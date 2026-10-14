@@ -19,6 +19,25 @@ the first module of a future UZGO ecosystem. Web first. Mobile later.
    relevant docs. Record significant decisions in `docs/decisions/NNNN-title.md`.
 7. Commit with a clear message. Stop at the end of the phase and wait.
 
+## Autopilot (owner does not copy prompts)
+When the owner writes a short command such as **"davom et"**, **"boshla"**,
+**"keyingi"**, "continue" or "next":
+1. Open `docs/ROADMAP.md` and find the first phase that is not fully VERIFIED.
+2. If that phase is IN PROGRESS or BLOCKED, finish or unblock it first.
+3. Otherwise take that phase's prompt block from `docs/PROMPTS.md` and treat it
+   as the owner's full instruction. Follow it exactly.
+4. Do not show the plan and wait for approval — state the plan briefly in the
+   report and proceed, unless the prompt explicitly says to wait (e.g. Phase 6
+   provider choice, Phase 7 hosting choice) or a decision is irreversible.
+5. Finish the whole phase: implement, run all checks, fix, update docs and
+   ROADMAP, commit and push to `main`.
+6. Report in Uzbek (Latin), short. End the report with one line:
+   `Keyingi: Phase N — "davom et" deb yozing.`
+7. Stop. One phase per command. Never run two phases in one go.
+
+If the owner writes **"xato"** / **"tuzat"** with a description or CI error, use
+the "Har qanday faza ichida xato bo'lsa" prompt from `docs/PROMPTS.md`.
+
 ## Owner's environment (important)
 - The owner has **no computer**. He works from a phone/iPad and drives Claude Code
   in the cloud against this GitHub repo.

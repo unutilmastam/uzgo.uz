@@ -1,6 +1,6 @@
 # Claude Code uchun buyruqlar
 
-Har bir fazani boshlash uchun tegishli blokni to'liq nusxalab Claude Code'ga
+Nusxalash shart emas: Claude Code ga faqat "davom et" deb yozing — u ROADMAP dan keyingi fazani topib, shu fayldagi buyruqni o'zi bajaradi.
 yuboring. Bitta faza tugagach, hisobotni o'qing, CI yashil ekanini tekshiring,
 keyin keyingisini yuboring.
 
