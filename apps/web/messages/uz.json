@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "title": "UZGO — onlayn bozor",
+    "description": "Oʻzbekiston uchun koʻp sotuvchili onlayn bozor."
+  },
+  "common": {
+    "skipToContent": "Asosiy mazmunga oʻtish",
+    "close": "Yopish",
+    "demo": "Demo",
+    "demoNotice": "Namuna maʼlumotlar: mahsulotlar, doʻkonlar va narxlar haqiqiy emas.",
+    "comingSoon": "Tez kunda",
+    "home": "Bosh sahifa",
+    "brandHome": "UZGO — bosh sahifa"
+  },
+  "header": {
+    "searchLabel": "Mahsulot qidirish",
+    "searchPlaceholder": "Mahsulot yoki toifani qidiring",
+    "searchSubmit": "Qidirish",
+    "account": "Kabinet",
+    "cart": "Savat",
+    "catalog": "Katalog",
+    "language": "Tilni tanlash",
+    "themeToDark": "Qorongʻi rejimni yoqish",
+    "themeToLight": "Yorugʻ rejimni yoqish",
+    "categoriesNav": "Toifalar",
+    "allCategories": "Barcha toifalar",
+    "bottomNav": "Pastki menyu"
+  },
+  "locales": {
+    "uz": "Oʻzbekcha",
+    "ru": "Русский",
+    "uzShort": "UZ",
+    "ruShort": "RU"
+  },
+  "footer": {
+    "tagline": "Oʻzbekiston uchun ishonchli onlayn bozor.",
+    "customers": "Xaridorlarga",
+    "sellers": "Sotuvchilarga",
+    "company": "Kompaniya",
+    "copyright": "© {year} UZGO. Barcha huquqlar himoyalangan.",
+    "navLabel": "Sayt boʻlimlari"
+  },
+  "info": {
+    "about": "UZGO haqida",
+    "help": "Yordam",
+    "sell": "UZGO da sotish",
+    "terms": "Foydalanish shartlari",
+    "privacy": "Maxfiylik siyosati",
+    "contacts": "Aloqa",
+    "emptyTitle": "Sahifa tayyorlanmoqda",
+    "emptyDescription": "Bu boʻlim tez orada toʻldiriladi."
+  },
+  "home": {
+    "title": "UZGO Market — onlayn bozor",
+    "bannersLabel": "Aksiyalar",
+    "banner1Title": "Oʻzbekistonning yangi onlayn bozori",
+    "banner1Text": "Bir savatda koʻplab doʻkonlar mahsulotlari.",
+    "banner1Cta": "Katalogni koʻrish",
+    "banner2Title": "Doʻkoningizni UZGO da oching",
+    "banner2Text": "Sotuvchilar uchun qulay kabinet va buyurtmalar.",
+    "banner2Cta": "Batafsil",
+    "banner3Title": "Yetkazib berishda toʻlov",
+    "banner3Text": "Naqd yoki karta bilan — buyurtmani olganingizda.",
+    "banner3Cta": "Qanday ishlaydi",
+    "popularCategories": "Mashhur toifalar",
+    "recommended": "Siz uchun tavsiyalar",
+    "servicesTitle": "UZGO ekotizimi",
+    "servicesSubtitle": "Yangi xizmatlar ustida ishlayapmiz.",
+    "sellerTitle": "UZGO da sotishni boshlang",
+    "sellerText": "Doʻkon oching, mahsulot qoʻshing va butun Oʻzbekiston boʻylab soting.",
+    "sellerCta": "Sotuvchi boʻlish"
+  },
+  "services": {
+    "deliveryTitle": "UZGO Yetkazish",
+    "deliveryText": "Shahar boʻylab tez yetkazib berish",
+    "goTitle": "UZGO Go",
+    "goText": "Taksi va qatnovlar",
+    "foodTitle": "UZGO Food",
+    "foodText": "Restoranlardan taom buyurtma qilish",
+    "mapsTitle": "UZGO Xarita",
+    "mapsText": "Manzillar va yoʻnalishlar"
+  },
+  "product": {
+    "addToCart": "Savatga",
+    "addToCartLabel": "{title} — savatga qoʻshish",
+    "cartSoon": "Savat tez orada ishga tushadi.",
+    "oldPrice": "Eski narx",
+    "discount": "−{percent}%"
+  },
+  "search": {
+    "title": "Qidiruv",
+    "resultsFor": "“{query}” boʻyicha natijalar",
+    "emptyTitle": "Hozircha mahsulotlar yoʻq",
+    "emptyDescription": "Katalog tez orada ishga tushadi. Keyinroq qayta urinib koʻring.",
+    "backHome": "Bosh sahifaga"
+  },
+  "cart": {
+    "title": "Savat",
+    "emptyTitle": "Savatingiz boʻsh",
+    "emptyDescription": "Mahsulotlarni katalogdan qoʻshing.",
+    "cta": "Xaridni boshlash"
+  },
+  "account": {
+    "title": "Kabinet",
+    "emptyTitle": "Kirish tez orada",
+    "emptyDescription": "Telefon raqami orqali kirish ustida ishlayapmiz."
+  },
+  "status": {
+    "title": "Tizim holati",
+    "ok": "API ishlayapti, maʼlumotlar bazasi ulangan",
+    "degraded": "API ishlayapti, maʼlumotlar bazasi ulanmagan",
+    "unreachable": "API javob bermayapti"
+  },
+  "states": {
+    "loading": "Yuklanmoqda…",
+    "errorTitle": "Nimadir xato ketdi",
+    "errorDescription": "Sahifani yuklab boʻlmadi. Qayta urinib koʻring.",
+    "retry": "Qayta urinish",
+    "notFoundTitle": "Sahifa topilmadi",
+    "notFoundDescription": "Manzil notoʻgʻri yoki sahifa oʻchirilgan."
+  },
+  "pagination": {
+    "nav": "Sahifalar",
+    "previous": "Oldingi sahifa",
+    "next": "Keyingi sahifa",
+    "page": "{page}-sahifa"
+  }
+}

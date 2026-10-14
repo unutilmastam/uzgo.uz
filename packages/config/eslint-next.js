@@ -1,20 +1,26 @@
 // ESLint flat config for the Next.js web app.
 import nextPlugin from '@next/eslint-plugin-next';
-import reactHooks from 'eslint-plugin-react-hooks';
-import globals from 'globals';
-import { base } from './eslint.js';
+import reactPlugin from 'eslint-plugin-react';
+import { react } from './eslint-react.js';
 
 /** @param {{ tsconfigRootDir: string }} options */
 export function next(options) {
   return [
-    ...base(options),
+    ...react(options),
     {
-      languageOptions: { globals: { ...globals.browser } },
-      plugins: { '@next/next': nextPlugin, 'react-hooks': reactHooks },
+      plugins: { '@next/next': nextPlugin, react: reactPlugin },
       rules: {
         ...nextPlugin.configs.recommended.rules,
         ...nextPlugin.configs['core-web-vitals'].rules,
-        ...reactHooks.configs.recommended.rules,
+        // Every user-visible string comes from the i18n message files.
+        'react/jsx-no-literals': [
+          'error',
+          {
+            noStrings: true,
+            ignoreProps: true,
+            allowedStrings: ['·', '/', '—', '×', '+', '-', ':'],
+          },
+        ],
       },
     },
   ];

@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "title": "UZGO — онлайн-маркетплейс",
+    "description": "Маркетплейс с множеством продавцов для Узбекистана."
+  },
+  "common": {
+    "skipToContent": "Перейти к содержимому",
+    "close": "Закрыть",
+    "demo": "Демо",
+    "demoNotice": "Демо-данные: товары, магазины и цены не настоящие.",
+    "comingSoon": "Скоро",
+    "home": "Главная",
+    "brandHome": "UZGO — главная"
+  },
+  "header": {
+    "searchLabel": "Поиск товаров",
+    "searchPlaceholder": "Искать товары и категории",
+    "searchSubmit": "Найти",
+    "account": "Кабинет",
+    "cart": "Корзина",
+    "catalog": "Каталог",
+    "language": "Выбор языка",
+    "themeToDark": "Включить тёмную тему",
+    "themeToLight": "Включить светлую тему",
+    "categoriesNav": "Категории",
+    "allCategories": "Все категории",
+    "bottomNav": "Нижнее меню"
+  },
+  "locales": {
+    "uz": "Oʻzbekcha",
+    "ru": "Русский",
+    "uzShort": "UZ",
+    "ruShort": "RU"
+  },
+  "footer": {
+    "tagline": "Надёжный маркетплейс для Узбекистана.",
+    "customers": "Покупателям",
+    "sellers": "Продавцам",
+    "company": "Компания",
+    "copyright": "© {year} UZGO. Все права защищены.",
+    "navLabel": "Разделы сайта"
+  },
+  "info": {
+    "about": "О UZGO",
+    "help": "Помощь",
+    "sell": "Продавать на UZGO",
+    "terms": "Условия использования",
+    "privacy": "Политика конфиденциальности",
+    "contacts": "Контакты",
+    "emptyTitle": "Страница готовится",
+    "emptyDescription": "Этот раздел скоро будет заполнен."
+  },
+  "home": {
+    "title": "UZGO Market — онлайн-маркетплейс",
+    "bannersLabel": "Акции",
+    "banner1Title": "Новый маркетплейс Узбекистана",
+    "banner1Text": "Товары многих магазинов в одной корзине.",
+    "banner1Cta": "Смотреть каталог",
+    "banner2Title": "Откройте свой магазин на UZGO",
+    "banner2Text": "Удобный кабинет и заказы для продавцов.",
+    "banner2Cta": "Подробнее",
+    "banner3Title": "Оплата при получении",
+    "banner3Text": "Наличными или картой — при получении заказа.",
+    "banner3Cta": "Как это работает",
+    "popularCategories": "Популярные категории",
+    "recommended": "Рекомендуем вам",
+    "servicesTitle": "Экосистема UZGO",
+    "servicesSubtitle": "Мы работаем над новыми сервисами.",
+    "sellerTitle": "Начните продавать на UZGO",
+    "sellerText": "Откройте магазин, добавьте товары и продавайте по всему Узбекистану.",
+    "sellerCta": "Стать продавцом"
+  },
+  "services": {
+    "deliveryTitle": "UZGO Доставка",
+    "deliveryText": "Быстрая доставка по городу",
+    "goTitle": "UZGO Go",
+    "goText": "Такси и поездки",
+    "foodTitle": "UZGO Food",
+    "foodText": "Заказ еды из ресторанов",
+    "mapsTitle": "UZGO Карты",
+    "mapsText": "Адреса и маршруты"
+  },
+  "product": {
+    "addToCart": "В корзину",
+    "addToCartLabel": "Добавить в корзину: {title}",
+    "cartSoon": "Корзина скоро заработает.",
+    "oldPrice": "Старая цена",
+    "discount": "−{percent}%"
+  },
+  "search": {
+    "title": "Поиск",
+    "resultsFor": "Результаты по запросу «{query}»",
+    "emptyTitle": "Пока нет товаров",
+    "emptyDescription": "Каталог скоро заработает. Попробуйте позже.",
+    "backHome": "На главную"
+  },
+  "cart": {
+    "title": "Корзина",
+    "emptyTitle": "Ваша корзина пуста",
+    "emptyDescription": "Добавьте товары из каталога.",
+    "cta": "Начать покупки"
+  },
+  "account": {
+    "title": "Кабинет",
+    "emptyTitle": "Вход скоро появится",
+    "emptyDescription": "Мы работаем над входом по номеру телефона."
+  },
+  "status": {
+    "title": "Состояние системы",
+    "ok": "API работает, база данных подключена",
+    "degraded": "API работает, база данных недоступна",
+    "unreachable": "API не отвечает"
+  },
+  "states": {
+    "loading": "Загрузка…",
+    "errorTitle": "Что-то пошло не так",
+    "errorDescription": "Не удалось загрузить страницу. Попробуйте ещё раз.",
+    "retry": "Повторить",
+    "notFoundTitle": "Страница не найдена",
+    "notFoundDescription": "Адрес неверный или страница удалена."
+  },
+  "pagination": {
+    "nav": "Страницы",
+    "previous": "Предыдущая страница",
+    "next": "Следующая страница",
+    "page": "Страница {page}"
+  }
+}

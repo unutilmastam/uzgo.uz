@@ -5,13 +5,13 @@ sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
 Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 1 (foundation) — see `docs/ROADMAP.md`.
+**Status:** Phase 2 (design system + web shell) — see `docs/ROADMAP.md`.
 
 ## Stack
 
 pnpm 12 + Turborepo monorepo · Node.js 24 LTS · Next.js 16 (App Router) +
-Tailwind CSS 4 · NestJS 12 REST API · PostgreSQL 18 + Prisma 7 · Zod 4 contracts
-· Vitest + Supertest · GitHub Actions CI + CodeQL. Versions and reasons:
+Tailwind CSS 4 + shadcn/ui (Radix) + next-intl · NestJS 12 REST API · PostgreSQL 18 + Prisma 7 · Zod 4 contracts
+· Vitest + Supertest + Playwright/axe · GitHub Actions CI + CodeQL. Versions and reasons:
 `docs/decisions/0009-toolchain-versions.md`.
 
 ## Repository map
@@ -22,7 +22,7 @@ apps/api            NestJS modular monolith
 apps/api/prisma     the only Prisma schema, migrations, seed
 packages/contracts  Zod schemas shared by web and api
 packages/config     shared tsconfig / ESLint / Prettier presets
-packages/ui         design tokens + components (Phase 2)
+packages/ui         design tokens + shared components
 docs/               specification, architecture, decisions
 ```
 
@@ -69,7 +69,8 @@ pnpm db:deploy
 pnpm dev            # web on http://localhost:3000, API on http://localhost:4000
 ```
 
-- Web page shows the live API/database status.
+- Storefront: http://localhost:3000/uz (and /ru). Demo data is labelled "Demo".
+- Technical status page with live API/database status: http://localhost:3000/uz/status.
 - API health: `GET /api/v1/health/live`, `GET /api/v1/health/ready`.
 - In development the web forwards `/api/*` to the API (same-site, ADR 0007).
 - Swagger UI: http://localhost:4000/api/docs (off in production by default).
@@ -82,6 +83,8 @@ pnpm lint
 pnpm typecheck
 pnpm test           # API integration tests use DATABASE_URL from apps/api/.env (real PostgreSQL)
 pnpm build
+pnpm e2e           # Playwright smoke + axe (after pnpm build; first run:
+                    # pnpm --filter @uzgo/web exec playwright install chromium)
 pnpm audit
 ```
 

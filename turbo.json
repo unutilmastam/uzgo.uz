@@ -21,6 +21,11 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "e2e": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "passThroughEnv": ["CI", "PLAYWRIGHT_BROWSERS_PATH", "PLAYWRIGHT_CHROMIUM_EXECUTABLE"]
     }
   }
 }

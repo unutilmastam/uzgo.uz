@@ -12,6 +12,10 @@ minimumReleaseAgeExclude:
   - turbo@2.11.8
   - react-dom@19.3.1
   - react@19.3.1
+  - lucide-react@1.57.0
+  - '@playwright/test@1.64.1'
+  - playwright-core@1.64.1
+  - playwright@1.64.1
 
 # Dependency install scripts are blocked unless listed here (supply-chain safety).
 allowBuilds:
@@ -20,6 +24,8 @@ allowBuilds:
   '@swc/core': true
   # Usage telemetry only — not needed.
   '@scarf/scarf': false
+  # File watcher used by dev tooling; ships prebuilt binaries.
+  '@parcel/watcher': false
 
 # Security overrides for vulnerable transitive dependencies (pnpm audit).
 # Remove once upstream packages ship the fixed versions.

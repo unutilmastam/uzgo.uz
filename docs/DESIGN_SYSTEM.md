@@ -1,76 +1,126 @@
-# DESIGN SYSTEM (principles — values finalised in Phase 2)
+# DESIGN SYSTEM
+
+Status: **values final for Phase 2** (implemented in `packages/ui`). Brand
+colours and wordmark are the owner-approved direction "deep blue + green";
+a designer's logo can replace the wordmark later without code changes.
 
 ## Brand brief (from the owner)
 
 - Style: modern, clean, premium, mobile-friendly.
 - Mood: trustworthy, fast, bright — but not excessive.
 - Light **and** dark mode.
-- Logo: none yet → simple text wordmark "UZGO".
-- Feel references (feel only, nothing copied): large regional marketplaces for
-  convenience, Apple for restraint and typography, Airbnb for warmth and
-  clarity.
-- Must be original. Do not reuse any other company's colours, logo, layout or
-  assets. In particular avoid the signature colours of the main competing
-  marketplaces in Uzbekistan (purple, bright yellow) as the primary brand colour.
-
-## Colour proposal (owner confirms in Phase 2)
-
-Working direction: **deep blue + fresh green**.
-
-- Deep blue (trust, premium) as primary: around `#0B3D91`–`#123C8C` family.
-- Fresh green (speed, "go", positive actions) as accent: emerald family.
-- Warm accent for discounts/badges only (coral/orange), used sparingly.
-- Neutral greys slightly cool; pure white surfaces in light mode,
-  near-black blue-grey surfaces in dark mode (not pure black).
-  Exact values, contrast checks (WCAG AA ≥ 4.5:1 text, 3:1 UI) and dark-mode
-  pairs are fixed in Phase 2.
-
-Alternatives the owner mentioned: purple (rejected — too close to an existing
-marketplace), dark orange (possible as accent instead of primary).
-
-## Wordmark proposal
-
-- "UZGO" in a geometric sans, bold, slightly tight letter spacing.
-- "GO" coloured with the green accent, "UZ" in deep blue (inverted in dark mode).
-- Optional small forward chevron/arrow cue in the "O" later — only if it stays
-  simple. Final logo by a designer can replace it without code changes
-  (logo is a component).
+- Logo: text wordmark "UZGO" for now.
+- Feel references only (nothing copied): large regional marketplaces for
+  convenience, Apple for restraint and typography, Airbnb for warmth.
+- Original identity. Purple and bright yellow are avoided as primary colours
+  because they are the signature colours of existing marketplaces.
 
 ## Principles
 
 1. Mobile-first: designed at 360px, then 768px and 1280px+.
-2. Content first: product photos and prices dominate; chrome stays quiet.
-3. Speed is a feature: skeletons, no layout shift, small JS, optimised images.
-4. Trust cues: clear prices in soʻm, seller name, delivery estimate, returns info.
-5. Accessible: WCAG AA contrast, visible focus, keyboard navigable, 44px touch targets.
+2. Content first: product images and prices dominate; chrome stays quiet.
+3. Speed is a feature: static rendering where possible, skeletons, no layout shift.
+4. Trust cues: clear prices in soʻm, seller name, honest "Demo"/"Tez kunda" labels.
+5. Accessible: WCAG 2.2 AA contrast (checked), visible focus, keyboard navigable,
+   touch targets ≥ 44px for primary controls, `prefers-reduced-motion` respected.
 6. Every screen has loading, empty, error and success states.
 7. Bilingual by design: layouts tolerate longer Russian strings; Uzbek ʻ ʼ render correctly.
-8. Restraint: one primary action per view; colour accents used sparingly.
+8. Restraint: one primary action per view; accents used sparingly.
 
-## Token categories (values in Phase 2, implemented in `packages/ui`)
+## Wordmark
 
-| Category           | Contents                                                                                                                                                                            |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Colour             | brand (primary, accent), semantic (success, warning, danger, info), neutrals, surfaces, text, border, focus ring — each with light and dark values                                  |
-| Typography         | font families (must cover Uzbek Latin incl. ʻ U+02BB, ʼ U+02BC, and Cyrillic — e.g. Inter, Manrope or Golos-like candidates, checked in Phase 2), size scale, weights, line heights |
-| Spacing            | 4px base scale                                                                                                                                                                      |
-| Radius             | sm / md / lg / full                                                                                                                                                                 |
-| Shadow / elevation | 3–4 levels, softer in dark mode                                                                                                                                                     |
-| Motion             | durations, easings; respects `prefers-reduced-motion`                                                                                                                               |
-| Breakpoints        | 360, 768, 1024, 1280                                                                                                                                                                |
-| Z-index            | header, sheet, dialog, toast                                                                                                                                                        |
+`<Logo />` — "UZ" in `primary` + "GO" in `brand-go`, Onest 800, tracking −0.04em.
+Exposed to assistive tech as one image named "UZGO". Banner art uses an
+original "motion lines + ring" motif (the "GO" idea).
 
-## Component inventory
+## Colour tokens
 
-- Primitives: Button, IconButton, Input, PhoneInput (+998), Select, Checkbox,
-  Radio, Switch, Textarea, Label, Badge, Tooltip.
-- Feedback: Toast, Skeleton, Spinner, EmptyState, ErrorState, Alert.
-- Overlays: Dialog, Sheet (mobile bottom sheet), Dropdown menu.
-- Cards: ProductCard, StoreCard, ServiceCard ("Tez kunda / Скоро", non-interactive), CategoryTile.
-- Navigation: Header (logo, search, language UZ/RU, account, cart), CategoryMenu,
-  MobileBottomNav, Breadcrumbs, Pagination, Tabs.
-- Commerce: Price (formats tiyin → `12 500 soʻm` / `12 500 сум`), QuantityStepper,
-  VariantPicker, CartLine, OrderStatusBadge.
-- Layout: Container, Grid, Footer, ThemeToggle.
+Components use semantic tokens only (`bg-primary`, `text-muted-foreground`, …).
+Defined in `packages/ui/src/styles/tokens.css`.
 
-Based on shadcn/ui (Radix primitives) + Tailwind CSS, themed via CSS variables.
+| Token                  | Light                 | Dark                  | Use                          |
+| ---------------------- | --------------------- | --------------------- | ---------------------------- |
+| `background`           | `#ffffff`             | `#0c1018`             | page                         |
+| `foreground`           | `#151a25`             | `#edeff3`             | body text                    |
+| `card` / `popover`     | `#ffffff`             | `#151a25`             | surfaces                     |
+| `muted`                | `#f3f5f8`             | `#1c2230`             | subtle fills, inputs         |
+| `muted-foreground`     | `#5a6376`             | `#a3abbb`             | secondary text               |
+| `border`               | `#dde1e8`             | `#2a3142`             | dividers                     |
+| `input`                | `#8a93a6`             | `#5c6579`             | form control borders (≥ 3:1) |
+| `primary` (deep blue)  | `#143c8f`             | `#86acf2`             | main actions, links          |
+| `primary-foreground`   | `#ffffff`             | `#0a1f4d`             | text on primary              |
+| `secondary`            | `#e8effd`             | `#1b2a4d`             | soft buttons, icon tiles     |
+| `secondary-foreground` | `#143c8f`             | `#d0defa`             |                              |
+| `accent` (green)       | `#047a4e`             | `#3dd093`             | seller / positive actions    |
+| `accent-foreground`    | `#ffffff`             | `#0c1018`             |                              |
+| `brand-go`             | `#059862`             | `#3dd093`             | wordmark "GO" only           |
+| `sale`                 | `#c2410c`             | `#fb8b5b`             | discount badges              |
+| `success` / `warning`  | `#047a4e` / `#b45309` | `#3dd093` / `#f5b454` | status                       |
+| `destructive`          | `#c42b32`             | `#f2777c`             | errors                       |
+| `ring` (focus)         | `#2c63d6`             | `#7aa3f0`             | focus outline                |
+
+Measured contrast (WCAG): text on background 17.4 (light) / 16.5 (dark);
+muted text ≥ 5.5 / 7.5; primary button text 10.1 / 7.0; accent button 5.4 / 9.7;
+sale badge 5.2 / 8.1; input borders 3.1 / 3.3. Banner gradients keep white
+text ≥ 4.5:1. axe (WCAG 2.2 AA) passes on the homepage in both themes (CI).
+
+## Typography
+
+- Family: **Onest Variable** (SIL OFL, self-hosted via `@fontsource-variable/onest`,
+  no requests to Google). Verified glyph coverage: ʻ U+02BB, ʼ U+02BC, Cyrillic
+  incl. Ўў Ққ Ғғ Ҳҳ. Inter also covers them and is the documented alternative;
+  Manrope and Golos were rejected (missing ʻ/ʼ or Uzbek Cyrillic letters).
+- Fallback: `ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`.
+- Scale (Tailwind): `text-xs` 12 · `sm` 14 · `base` 16 · `lg` 18 · `xl` 20 ·
+  `2xl` 24 · `3xl` 30 · `4xl` 36. Weights 400/500/600/700/800.
+- Inputs are 16px on mobile (prevents iOS zoom). Prices use `tabular-nums`.
+
+## Spacing, radius, elevation, motion
+
+- Spacing: Tailwind 4px scale; page gutter 16px; content max width 1280px (`max-w-7xl`).
+- Radius: `sm` 6px · `md` 10px · `lg` 14px · `xl` 20px.
+- Shadows: `sm`, `md`, `lg`, `xl` built from `--shadow-color` (softer/darker in dark mode).
+- Motion: `fast` 120ms, `base` 200ms, `slow` 320ms; easings `standard`
+  `cubic-bezier(0.2,0,0,1)`, `emphasized` `cubic-bezier(0.3,0,0,1.15)`;
+  animations: fade, zoom (dialog), slide-left (sheet), slide-bottom. All
+  disabled under `prefers-reduced-motion`.
+- Breakpoints: Tailwind defaults (`sm` 640, `md` 768, `lg` 1024, `xl` 1280);
+  verified at 360 / 768 / 1280.
+
+## Theme
+
+`.dark` class on `<html>`. A tiny inline script applies the saved choice
+(`localStorage["uzgo-theme"]`) or the system preference before paint; the
+header toggle switches and saves it. (When the nonce-based CSP arrives in
+Phase 7 this script gets the nonce.)
+
+## Components (`packages/ui`)
+
+Built on shadcn/ui patterns with Radix primitives, Tailwind and
+`class-variance-authority`. All user-visible text is passed in by the app
+(translated), never hardcoded in the package.
+
+| Component   | Notes                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------ |
+| Button      | variants primary/accent/secondary/outline/ghost/destructive/link; sizes sm/md/lg/icon; `asChild` |
+| Input       | 44px, 16px text on mobile, `aria-invalid` styling                                                |
+| Select      | Radix Select, keyboard and screen-reader accessible                                              |
+| Badge       | primary/secondary/accent/sale/outline/muted                                                      |
+| Card        | Card, Header, Title, Description, Content, Footer                                                |
+| ProductCard | price (tiyin → soʻm), old price + discount, store, image slot, action slot                       |
+| ServiceCard | "coming soon" card — deliberately not interactive                                                |
+| Dialog      | Radix Dialog, translated close label required                                                    |
+| Sheet       | side/bottom panel on Radix Dialog                                                                |
+| Toast       | `Toaster` + `toast()` (sonner), polite announcements                                             |
+| Skeleton    | hidden from assistive tech                                                                       |
+| EmptyState  | `role=status`, or `role=alert` for errors                                                        |
+| Pagination  | accessible nav with `aria-current`, pluggable link component                                     |
+| Logo, Price | wordmark; `formatPrice()` → `12 500 soʻm` / `12 500 сум` (NBSP)                                  |
+
+Web-app components (in `apps/web`): SiteHeader (logo, search, language,
+theme, account, cart), CategoryNav + CatalogSheet, MobileBottomNav, SiteFooter,
+LocaleSwitcher (keeps path and query), ThemeToggle, homepage sections.
+
+## Still open (owner)
+
+- Final logo by a designer (optional); colours can be tuned only via tokens.

@@ -16,3 +16,4 @@ Decision, Consequences. Superseded ADRs stay, marked "Superseded by NNNN".
 | 0009 | Toolchain versions (Phase 1)                   |
 | 0010 | Empty baseline migration in Phase 1            |
 | 0011 | Security baseline from Phase 1                 |
+| 0012 | Design system and web i18n (Phase 2)           |

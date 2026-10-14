@@ -1,0 +1,203 @@
+/*
+ * UZGO design tokens (docs/DESIGN_SYSTEM.md). Import after "tailwindcss".
+ * Light values on :root, dark values on .dark. Components only use the
+ * semantic names (bg-background, text-primary, …), never raw palette values.
+ */
+@source "../components";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces and text */
+  --background: #ffffff;
+  --foreground: #151a25;
+  --card: #ffffff;
+  --card-foreground: #151a25;
+  --popover: #ffffff;
+  --popover-foreground: #151a25;
+  --muted: #f3f5f8;
+  --muted-foreground: #5a6376;
+  --border: #dde1e8;
+  --input: #8a93a6;
+
+  /* Brand: deep blue (trust) + fresh green ("go") */
+  --primary: #143c8f;
+  --primary-hover: #0f2e6e;
+  --primary-foreground: #ffffff;
+  --secondary: #e8effd;
+  --secondary-hover: #d0defa;
+  --secondary-foreground: #143c8f;
+  --accent: #047a4e;
+  --accent-hover: #03653f;
+  --accent-foreground: #ffffff;
+  --brand-go: #059862;
+
+  /* Semantic */
+  --sale: #c2410c;
+  --sale-foreground: #ffffff;
+  --success: #047a4e;
+  --warning: #b45309;
+  --destructive: #c42b32;
+  --destructive-foreground: #ffffff;
+  --ring: #2c63d6;
+
+  /* Elevation */
+  --shadow-color: 220 40% 15%;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0c1018;
+  --foreground: #edeff3;
+  --card: #151a25;
+  --card-foreground: #edeff3;
+  --popover: #151a25;
+  --popover-foreground: #edeff3;
+  --muted: #1c2230;
+  --muted-foreground: #a3abbb;
+  --border: #2a3142;
+  --input: #5c6579;
+
+  --primary: #86acf2;
+  --primary-hover: #a9c4f6;
+  --primary-foreground: #0a1f4d;
+  --secondary: #1b2a4d;
+  --secondary-hover: #243868;
+  --secondary-foreground: #d0defa;
+  --accent: #3dd093;
+  --accent-hover: #7fe3b8;
+  --accent-foreground: #0c1018;
+  --brand-go: #3dd093;
+
+  --sale: #fb8b5b;
+  --sale-foreground: #0c1018;
+  --success: #3dd093;
+  --warning: #f5b454;
+  --destructive: #f2777c;
+  --destructive-foreground: #0c1018;
+  --ring: #7aa3f0;
+
+  --shadow-color: 220 60% 2%;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-brand-go: var(--brand-go);
+  --color-sale: var(--sale);
+  --color-sale-foreground: var(--sale-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.08);
+  --shadow-md:
+    0 2px 4px hsl(var(--shadow-color) / 0.06), 0 4px 12px hsl(var(--shadow-color) / 0.08);
+  --shadow-lg:
+    0 8px 24px hsl(var(--shadow-color) / 0.12), 0 2px 6px hsl(var(--shadow-color) / 0.08);
+  --shadow-xl: 0 16px 48px hsl(var(--shadow-color) / 0.18);
+}
+
+@theme {
+  /* Onest covers Uzbek Latin ʻ (U+02BB), ʼ (U+02BC) and Cyrillic incl. Ўў Ққ Ғғ Ҳҳ. */
+  --font-sans:
+    'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1.15);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --animate-fade-in: fade-in var(--duration-base) var(--ease-standard);
+  --animate-fade-out: fade-out var(--duration-fast) var(--ease-standard);
+  --animate-zoom-in: zoom-in var(--duration-base) var(--ease-emphasized);
+  --animate-slide-in-left: slide-in-left var(--duration-slow) var(--ease-standard);
+  --animate-slide-in-bottom: slide-in-bottom var(--duration-slow) var(--ease-standard);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes zoom-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -48%) scale(0.96);
+    }
+  }
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
