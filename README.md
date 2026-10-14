@@ -5,7 +5,7 @@ sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
 Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 3 (data + phone/OTP authentication) — see `docs/ROADMAP.md`.
+**Status:** Phase 4 (marketplace core: catalog, search, cart, checkout) — see `docs/ROADMAP.md`.
 
 ## Stack
 
@@ -51,7 +51,8 @@ cp apps/web/.env.example apps/web/.env.local
 ```bash
 docker compose up -d postgres     # PostgreSQL on 127.0.0.1:5432
 pnpm db:deploy                    # apply migrations
-pnpm db:seed                      # regions and districts of Uzbekistan
+pnpm db:seed                      # regions, districts and the category tree
+pnpm db:seed:demo                 # + clearly labelled demo stores/products (never in production)
 ```
 
 ### Database without Docker (native PostgreSQL)
@@ -62,7 +63,7 @@ sudo apt install postgresql
 sudo -u postgres psql -c "CREATE USER uzgo WITH PASSWORD 'uzgo_dev_password' CREATEDB;"
 sudo -u postgres psql -c "CREATE DATABASE uzgo OWNER uzgo;"
 pnpm db:deploy
-pnpm db:seed
+pnpm db:seed:demo
 ```
 
 ### Run

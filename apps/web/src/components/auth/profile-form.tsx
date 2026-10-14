@@ -1,50 +1,26 @@
 'use client';
 
-import type { CurrentUser, District, Region } from '@uzgo/contracts';
-import { districtsResponseSchema } from '@uzgo/contracts';
+import type { CurrentUser, Region } from '@uzgo/contracts';
 import { Button } from '@uzgo/ui/components/button';
 import { Input } from '@uzgo/ui/components/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@uzgo/ui/components/select';
 import { toast } from '@uzgo/ui/components/toast';
-import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
+import { DistrictPicker } from '@/components/geo/district-picker';
 import { useRouter } from '@/i18n/navigation';
 import { ApiClientError, apiClient } from '@/lib/api-client';
 
 export function ProfileForm({ user, regions }: { user: CurrentUser; regions: Region[] }) {
   const t = useTranslations();
-  const locale = useLocale() as 'uz' | 'ru';
   const router = useRouter();
-  const ids = { first: useId(), last: useId(), region: useId(), district: useId(), error: useId() };
+  const ids = { first: useId(), last: useId(), error: useId() };
 
   const [firstName, setFirstName] = useState(user.profile.firstName ?? '');
   const [lastName, setLastName] = useState(user.profile.lastName ?? '');
   const [regionId, setRegionId] = useState(user.profile.regionId ?? '');
   const [districtId, setDistrictId] = useState(user.profile.districtId ?? '');
-  const [districts, setDistricts] = useState<District[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    if (!regionId) return;
-    let cancelled = false;
-    void apiClient(`/geo/regions/${regionId}/districts`)
-      .then((json) => {
-        if (!cancelled) setDistricts(districtsResponseSchema.parse(json).items);
-      })
-      .catch(() => {
-        if (!cancelled) setDistricts([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [regionId]);
 
   async function save() {
     setPending(true);
@@ -108,50 +84,15 @@ export function ProfileForm({ user, regions }: { user: CurrentUser; regions: Reg
           }}
         />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <label id={ids.region} className="text-sm font-medium">
-          {t('account.region')}
-        </label>
-        <Select
-          value={regionId}
-          onValueChange={(value) => {
-            setRegionId(value);
-            setDistrictId('');
-          }}
-        >
-          <SelectTrigger aria-labelledby={ids.region}>
-            <SelectValue placeholder={t('account.selectRegion')} />
-          </SelectTrigger>
-          <SelectContent>
-            {regions.map((region) => (
-              <SelectItem key={region.id} value={region.id}>
-                {region.name[locale]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label id={ids.district} className="text-sm font-medium">
-          {t('account.district')}
-        </label>
-        <Select
-          value={districtId}
-          onValueChange={setDistrictId}
-          disabled={!regionId || districts.length === 0}
-        >
-          <SelectTrigger aria-labelledby={ids.district}>
-            <SelectValue placeholder={t('account.selectDistrict')} />
-          </SelectTrigger>
-          <SelectContent>
-            {districts.map((district) => (
-              <SelectItem key={district.id} value={district.id}>
-                {district.name[locale]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <DistrictPicker
+        regions={regions}
+        regionId={regionId}
+        districtId={districtId}
+        onChange={(value) => {
+          setRegionId(value.regionId);
+          setDistrictId(value.districtId);
+        }}
+      />
       {error ? (
         <p
           id={ids.error}

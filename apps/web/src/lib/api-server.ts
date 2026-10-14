@@ -1,6 +1,9 @@
 import {
   type CurrentUser,
   currentUserResponseSchema,
+  orderListResponseSchema,
+  type OrderView,
+  orderResponseSchema,
   type Region,
   regionsResponseSchema,
 } from '@uzgo/contracts';
@@ -32,4 +35,18 @@ export async function getRegions(): Promise<Region[]> {
   const res = await apiFetch('/geo/regions');
   if (!res.ok) throw new Error(`API /geo/regions failed with ${String(res.status)}`);
   return regionsResponseSchema.parse(await res.json()).items;
+}
+
+export async function getMyOrders() {
+  const res = await apiFetch('/orders');
+  if (!res.ok) throw new Error(`API /orders failed with ${String(res.status)}`);
+  return orderListResponseSchema.parse(await res.json()).items;
+}
+
+/** The caller's order, or null if it does not exist or is not theirs. */
+export async function getMyOrder(number: string): Promise<OrderView | null> {
+  const res = await apiFetch(`/orders/${encodeURIComponent(number)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API /orders/:number failed with ${String(res.status)}`);
+  return orderResponseSchema.parse(await res.json()).order;
 }

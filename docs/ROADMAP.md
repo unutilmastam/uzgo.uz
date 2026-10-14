@@ -12,7 +12,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
-| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | NOT STARTED |
+| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | IN PROGRESS |
 | 5     | Seller panel, moderation, admin panel                                          | NOT STARTED |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
@@ -34,6 +34,11 @@ Phase 3 notes: API integration tests run against real PostgreSQL (64 tests);
 browser e2e logs in through the real API with the FakeSmsProvider. Staff TOTP
 is deliberately left for Phase 5 (admin panel) / Phase 7 (before production).
 CI run #8 (commit 06e8a40) passed incl. e2e.
+
+Phase 4 notes: delivered in sub-steps 4a catalog → 4b stores/products/media →
+4d search → 4c web pages → 4e cart → 4f checkout/orders. Online payments,
+stock reservations with expiry, delivery fees and the seller/admin UIs are
+later phases by design.
 
 ## Open decisions
 

@@ -74,6 +74,34 @@ SameSite=Lax; Path=/`. Only the hash is stored in the DB.
 | POST   | `/admin/users/:userId/roles`       | ADMIN, SUPER_ADMIN | `{ role }`, 204                                                            |
 | DELETE | `/admin/users/:userId/roles/:role` | ADMIN, SUPER_ADMIN | 204                                                                        |
 
+## Endpoints (Phase 4)
+
+| Method         | Path                                           | Access                      | Notes                                                                                                                                                       |
+| -------------- | ---------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET            | `/catalog/categories`                          | public                      | active tree                                                                                                                                                 |
+| GET            | `/catalog/categories/:slug`                    | public                      | breadcrumbs, children, inherited filters                                                                                                                    |
+| GET            | `/catalog/products`                            | public                      | `q, category, store, minPrice, maxPrice (soʻm), attr=code:value…, sort, page, pageSize ≤ 48` → `{ items, page, pageSize, total }`; approved + in stock only |
+| GET            | `/catalog/products/:slug`                      | public                      | variants with tiyin prices and capped availability                                                                                                          |
+| GET            | `/catalog/stores/:slug`                        | public                      | active stores                                                                                                                                               |
+| GET            | `/media/*key`                                  | public                      | dev storage only; `nosniff` + sandbox CSP                                                                                                                   |
+| GET            | `/cart`                                        | guest or user               | recalculated every time; grouped by store                                                                                                                   |
+| POST           | `/cart/items`                                  | guest or user               | `{ variantId, quantity }` (adds)                                                                                                                            |
+| PATCH / DELETE | `/cart/items/:variantId`                       | guest or user               | set quantity / remove                                                                                                                                       |
+| POST           | `/checkout`                                    | session + `Idempotency-Key` | COD; `{ recipientName, recipientPhone, districtId, addressLine, comment?, paymentMethod, expectedTotalTiyin }` → 201 `{ order }`                            |
+| GET            | `/orders`, `/orders/:number`                   | session                     | own orders only (others 404)                                                                                                                                |
+| POST           | `/orders/:number/seller-orders/:id/transition` | session (owner)             | `{ to, reason? }` — customer transitions only                                                                                                               |
+| GET            | `/seller/orders?storeId=`                      | session (store member)      | 403 for foreign stores                                                                                                                                      |
+| POST           | `/seller/seller-orders/:id/transition`         | store member or admin       | 204; 404 for foreign shipments                                                                                                                              |
+
+Listings use page-based pagination (numbered pages in the storefront UI);
+cursor pagination stays the default for future feeds.
+
+Phase 4 error codes: `PRODUCT_UNAVAILABLE`, `INSUFFICIENT_STOCK`
+(`details.available`), `CART_LIMIT`, `CART_EMPTY`, `CART_HAS_ISSUES`,
+`OUT_OF_STOCK` (`details.variantId`), `PRICE_CHANGED` (422,
+`details.totalTiyin`), `IDEMPOTENCY_KEY_REQUIRED`, `IDEMPOTENCY_KEY_REUSED`,
+`INVALID_STATE_TRANSITION` (`details.from/to`).
+
 Auth error codes: `INVALID_PHONE`, `INVALID_CODE`, `OTP_RESEND_TOO_SOON`
 (`details.retryAfterSeconds`), `OTP_LIMIT_REACHED`, `RATE_LIMITED`,
 `ACCOUNT_BLOCKED`, `SMS_UNAVAILABLE`, `UNAUTHENTICATED`, `FORBIDDEN`,

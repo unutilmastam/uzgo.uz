@@ -89,6 +89,29 @@ membership, Phase 5), `MODERATOR`, `ADMIN`, `SUPER_ADMIN`.
 (POST/PUT/PATCH/DELETE) must carry an allow-listed `Origin` or `Referer`;
 without either it is accepted only if it carries no cookies at all.
 
+## Commerce rules (Phase 4)
+
+- **Prices, totals and stock are decided on the server only.** The cart stores
+  quantities, never prices; checkout recomputes everything and rejects a total
+  the customer did not see (`PRICE_CHANGED`). Request schemas are strict, so
+  extra fields such as a price are rejected.
+- **Idempotent checkout:** the `Idempotency-Key` row is inserted in the same
+  transaction as the order (`ON CONFLICT DO NOTHING`), so concurrent duplicates
+  wait and then replay the stored response; a reused key with a different body
+  is refused.
+- **No overselling:** conditional stock decrements + `CHECK (stock >= 0)`.
+- **Isolation:** customers see only their orders; sellers only shipments of
+  stores they are members of; foreign ids answer 404 (no existence leak).
+- **Guest cart cookie:** random token, only its SHA-256 is stored;
+  `HttpOnly; SameSite=Lax`, `__Host-` prefix in production; merged into the
+  user cart at login and then invalidated.
+- **Storage:** server-generated keys only; path containment; media responses
+  with `nosniff` and a sandbox CSP; SVG is not an accepted image type.
+- **Search:** user input is normalised to `[a-z0-9 ]` tokens and passed as
+  bound parameters (no SQL or tsquery injection).
+- **Orders are permanent:** database triggers forbid deleting orders,
+  shipments and items and changing items and order events.
+
 ## Audit log
 
 `AuditEvent` rows: `user.created`, `auth.login`, `auth.logout`,

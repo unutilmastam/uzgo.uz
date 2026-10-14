@@ -53,6 +53,7 @@ model District {
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
   profiles  UserProfile[]
   stores    Store[]
+  orders    Order[]
 
   @@index([regionId, sort])
 }
@@ -74,22 +75,25 @@ enum Role {
 }
 
 model User {
-  id           String        @id @default(uuid(7)) @db.Uuid
+  id              String           @id @default(uuid(7)) @db.Uuid
   /// E.164, e.g. +998901234567
-  phone        String        @unique
-  status       UserStatus    @default(ACTIVE)
-  locale       String        @default("uz")
-  lastLoginAt  DateTime?     @db.Timestamptz(3)
-  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime      @updatedAt @db.Timestamptz(3)
-  deletedAt    DateTime?     @db.Timestamptz(3)
-  profile      UserProfile?
-  roles        UserRole[]    @relation("UserRoles")
-  rolesGranted UserRole[]    @relation("RoleGrantedBy")
-  sessions     Session[]
-  auditEvents  AuditEvent[]
-  storeMembers StoreMember[]
-  cart         Cart?
+  phone           String           @unique
+  status          UserStatus       @default(ACTIVE)
+  locale          String           @default("uz")
+  lastLoginAt     DateTime?        @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?        @db.Timestamptz(3)
+  profile         UserProfile?
+  roles           UserRole[]       @relation("UserRoles")
+  rolesGranted    UserRole[]       @relation("RoleGrantedBy")
+  sessions        Session[]
+  auditEvents     AuditEvent[]
+  storeMembers    StoreMember[]
+  cart            Cart?
+  orders          Order[]
+  orderEvents     OrderEvent[]
+  idempotencyKeys IdempotencyKey[]
 }
 
 model UserProfile {
@@ -245,22 +249,23 @@ enum StoreStatus {
 }
 
 model Store {
-  id          String           @id @default(uuid(7)) @db.Uuid
-  slug        String           @unique
-  name        Json
-  description Json?
-  status      StoreStatus      @default(PENDING)
+  id           String           @id @default(uuid(7)) @db.Uuid
+  slug         String           @unique
+  name         Json
+  description  Json?
+  status       StoreStatus      @default(PENDING)
   /// Demo stores (seeded fixtures) are labelled "Demo" everywhere in the UI.
-  isDemo      Boolean          @default(false)
-  districtId  String?          @db.Uuid
-  district    District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
-  logoKey     String?
-  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
-  deletedAt   DateTime?        @db.Timestamptz(3)
-  members     StoreMember[]
-  products    Product[]
-  variants    ProductVariant[]
+  isDemo       Boolean          @default(false)
+  districtId   String?          @db.Uuid
+  district     District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  logoKey      String?
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?        @db.Timestamptz(3)
+  members      StoreMember[]
+  products     Product[]
+  variants     ProductVariant[]
+  sellerOrders SellerOrder[]
 
   @@index([status])
   @@index([districtId])
@@ -356,6 +361,7 @@ model ProductVariant {
   updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
   options             VariantAttributeValue[]
   cartItems           CartItem[]
+  orderItems          OrderItem[]
 
   @@unique([storeId, sku])
   @@index([productId])
@@ -417,4 +423,149 @@ model CartItem {
 
   @@unique([cartId, variantId])
   @@index([variantId])
+}
+
+// ─── Orders (Phase 4f) — never deleted (trigger) ───────────────────────────
+
+enum OrderStatus {
+  CREATED // cash/card on delivery, waiting for sellers
+  CONFIRMED // at least one seller accepted
+  COMPLETED // every shipment resolved
+  CANCELLED // every shipment cancelled
+}
+
+enum SellerOrderStatus {
+  NEW
+  ACCEPTED
+  PACKED
+  HANDED_TO_DELIVERY
+  DELIVERED
+  DELIVERY_FAILED
+  CANCELLED_BY_SELLER
+  CANCELLED_BY_CUSTOMER
+  RETURN_REQUESTED
+  RETURNED
+  RETURN_REJECTED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+enum OrderActor {
+  CUSTOMER
+  SELLER
+  ADMIN
+  SYSTEM
+}
+
+/// Customer-facing order; one SellerOrder (shipment) per store (ADR 0006).
+model Order {
+  id                 String        @id @default(uuid(7)) @db.Uuid
+  /// Human-readable, e.g. UZ-2026-000123
+  number             String        @unique
+  userId             String        @db.Uuid
+  user               User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status             OrderStatus   @default(CREATED)
+  paymentMethod      PaymentMethod
+  itemsTotalTiyin    BigInt
+  deliveryTotalTiyin BigInt
+  totalTiyin         BigInt
+  recipientName      String
+  recipientPhone     String
+  districtId         String        @db.Uuid
+  district           District      @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  addressLine        String
+  /// Region/district names at order time.
+  addressSnapshot    Json
+  comment            String?
+  createdAt          DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @db.Timestamptz(3)
+  sellerOrders       SellerOrder[]
+  events             OrderEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([districtId])
+}
+
+model SellerOrder {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  orderId         String            @db.Uuid
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  storeId         String            @db.Uuid
+  store           Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  /// e.g. UZ-2026-000123-1
+  number          String            @unique
+  status          SellerOrderStatus @default(NEW)
+  itemsTotalTiyin BigInt
+  deliveryTiyin   BigInt
+  totalTiyin      BigInt
+  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
+  items           OrderItem[]
+  events          OrderEvent[]
+
+  @@index([orderId])
+  @@index([storeId, status, createdAt])
+}
+
+/// Snapshot of what was bought: later product edits never change orders.
+model OrderItem {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  sellerOrderId  String         @db.Uuid
+  sellerOrder    SellerOrder    @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  variantId      String         @db.Uuid
+  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  productId      String         @db.Uuid
+  productSlug    String
+  title          Json
+  /// Variant option labels at order time, e.g. [{uz:"128 GB",ru:"128 ГБ"}]
+  options        Json
+  sku            String
+  unitPriceTiyin BigInt
+  quantity       Int
+  lineTotalTiyin BigInt
+  mxikCode       String?
+  packageCode    String?
+  vatRateBp      Int?
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([sellerOrderId])
+  @@index([variantId])
+}
+
+/// Append-only history of every status change (who, when, from, to).
+model OrderEvent {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  orderId       String       @db.Uuid
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  sellerOrderId String?      @db.Uuid
+  sellerOrder   SellerOrder? @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  actorId       String?      @db.Uuid
+  actor         User?        @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  actorType     OrderActor
+  fromStatus    String?
+  toStatus      String
+  reason        String?
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+
+  @@index([orderId, createdAt])
+  @@index([sellerOrderId])
+}
+
+/// Replay protection for order creation and payment operations (SPEC §6.9).
+model IdempotencyKey {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope       String
+  key         String
+  requestHash String
+  /// Stored response replayed for repeats of the same request.
+  response    Json
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([userId, scope, key])
+  @@index([createdAt])
 }

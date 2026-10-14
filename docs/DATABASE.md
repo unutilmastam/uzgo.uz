@@ -70,6 +70,17 @@ erDiagram
   Hand-written SQL in the migration adds E.164 `CHECK`s, `attempts >= 0`,
   `expiresAt > createdAt` and the append-only trigger on `AuditEvent`.
 
+- **Phase 4:** `Category`, `Attribute`, `AttributeValue`, `CategoryAttribute`,
+  `Store`, `StoreMember`, `Product` (+ `searchText`, generated `searchVector`),
+  `ProductAttributeValue`, `ProductVariant`, `VariantAttributeValue`,
+  `ProductImage`, `Cart`, `CartItem`, `Order`, `SellerOrder`, `OrderItem`,
+  `OrderEvent`, `IdempotencyKey`. Hand-written SQL adds money/stock/format
+  `CHECK`s, `order_number_seq`, and triggers that forbid deleting orders,
+  shipments and items and changing items and events.
+- **Deferred:** `StockReservation` (needed for unpaid online orders) arrives with
+  online payments in Phase 6. Cash-on-delivery orders decrement stock at
+  checkout and restock on cancellation, failed delivery or return (ADR 0015).
+
 ## Geography reference data
 
 `apps/api/prisma/data/geo.json`, loaded by `pnpm db:seed` (idempotent upserts):
@@ -174,8 +185,19 @@ stateDiagram-v2
 **Final states:** `CANCELLED_BY_SELLER`, `CANCELLED_BY_CUSTOMER`,
 `DELIVERY_FAILED`, `RETURNED`, `RETURN_REJECTED`, and `DELIVERED` once the
 return window (configurable, default 10 days — to verify against consumer law)
-has closed. `DELIVERY_FAILED` releases stock back. Cancellation releases the
-reservation.
+has closed. Cancellation, `DELIVERY_FAILED` and `RETURNED` put the goods back
+into stock.
+
+**Implemented (Phase 4):** the transition table lives in
+`apps/api/src/orders/state-machine.ts` with the allowed actor per transition
+(customer: cancel while `NEW`, request a return after `DELIVERED`; seller/admin:
+fulfilment, cancellation, return decisions; system: delivery outcome). The
+customer `Order` status is derived from its shipments: all cancelled →
+`CANCELLED`; all resolved (delivered/failed/cancelled/return states) →
+`COMPLETED`; any accepted or later → `CONFIRMED`; otherwise `CREATED`. Every
+change writes an `OrderEvent`; transitions lock the shipment row and re-check the
+table inside the transaction. Online-payment states (`PENDING_PAYMENT`, `PAID`)
+come in Phase 6.
 
 ### Product
 

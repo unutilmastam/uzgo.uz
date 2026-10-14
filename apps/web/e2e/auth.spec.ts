@@ -1,17 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
-
-const API = 'http://localhost:4000/api/v1';
-
-function randomLocalPhone(): string {
-  return `90${String(Math.floor(Math.random() * 10_000_000)).padStart(7, '0')}`;
-}
-
-async function lastOtp(request: APIRequestContext, localPhone: string): Promise<string> {
-  const res = await request.get(`${API}/__test__/last-otp?phone=%2B998${localPhone}`);
-  expect(res.ok()).toBe(true);
-  return ((await res.json()) as { code: string }).code;
-}
+import { expect, type Page, test } from '@playwright/test';
+import { lastOtp, randomLocalPhone } from './helpers';
 
 async function requestCode(page: Page, localPhone: string) {
   await page.getByLabel('Telefon raqami').fill(localPhone);

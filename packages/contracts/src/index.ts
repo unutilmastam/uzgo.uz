@@ -4,4 +4,5 @@ export * from './catalog.js';
 export * from './error.js';
 export * from './geo.js';
 export * from './health.js';
+export * from './orders.js';
 export * from './products.js';

@@ -1,10 +1,11 @@
 import { Badge } from '@uzgo/ui/components/badge';
+import { Package } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { LogoutButtons } from '@/components/auth/logout-buttons';
 import { ProfileForm } from '@/components/auth/profile-form';
 import { PageShell } from '@/components/page-shell';
-import { redirect } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
 import { getCurrentUser, getRegions } from '@/lib/api-server';
 import { formatPhone } from '@/lib/format-phone';
 
@@ -65,6 +66,13 @@ export default async function AccountPage() {
           </h2>
           <LogoutButtons />
         </section>
+        <Link
+          href="/orders"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 font-semibold hover:border-primary lg:col-start-2"
+        >
+          <Package aria-hidden="true" className="size-5 text-primary" />
+          {t('myOrders')}
+        </Link>
       </div>
     </PageShell>
   );

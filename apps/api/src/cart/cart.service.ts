@@ -16,9 +16,13 @@ export type CartOwner = { userId: string } | { guestToken: string | undefined };
 
 const variantSelect = {
   id: true,
+  sku: true,
   priceTiyin: true,
   stock: true,
   active: true,
+  mxikCode: true,
+  packageCode: true,
+  vatRateBp: true,
   options: {
     select: { attributeValue: { select: { name: true, attribute: { select: { sort: true } } } } },
   },
