@@ -9,7 +9,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 0     | ADRs for decisions already taken in SPEC (docs/decisions/0001–0008)            | VERIFIED    |
 | 1     | Monorepo, web + api skeletons, strict TS, lint/format                          | VERIFIED    |
 | 1     | Env validation, health endpoints, Prisma connected, Docker Compose             | VERIFIED    |
-| 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | IN PROGRESS |
+| 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | NOT STARTED |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | NOT STARTED |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | NOT STARTED |
@@ -24,7 +24,8 @@ consistent with SPEC and were reviewed. No code checks apply.
 
 Phase 1 notes: local checks ran in the cloud session with native PostgreSQL 16
 (Docker daemon not available there); CI uses PostgreSQL 18. Docker Compose file
-validated with `docker compose config` only.
+validated with `docker compose config` only. CI run #1 and CodeQL run #1 on
+commit 10f7c59 passed.
 
 ## Open decisions
 
