@@ -16,7 +16,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "user:grant-role": "tsx scripts/grant-role.ts"
+    "user:grant-role": "tsx scripts/grant-role.ts",
+    "db:seed:demo": "SEED_DEMO=true prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "12.1.3",

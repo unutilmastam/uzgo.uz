@@ -13,6 +13,7 @@ import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SmsModule } from './sms/sms.module.js';
+import { StorageModule } from './storage/storage.module.js';
 import { TestSupportModule } from './testing/test-support.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module.js';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     AuditModule,
     SmsModule,
+    StorageModule,
     HealthModule,
     GeoModule,
     CatalogModule,

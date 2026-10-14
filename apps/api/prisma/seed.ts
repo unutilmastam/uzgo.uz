@@ -4,6 +4,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { seedCatalog } from './seeders/catalog.js';
+import { seedDemo } from './seeders/demo.js';
 import { seedGeo } from './seeders/geo.js';
 
 const url = process.env.DATABASE_URL;
@@ -13,6 +14,9 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url 
 try {
   console.log(`[seed] ${await seedGeo(prisma)}`);
   console.log(`[seed] ${await seedCatalog(prisma)}`);
+  if (process.env.SEED_DEMO === 'true') {
+    console.log(`[seed] ${await seedDemo(prisma)} (DEMO DATA)`);
+  }
 } finally {
   await prisma.$disconnect();
 }

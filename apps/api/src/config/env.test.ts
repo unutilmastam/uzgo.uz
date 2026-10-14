@@ -70,6 +70,18 @@ describe('parseEnv', () => {
     }
   });
 
+  it('refuses local disk storage in production', () => {
+    const error = errorOf(() =>
+      parseEnv({
+        ...valid,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://uzgo.uz',
+        SMS_PROVIDER: 'dev',
+      }),
+    );
+    expect(error.issues.some((issue) => issue.startsWith('STORAGE_DRIVER'))).toBe(true);
+  });
+
   it('requires a long AUTH_SECRET', () => {
     expect(() => parseEnv({ ...valid, AUTH_SECRET: 'short' })).toThrow(EnvValidationError);
   });

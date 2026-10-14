@@ -1,0 +1,634 @@
+{
+  "note": "DEMO DATA — fictional stores, brands, products and prices. Seeded only when SEED_DEMO=true and never in production.",
+  "brands": [
+    {
+      "code": "nova",
+      "name": {
+        "uz": "Nova",
+        "ru": "Nova"
+      }
+    },
+    {
+      "code": "orzu",
+      "name": {
+        "uz": "Orzu",
+        "ru": "Orzu"
+      }
+    },
+    {
+      "code": "sardor",
+      "name": {
+        "uz": "Sardor",
+        "ru": "Sardor"
+      }
+    },
+    {
+      "code": "bahor",
+      "name": {
+        "uz": "Bahor",
+        "ru": "Bahor"
+      }
+    },
+    {
+      "code": "yulduz",
+      "name": {
+        "uz": "Yulduz",
+        "ru": "Yulduz"
+      }
+    }
+  ],
+  "stores": [
+    {
+      "slug": "demo-elektronika",
+      "name": {
+        "uz": "Demo Elektronika",
+        "ru": "Демо Электроника"
+      },
+      "district": "termiz_city"
+    },
+    {
+      "slug": "demo-texnika",
+      "name": {
+        "uz": "Demo Texnika",
+        "ru": "Демо Техника"
+      },
+      "district": "termiz_city"
+    },
+    {
+      "slug": "demo-moda",
+      "name": {
+        "uz": "Demo Moda",
+        "ru": "Демо Мода"
+      },
+      "district": "denau"
+    },
+    {
+      "slug": "demo-market",
+      "name": {
+        "uz": "Demo Market",
+        "ru": "Демо Маркет"
+      },
+      "district": "termiz_city"
+    },
+    {
+      "slug": "demo-uy",
+      "name": {
+        "uz": "Demo Uy",
+        "ru": "Демо Дом"
+      },
+      "district": "sherabad"
+    }
+  ],
+  "products": [
+    {
+      "slug": "nova-x5-smartfon",
+      "store": "demo-elektronika",
+      "category": "smartphones",
+      "title": {
+        "uz": "Nova X5 smartfon, 6,5\"",
+        "ru": "Смартфон Nova X5, 6,5\""
+      },
+      "variants": [
+        {
+          "price": 2799000,
+          "stock": 12,
+          "options": ["memory:128gb", "color:black"]
+        },
+        {
+          "price": 3199000,
+          "stock": 5,
+          "options": ["memory:256gb", "color:black"],
+          "compareAt": 3499000
+        },
+        {
+          "price": 2799000,
+          "stock": 8,
+          "options": ["memory:128gb", "color:blue"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "nova"
+    },
+    {
+      "slug": "nova-a2-smartfon",
+      "store": "demo-elektronika",
+      "category": "smartphones",
+      "title": {
+        "uz": "Nova A2 smartfon",
+        "ru": "Смартфон Nova A2"
+      },
+      "variants": [
+        {
+          "price": 1499000,
+          "stock": 20,
+          "options": ["memory:64gb", "color:black"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "nova"
+    },
+    {
+      "slug": "orzu-buds-simsiz-quloqchin",
+      "store": "demo-elektronika",
+      "category": "headphones",
+      "title": {
+        "uz": "Orzu Buds simsiz quloqchinlari",
+        "ru": "Беспроводные наушники Orzu Buds"
+      },
+      "variants": [
+        {
+          "price": 349000,
+          "stock": 15,
+          "options": ["color:black"],
+          "compareAt": 399000
+        },
+        {
+          "price": 349000,
+          "stock": 9,
+          "options": ["color:white"],
+          "compareAt": 399000
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "orzu"
+    },
+    {
+      "slug": "orzu-bass-simli-quloqchin",
+      "store": "demo-elektronika",
+      "category": "headphones",
+      "title": {
+        "uz": "Orzu Bass simli quloqchinlari",
+        "ru": "Проводные наушники Orzu Bass"
+      },
+      "variants": [
+        {
+          "price": 89000,
+          "stock": 0,
+          "options": ["color:black"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "orzu"
+    },
+    {
+      "slug": "nova-book-14-noutbuk",
+      "store": "demo-elektronika",
+      "category": "laptops",
+      "title": {
+        "uz": "Nova Book 14 noutbuk",
+        "ru": "Ноутбук Nova Book 14"
+      },
+      "variants": [
+        {
+          "price": 7490000,
+          "stock": 4,
+          "options": ["memory:256gb", "color:grey"]
+        },
+        {
+          "price": 8290000,
+          "stock": 3,
+          "options": ["memory:512gb", "color:grey"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "nova"
+    },
+    {
+      "slug": "sardor-43-smart-televizor",
+      "store": "demo-texnika",
+      "category": "tv",
+      "title": {
+        "uz": "Sardor 43\" Smart televizor",
+        "ru": "Smart-телевизор Sardor 43\""
+      },
+      "variants": [
+        {
+          "price": 3990000,
+          "stock": 6,
+          "options": []
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "sardor"
+    },
+    {
+      "slug": "bahor-elektr-choynak",
+      "store": "demo-texnika",
+      "category": "kettles",
+      "title": {
+        "uz": "Bahor elektr choynagi, 1,7 l",
+        "ru": "Электрочайник Bahor, 1,7 л"
+      },
+      "variants": [
+        {
+          "price": 249000,
+          "stock": 25,
+          "options": ["color:white"]
+        },
+        {
+          "price": 259000,
+          "stock": 10,
+          "options": ["color:black"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "bahor"
+    },
+    {
+      "slug": "sardor-kir-yuvish-mashinasi-7kg",
+      "store": "demo-texnika",
+      "category": "washing-machines",
+      "title": {
+        "uz": "Sardor kir yuvish mashinasi, 7 kg",
+        "ru": "Стиральная машина Sardor, 7 кг"
+      },
+      "variants": [
+        {
+          "price": 3890000,
+          "stock": 5,
+          "options": ["color:white"],
+          "compareAt": 4290000
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "sardor"
+    },
+    {
+      "slug": "sardor-ikki-kamerali-muzlatkich",
+      "store": "demo-texnika",
+      "category": "refrigerators",
+      "title": {
+        "uz": "Sardor ikki kamerali muzlatkich",
+        "ru": "Двухкамерный холодильник Sardor"
+      },
+      "variants": [
+        {
+          "price": 6990000,
+          "stock": 3,
+          "options": ["color:grey"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "sardor"
+    },
+    {
+      "slug": "bahor-changyutgich-2000",
+      "store": "demo-texnika",
+      "category": "vacuum-cleaners",
+      "title": {
+        "uz": "Bahor changyutgichi, 2000 Vt",
+        "ru": "Пылесос Bahor, 2000 Вт"
+      },
+      "variants": [
+        {
+          "price": 1190000,
+          "stock": 7,
+          "options": ["color:red"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "bahor"
+    },
+    {
+      "slug": "paxta-futbolka-erkaklar",
+      "store": "demo-moda",
+      "category": "men",
+      "title": {
+        "uz": "Paxta futbolka, erkaklar uchun",
+        "ru": "Футболка мужская, хлопок"
+      },
+      "variants": [
+        {
+          "price": 89000,
+          "stock": 10,
+          "options": ["size:m", "color:white"],
+          "compareAt": 119000
+        },
+        {
+          "price": 89000,
+          "stock": 10,
+          "options": ["size:l", "color:white"],
+          "compareAt": 119000
+        },
+        {
+          "price": 89000,
+          "stock": 6,
+          "options": ["size:m", "color:black"],
+          "compareAt": 119000
+        },
+        {
+          "price": 89000,
+          "stock": 4,
+          "options": ["size:l", "color:black"],
+          "compareAt": 119000
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "zigir-koylak-ayollar",
+      "store": "demo-moda",
+      "category": "women",
+      "title": {
+        "uz": "Ayollar koʻylagi, zigʻir",
+        "ru": "Платье женское, лён"
+      },
+      "variants": [
+        {
+          "price": 259000,
+          "stock": 5,
+          "options": ["size:s", "color:beige"]
+        },
+        {
+          "price": 259000,
+          "stock": 7,
+          "options": ["size:m", "color:beige"]
+        },
+        {
+          "price": 259000,
+          "stock": 3,
+          "options": ["size:l", "color:beige"]
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "bolalar-xudisi",
+      "store": "demo-moda",
+      "category": "kids-clothing",
+      "title": {
+        "uz": "Bolalar xudisi",
+        "ru": "Детское худи"
+      },
+      "variants": [
+        {
+          "price": 149000,
+          "stock": 8,
+          "options": ["size:s", "color:blue"]
+        },
+        {
+          "price": 149000,
+          "stock": 8,
+          "options": ["size:m", "color:blue"]
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "yugurish-krossovkasi",
+      "store": "demo-moda",
+      "category": "shoes",
+      "title": {
+        "uz": "Yugurish uchun krossovka",
+        "ru": "Кроссовки для бега"
+      },
+      "variants": [
+        {
+          "price": 399000,
+          "stock": 6,
+          "options": ["size:m", "color:grey"]
+        },
+        {
+          "price": 399000,
+          "stock": 4,
+          "options": ["size:l", "color:grey"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "yulduz"
+    },
+    {
+      "slug": "kok-choy-100g",
+      "store": "demo-market",
+      "category": "tea-coffee",
+      "title": {
+        "uz": "Koʻk choy, 100 g",
+        "ru": "Зелёный чай, 100 г"
+      },
+      "variants": [
+        {
+          "price": 24500,
+          "stock": 50,
+          "options": []
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "qora-choy-250g",
+      "store": "demo-market",
+      "category": "tea-coffee",
+      "title": {
+        "uz": "Qora choy, 250 g",
+        "ru": "Чёрный чай, 250 г"
+      },
+      "variants": [
+        {
+          "price": 39000,
+          "stock": 40,
+          "options": []
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "navvot-500g",
+      "store": "demo-market",
+      "category": "sweets",
+      "title": {
+        "uz": "Navvot, 500 g",
+        "ru": "Нават, 500 г"
+      },
+      "variants": [
+        {
+          "price": 32000,
+          "stock": 30,
+          "options": []
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "devzira-guruch-1kg",
+      "store": "demo-market",
+      "category": "grains",
+      "title": {
+        "uz": "Devzira guruchi, 1 kg",
+        "ru": "Рис девзира, 1 кг"
+      },
+      "variants": [
+        {
+          "price": 38000,
+          "stock": 60,
+          "options": []
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "paxta-choyshab-toplami",
+      "store": "demo-uy",
+      "category": "bedding",
+      "title": {
+        "uz": "Paxta choyshab toʻplami, 2 kishilik",
+        "ru": "Комплект постельного белья, 2-спальный"
+      },
+      "variants": [
+        {
+          "price": 420000,
+          "stock": 9,
+          "options": ["color:white"]
+        },
+        {
+          "price": 420000,
+          "stock": 6,
+          "options": ["color:beige"]
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "lagan-40sm",
+      "store": "demo-uy",
+      "category": "kitchenware",
+      "title": {
+        "uz": "Lagan, 40 sm",
+        "ru": "Ляган, 40 см"
+      },
+      "variants": [
+        {
+          "price": 159000,
+          "stock": 12,
+          "options": ["color:blue"]
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "atlas-yostiq-jildi",
+      "store": "demo-uy",
+      "category": "decor",
+      "title": {
+        "uz": "Atlas yostiq jildi",
+        "ru": "Наволочка из атласа"
+      },
+      "variants": [
+        {
+          "price": 79000,
+          "stock": 20,
+          "options": ["color:red"]
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "namlovchi-yuz-kremi",
+      "store": "demo-market",
+      "category": "skincare",
+      "title": {
+        "uz": "Namlovchi yuz kremi",
+        "ru": "Увлажняющий крем для лица"
+      },
+      "variants": [
+        {
+          "price": 67000,
+          "stock": 25,
+          "options": []
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "yulduz"
+    },
+    {
+      "slug": "atir-50ml",
+      "store": "demo-market",
+      "category": "perfume",
+      "title": {
+        "uz": "Atir, 50 ml",
+        "ru": "Парфюмерная вода, 50 мл"
+      },
+      "variants": [
+        {
+          "price": 289000,
+          "stock": 10,
+          "options": []
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "yulduz"
+    },
+    {
+      "slug": "konstruktor-250",
+      "store": "demo-uy",
+      "category": "toys",
+      "title": {
+        "uz": "Konstruktor, 250 dona",
+        "ru": "Конструктор, 250 деталей"
+      },
+      "variants": [
+        {
+          "price": 159000,
+          "stock": 14,
+          "options": [],
+          "compareAt": 199000
+        }
+      ],
+      "status": "APPROVED"
+    },
+    {
+      "slug": "yoga-gilamchasi-6mm",
+      "store": "demo-moda",
+      "category": "fitness",
+      "title": {
+        "uz": "Yoga gilamchasi, 6 mm",
+        "ru": "Коврик для йоги, 6 мм"
+      },
+      "variants": [
+        {
+          "price": 125000,
+          "stock": 18,
+          "options": ["color:green"],
+          "compareAt": 149000
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "yulduz"
+    },
+    {
+      "slug": "turistik-chodir-2",
+      "store": "demo-moda",
+      "category": "outdoor",
+      "title": {
+        "uz": "Turistik chodir, 2 kishilik",
+        "ru": "Туристическая палатка, 2-местная"
+      },
+      "variants": [
+        {
+          "price": 690000,
+          "stock": 5,
+          "options": ["color:green"]
+        }
+      ],
+      "status": "APPROVED",
+      "brand": "yulduz"
+    },
+    {
+      "slug": "moderatsiyadagi-smartfon",
+      "store": "demo-elektronika",
+      "category": "smartphones",
+      "title": {
+        "uz": "Moderatsiyadagi smartfon (koʻrinmaydi)",
+        "ru": "Смартфон на модерации (не виден)"
+      },
+      "variants": [
+        {
+          "price": 999000,
+          "stock": 5,
+          "options": ["memory:64gb", "color:black"]
+        }
+      ],
+      "status": "PENDING_REVIEW",
+      "brand": "nova"
+    }
+  ]
+}

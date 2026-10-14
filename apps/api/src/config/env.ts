@@ -45,6 +45,11 @@ export const envSchema = z
     SMS_PROVIDER: z.enum(['dev', 'fake']),
     /** Max OTP requests per client IP per hour (abuse / SMS pumping protection). */
     OTP_IP_HOURLY_LIMIT: z.coerce.number().int().min(1).max(10_000).default(20),
+    /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
+    STORAGE_DRIVER: z.enum(['local']).default('local'),
+    STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),
+    /** Base URL under which stored images are public. */
+    MEDIA_PUBLIC_BASE_URL: z.string().min(1).default('/api/v1/media'),
   })
   .superRefine((env, ctx) => {
     if (env.SMS_PROVIDER === 'dev' && env.NODE_ENV !== 'development') {
@@ -62,6 +67,13 @@ export const envSchema = z
       });
     }
     if (env.NODE_ENV !== 'production') return;
+    // Only the local-disk adapter exists so far; production needs object storage
+    // (S3-compatible adapter, added with the hosting decision before Phase 7).
+    ctx.addIssue({
+      code: 'custom',
+      path: ['STORAGE_DRIVER'],
+      message: `${env.STORAGE_DRIVER} disk storage is for development only; configure object storage`,
+    });
     for (const origin of env.CORS_ORIGINS) {
       if (!origin.startsWith('https://')) {
         ctx.addIssue({

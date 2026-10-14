@@ -63,8 +63,8 @@ jobs:
       - name: Apply database migrations
         run: pnpm db:deploy
 
-      - name: Seed reference data (regions, districts)
-        run: pnpm db:seed
+      - name: Seed reference data + labelled demo data
+        run: pnpm db:seed:demo
 
       - name: Check schema matches migrations
         working-directory: apps/api

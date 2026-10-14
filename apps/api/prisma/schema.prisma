@@ -51,6 +51,7 @@ model District {
   createdAt DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt DateTime      @updatedAt @db.Timestamptz(3)
   profiles  UserProfile[]
+  stores    Store[]
 
   @@index([regionId, sort])
 }
@@ -72,20 +73,21 @@ enum Role {
 }
 
 model User {
-  id           String       @id @default(uuid(7)) @db.Uuid
+  id           String        @id @default(uuid(7)) @db.Uuid
   /// E.164, e.g. +998901234567
-  phone        String       @unique
-  status       UserStatus   @default(ACTIVE)
-  locale       String       @default("uz")
-  lastLoginAt  DateTime?    @db.Timestamptz(3)
-  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
-  deletedAt    DateTime?    @db.Timestamptz(3)
+  phone        String        @unique
+  status       UserStatus    @default(ACTIVE)
+  locale       String        @default("uz")
+  lastLoginAt  DateTime?     @db.Timestamptz(3)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?     @db.Timestamptz(3)
   profile      UserProfile?
-  roles        UserRole[]   @relation("UserRoles")
-  rolesGranted UserRole[]   @relation("RoleGrantedBy")
+  roles        UserRole[]    @relation("UserRoles")
+  rolesGranted UserRole[]    @relation("RoleGrantedBy")
   sessions     Session[]
   auditEvents  AuditEvent[]
+  storeMembers StoreMember[]
 }
 
 model UserProfile {
@@ -184,6 +186,7 @@ model Category {
   createdAt  DateTime            @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime            @updatedAt @db.Timestamptz(3)
   attributes CategoryAttribute[]
+  products   Product[]
 
   @@index([parentId, sort])
 }
@@ -205,14 +208,16 @@ model Attribute {
 }
 
 model AttributeValue {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  attributeId String    @db.Uuid
-  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  id          String                  @id @default(uuid(7)) @db.Uuid
+  attributeId String                  @db.Uuid
+  attribute   Attribute               @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   code        String
   name        Json
-  sort        Int       @default(0)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+  sort        Int                     @default(0)
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime                @updatedAt @db.Timestamptz(3)
+  products    ProductAttributeValue[]
+  variants    VariantAttributeValue[]
 
   @@unique([attributeId, code])
 }
@@ -227,4 +232,149 @@ model CategoryAttribute {
 
   @@id([categoryId, attributeId])
   @@index([attributeId])
+}
+
+// ─── Stores and products (Phase 4) ─────────────────────────────────────────
+
+enum StoreStatus {
+  PENDING // created, awaiting approval (Phase 5 onboarding)
+  ACTIVE
+  SUSPENDED
+}
+
+model Store {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  slug        String           @unique
+  name        Json
+  description Json?
+  status      StoreStatus      @default(PENDING)
+  /// Demo stores (seeded fixtures) are labelled "Demo" everywhere in the UI.
+  isDemo      Boolean          @default(false)
+  districtId  String?          @db.Uuid
+  district    District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  logoKey     String?
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt   DateTime?        @db.Timestamptz(3)
+  members     StoreMember[]
+  products    Product[]
+  variants    ProductVariant[]
+
+  @@index([status])
+  @@index([districtId])
+}
+
+enum StoreRole {
+  OWNER
+  STAFF
+}
+
+/// Store-scoped seller roles (SPEC §9). Seller isolation is checked against this table.
+model StoreMember {
+  storeId   String    @db.Uuid
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      StoreRole
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@id([storeId, userId])
+  @@index([userId])
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+model Product {
+  id          String                  @id @default(uuid(7)) @db.Uuid
+  storeId     String                  @db.Uuid
+  store       Store                   @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  categoryId  String                  @db.Uuid
+  category    Category                @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  slug        String                  @unique
+  title       Json
+  description Json
+  status      ProductStatus           @default(DRAFT)
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime                @updatedAt @db.Timestamptz(3)
+  deletedAt   DateTime?               @db.Timestamptz(3)
+  variants    ProductVariant[]
+  images      ProductImage[]
+  attributes  ProductAttributeValue[]
+
+  @@index([status, categoryId])
+  @@index([storeId, status])
+  @@index([categoryId])
+}
+
+/// Product-level attribute values (e.g. brand) used for filters.
+model ProductAttributeValue {
+  productId        String         @db.Uuid
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValueId String         @db.Uuid
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Restrict)
+
+  @@id([productId, attributeValueId])
+  @@index([attributeValueId])
+}
+
+/// SKU: price, stock and fiscal data live on the variant (SPEC §10).
+model ProductVariant {
+  id                  String                  @id @default(uuid(7)) @db.Uuid
+  productId           String                  @db.Uuid
+  product             Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// Denormalised from Product so SKUs are unique per store.
+  storeId             String                  @db.Uuid
+  store               Store                   @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  sku                 String
+  barcode             String?
+  /// Integer tiyin (1 soʻm = 100 tiyin).
+  priceTiyin          BigInt
+  compareAtPriceTiyin BigInt?
+  stock               Int                     @default(0)
+  /// MXIK / IKPU product classification code (17 digits). Required before online payments.
+  mxikCode            String?
+  packageCode         String?
+  /// VAT in basis points, e.g. 1200 = 12 %.
+  vatRateBp           Int?
+  active              Boolean                 @default(true)
+  sort                Int                     @default(0)
+  createdAt           DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
+  options             VariantAttributeValue[]
+
+  @@unique([storeId, sku])
+  @@index([productId])
+  @@index([priceTiyin])
+}
+
+/// Variant options (e.g. colour, size, memory).
+model VariantAttributeValue {
+  variantId        String         @db.Uuid
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attributeValueId String         @db.Uuid
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Restrict)
+
+  @@id([variantId, attributeValueId])
+  @@index([attributeValueId])
+}
+
+model ProductImage {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  productId  String   @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Random object-storage key; never a user-supplied path.
+  storageKey String   @unique
+  sort       Int      @default(0)
+  alt        Json?
+  width      Int?
+  height     Int?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([productId, sort])
 }
