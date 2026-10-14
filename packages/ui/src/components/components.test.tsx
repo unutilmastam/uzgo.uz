@@ -100,7 +100,12 @@ describe('ProductCard', () => {
 });
 
 describe('ServiceCard', () => {
-  it('is not interactive', () => {
+  it('links only live services', () => {
+    render(<ServiceCard icon={null} title="Market" statusLabel="Ochiq" href="/uz/search" />);
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/uz/search');
+  });
+
+  it('is not interactive when coming soon', () => {
     render(<ServiceCard icon={null} title="UZGO Go" description="Taksi" statusLabel="Tez kunda" />);
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();

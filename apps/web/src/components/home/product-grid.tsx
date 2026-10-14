@@ -4,7 +4,9 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { CategoryIcon } from '@/components/category-icon';
 import { categories, products } from '@/fixtures/catalog';
 import type { Locale } from '@/i18n/routing';
+import { CATEGORY_TINT } from '@/lib/category-style';
 import { AddToCartButton } from './add-to-cart-button';
+import { SectionHeader } from './section-header';
 
 export async function ProductGrid() {
   const t = await getTranslations();
@@ -13,14 +15,14 @@ export async function ProductGrid() {
 
   return (
     <section aria-labelledby="recommended">
-      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h2 id="recommended" className="text-xl font-bold md:text-2xl">
-          {t('home.recommended')}
-        </h2>
-        <Badge variant="muted">{t('common.demo')}</Badge>
-      </div>
-      <p className="mb-4 text-sm text-muted-foreground">{t('common.demoNotice')}</p>
-      <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
+      <SectionHeader
+        id="recommended"
+        title={t('home.recommended')}
+        extra={<Badge variant="muted">{t('common.demo')}</Badge>}
+        viewAll={{ href: '/search', label: t('home.viewAll') }}
+      />
+      <p className="-mt-2 mb-4 text-sm text-muted-foreground">{t('common.demoNotice')}</p>
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
         {products.map((product) => {
           const title = product.title[locale];
           return (
@@ -33,8 +35,14 @@ export async function ProductGrid() {
                 locale={locale}
                 storeName={product.store}
                 image={
-                  <div className="flex size-full items-center justify-center bg-gradient-to-br from-secondary to-muted text-primary/70">
-                    <CategoryIcon name={iconFor(product.category)} className="size-14" />
+                  <div
+                    className={`flex size-full items-center justify-center ${CATEGORY_TINT[iconFor(product.category)]}`}
+                  >
+                    <CategoryIcon
+                      name={iconFor(product.category)}
+                      className="size-16"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 }
                 badges={<Badge variant="muted">{t('common.demo')}</Badge>}

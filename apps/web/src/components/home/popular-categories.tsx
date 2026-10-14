@@ -1,8 +1,11 @@
+import { cn } from '@uzgo/ui/lib/cn';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { CategoryIcon } from '@/components/category-icon';
 import { categories } from '@/fixtures/catalog';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
+import { CATEGORY_TINT } from '@/lib/category-style';
+import { SectionHeader } from './section-header';
 
 export async function PopularCategories() {
   const t = await getTranslations('home');
@@ -10,18 +13,29 @@ export async function PopularCategories() {
 
   return (
     <section aria-labelledby="popular-categories">
-      <h2 id="popular-categories" className="mb-4 text-xl font-bold md:text-2xl">
-        {t('popularCategories')}
-      </h2>
+      <SectionHeader
+        id="popular-categories"
+        title={t('popularCategories')}
+        viewAll={{ href: '/search', label: t('viewAll') }}
+      />
       <ul className="grid grid-cols-4 gap-2 sm:gap-3 lg:grid-cols-8">
         {categories.map((category) => (
           <li key={category.slug}>
             <Link
               href={{ pathname: '/search', query: { category: category.slug } }}
-              className="group flex h-full flex-col items-center gap-2 rounded-lg p-2 text-center hover:bg-muted"
+              className="group flex h-full flex-col items-center gap-2 rounded-xl p-1.5 text-center hover:bg-muted"
             >
-              <span className="flex aspect-square w-full max-w-20 items-center justify-center rounded-xl bg-secondary text-primary transition-transform duration-(--duration-base) group-hover:scale-105 motion-reduce:transition-none">
-                <CategoryIcon name={category.icon} className="size-7 md:size-8" />
+              <span
+                className={cn(
+                  'flex aspect-square w-full items-center justify-center rounded-2xl transition-transform duration-(--duration-base) group-hover:scale-105 motion-reduce:transition-none',
+                  CATEGORY_TINT[category.icon],
+                )}
+              >
+                <CategoryIcon
+                  name={category.icon}
+                  className="size-7 md:size-9"
+                  strokeWidth={1.75}
+                />
               </span>
               <span className="text-xs leading-tight font-medium sm:text-sm">
                 {category.name[locale]}

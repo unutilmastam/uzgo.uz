@@ -64,21 +64,34 @@
     "banner3Cta": "Qanday ishlaydi",
     "popularCategories": "Mashhur toifalar",
     "recommended": "Siz uchun tavsiyalar",
-    "servicesTitle": "UZGO ekotizimi",
+    "servicesTitle": "UZGO xizmatlari",
+    "viewAll": "Barchasi",
     "servicesSubtitle": "Yangi xizmatlar ustida ishlayapmiz.",
     "sellerTitle": "UZGO da sotishni boshlang",
     "sellerText": "Doʻkon oching, mahsulot qoʻshing va butun Oʻzbekiston boʻylab soting.",
     "sellerCta": "Sotuvchi boʻlish"
   },
   "services": {
-    "deliveryTitle": "UZGO Yetkazish",
+    "marketTitle": "Market",
+    "marketText": "Onlayn bozor",
+    "live": "Ochiq",
+    "deliveryTitle": "Yetkazish",
     "deliveryText": "Shahar boʻylab tez yetkazib berish",
-    "goTitle": "UZGO Go",
+    "goTitle": "Go",
     "goText": "Taksi va qatnovlar",
-    "foodTitle": "UZGO Food",
-    "foodText": "Restoranlardan taom buyurtma qilish",
-    "mapsTitle": "UZGO Xarita",
-    "mapsText": "Manzillar va yoʻnalishlar"
+    "foodTitle": "Food",
+    "foodText": "Restoranlardan taom buyurtma qilish"
+  },
+  "benefits": {
+    "label": "UZGO afzalliklari",
+    "storesTitle": "Bir savatda koʻp doʻkon",
+    "storesText": "Har bir sotuvchi oʻz buyurtmasini yuboradi",
+    "codTitle": "Yetkazishda toʻlov",
+    "codText": "Naqd yoki karta bilan",
+    "moderatedTitle": "Tekshirilgan mahsulotlar",
+    "moderatedText": "Har bir mahsulot moderatsiyadan oʻtadi",
+    "languagesTitle": "Oʻzbek va rus tilida",
+    "languagesText": "Oʻzingizga qulay tilda xarid qiling"
   },
   "product": {
     "addToCart": "Savatga",

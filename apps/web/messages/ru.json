@@ -64,21 +64,34 @@
     "banner3Cta": "Как это работает",
     "popularCategories": "Популярные категории",
     "recommended": "Рекомендуем вам",
-    "servicesTitle": "Экосистема UZGO",
+    "servicesTitle": "Сервисы UZGO",
+    "viewAll": "Все",
     "servicesSubtitle": "Мы работаем над новыми сервисами.",
     "sellerTitle": "Начните продавать на UZGO",
     "sellerText": "Откройте магазин, добавьте товары и продавайте по всему Узбекистану.",
     "sellerCta": "Стать продавцом"
   },
   "services": {
-    "deliveryTitle": "UZGO Доставка",
+    "marketTitle": "Market",
+    "marketText": "Онлайн-маркетплейс",
+    "live": "Открыт",
+    "deliveryTitle": "Доставка",
     "deliveryText": "Быстрая доставка по городу",
-    "goTitle": "UZGO Go",
+    "goTitle": "Go",
     "goText": "Такси и поездки",
-    "foodTitle": "UZGO Food",
-    "foodText": "Заказ еды из ресторанов",
-    "mapsTitle": "UZGO Карты",
-    "mapsText": "Адреса и маршруты"
+    "foodTitle": "Food",
+    "foodText": "Заказ еды из ресторанов"
+  },
+  "benefits": {
+    "label": "Преимущества UZGO",
+    "storesTitle": "Много магазинов — одна корзина",
+    "storesText": "Каждый продавец отправляет свой заказ",
+    "codTitle": "Оплата при получении",
+    "codText": "Наличными или картой",
+    "moderatedTitle": "Проверенные товары",
+    "moderatedText": "Каждый товар проходит модерацию",
+    "languagesTitle": "На узбекском и русском",
+    "languagesText": "Покупайте на удобном языке"
   },
   "product": {
     "addToCart": "В корзину",

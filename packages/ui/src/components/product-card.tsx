@@ -42,11 +42,11 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        'group relative flex flex-col gap-2 rounded-lg bg-card text-card-foreground',
+        'group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-2 text-card-foreground shadow-sm transition-shadow duration-(--duration-base) hover:shadow-md motion-reduce:transition-none',
         className,
       )}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
         {image ?? (
           <div className="flex size-full items-center justify-center text-muted-foreground">
             <ImageOff aria-hidden="true" className="size-8" />
@@ -57,7 +57,7 @@ export function ProductCard({
           {badges}
         </div>
       </div>
-      <div className="flex flex-col gap-0.5 px-0.5">
+      <div className="flex flex-col gap-0.5 px-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <Price value={price} locale={locale} className="text-lg text-foreground" />
           {discount > 0 && oldPrice !== undefined ? (
@@ -78,7 +78,7 @@ export function ProductCard({
         </h3>
         {storeName ? <p className="truncate text-xs text-muted-foreground">{storeName}</p> : null}
       </div>
-      {action ? <div className="relative z-10 mt-auto px-0.5">{action}</div> : null}
+      {action ? <div className="relative z-10 mt-auto px-1 pb-1">{action}</div> : null}
     </article>
   );
 }

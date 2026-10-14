@@ -15,6 +15,30 @@ a designer's logo can replace the wordmark later without code changes.
 - Original identity. Purple and bright yellow are avoided as primary colours
   because they are the signature colours of existing marketplaces.
 
+## Owner's visual references (2026-10-14)
+
+The owner shared reference shots (feel only — no assets, names or layouts
+copied):
+
+- **Marketplace web** (blue, clean): left category sidebar next to a large hero,
+  side promo cards, a benefits strip, colourful category tiles, white bordered
+  product cards with an add-to-cart action. → Implemented on the homepage.
+- **Super-app** (playful 3D illustrations, service grid): one place for all
+  services. → "UZGO xizmatlari" grid with original flat illustrations
+  (Market live; Yetkazish, Go, Food labelled "Tez kunda", non-interactive).
+- **Ride-hailing app** (green, map-first, bottom sheets) and **food delivery
+  apps** (photo-led cards, warm accents). → Direction for the future Go and
+  Food modules and the mobile apps (Phase 8–9); our green accent and bottom
+  `Sheet` component already fit that pattern.
+
+## Illustrations
+
+Original flat SVGs in `apps/web/src/components/art` (MarketArt, DeliveryArt,
+GoArt, FoodArt — a plov lagan — and HeroArt). Brand blue/green plus warm
+yellow/orange accents, always `aria-hidden`. Category tiles and demo product
+images use per-category pastel tints (`lib/category-style.ts`) with icons
+until real product photos arrive in Phase 4.
+
 ## Principles
 
 1. Mobile-first: designed at 360px, then 768px and 1280px+.
