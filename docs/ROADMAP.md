@@ -10,7 +10,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 1     | Monorepo, web + api skeletons, strict TS, lint/format                          | VERIFIED    |
 | 1     | Env validation, health endpoints, Prisma connected, Docker Compose             | VERIFIED    |
 | 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
-| 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | IN PROGRESS |
+| 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | NOT STARTED |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | NOT STARTED |
 | 5     | Seller panel, moderation, admin panel                                          | NOT STARTED |
