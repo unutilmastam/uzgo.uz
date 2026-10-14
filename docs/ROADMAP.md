@@ -12,7 +12,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
-| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | IN PROGRESS |
+| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
 | 5     | Seller panel, moderation, admin panel                                          | NOT STARTED |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
@@ -38,7 +38,7 @@ CI run #8 (commit 06e8a40) passed incl. e2e.
 Phase 4 notes: delivered in sub-steps 4a catalog → 4b stores/products/media →
 4d search → 4c web pages → 4e cart → 4f checkout/orders. Online payments,
 stock reservations with expiry, delivery fees and the seller/admin UIs are
-later phases by design.
+later phases by design. CI run #15 (commit 6b2ed5e) passed incl. e2e and CodeQL.
 
 ## Open decisions
 
