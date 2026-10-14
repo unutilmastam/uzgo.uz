@@ -89,6 +89,7 @@ model User {
   sessions     Session[]
   auditEvents  AuditEvent[]
   storeMembers StoreMember[]
+  cart         Cart?
 }
 
 model UserProfile {
@@ -354,6 +355,7 @@ model ProductVariant {
   createdAt           DateTime                @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime                @updatedAt @db.Timestamptz(3)
   options             VariantAttributeValue[]
+  cartItems           CartItem[]
 
   @@unique([storeId, sku])
   @@index([productId])
@@ -384,4 +386,35 @@ model ProductImage {
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([productId, sort])
+}
+
+// ─── Cart (Phase 4e) ───────────────────────────────────────────────────────
+
+/// One cart per user, or a guest cart identified by a hashed cookie token.
+/// Prices are never stored here: they are recalculated on every read.
+model Cart {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  userId         String?    @unique @db.Uuid
+  user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the guest cart cookie token.
+  guestTokenHash String?    @unique
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+  items          CartItem[]
+
+  @@index([updatedAt])
+}
+
+model CartItem {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  cartId    String         @db.Uuid
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId String         @db.Uuid
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@unique([cartId, variantId])
+  @@index([variantId])
 }

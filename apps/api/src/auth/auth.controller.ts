@@ -11,7 +11,8 @@ import {
 } from '@uzgo/contracts';
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
-import { clientIp } from '../common/http.js';
+import { CartService } from '../cart/cart.service.js';
+import { clientIp, parseCookies } from '../common/http.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { UsersService } from '../users/users.service.js';
 import type { AuthContext } from './auth.types.js';
@@ -40,6 +41,7 @@ export class AuthController {
     private readonly sessions: SessionService,
     private readonly users: UsersService,
     private readonly audit: AuditService,
+    private readonly carts: CartService,
   ) {}
 
   /** Sends a one-time code. Same response whether or not the phone has an account. */
@@ -70,6 +72,12 @@ export class AuthController {
       metaOf(req),
     );
     res.cookie(this.sessions.cookieName, token, this.sessions.cookieOptions());
+    // A guest cart follows the customer into their account.
+    await this.carts.mergeGuestIntoUser(
+      parseCookies(req.headers.cookie)[this.carts.cookieName],
+      userId,
+    );
+    res.clearCookie(this.carts.cookieName, { ...this.carts.cookieOptions(), maxAge: undefined });
     return { user: await this.users.getCurrent(userId) };
   }
 

@@ -2,6 +2,7 @@ import { Logo } from '@uzgo/ui/components/logo';
 import { ShoppingCart, UserRound } from 'lucide-react';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { CartCount } from '@/components/cart/cart-count';
 import { ThemeToggle } from '@/components/theme';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -36,8 +37,9 @@ export async function SiteHeader() {
             <UserRound aria-hidden="true" />
             {t('header.account')}
           </Link>
-          <Link href="/cart" className={iconLink}>
+          <Link href="/cart" className={`relative ${iconLink}`}>
             <ShoppingCart aria-hidden="true" />
+            <CartCount />
             {t('header.cart')}
           </Link>
         </div>

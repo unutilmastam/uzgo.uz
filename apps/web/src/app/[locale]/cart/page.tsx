@@ -1,30 +1,22 @@
-import { Button } from '@uzgo/ui/components/button';
-import { EmptyState } from '@uzgo/ui/components/empty-state';
-import { ShoppingCart } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { CartScreen } from '@/components/cart/cart-screen';
 import { PageShell } from '@/components/page-shell';
-import { Link } from '@/i18n/navigation';
+import { getCurrentUser } from '@/lib/api-server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('cart');
-  return { title: t('title') };
+  return { title: t('title'), robots: { index: false } };
 }
 
 export default async function CartPage() {
-  const t = await getTranslations('cart');
+  const [t, user] = await Promise.all([
+    getTranslations('cart'),
+    getCurrentUser().catch(() => null),
+  ]);
   return (
     <PageShell title={t('title')}>
-      <EmptyState
-        icon={<ShoppingCart />}
-        title={t('emptyTitle')}
-        description={t('emptyDescription')}
-        action={
-          <Button asChild>
-            <Link href="/">{t('cta')}</Link>
-          </Button>
-        }
-      />
+      <CartScreen loggedIn={user !== null} />
     </PageShell>
   );
 }

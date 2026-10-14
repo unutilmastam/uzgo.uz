@@ -3,6 +3,7 @@
 import { cn } from '@uzgo/ui/lib/cn';
 import { House, LayoutGrid, ShoppingCart, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { CartCount } from '@/components/cart/cart-count';
 import { Link, usePathname } from '@/i18n/navigation';
 
 const ITEMS = [
@@ -41,7 +42,10 @@ export function MobileBottomNav() {
                   active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Icon aria-hidden="true" className="size-6" />
+                <span className="relative">
+                  <Icon aria-hidden="true" className="size-6" />
+                  {href === '/cart' ? <CartCount /> : null}
+                </span>
                 {t(label)}
               </Link>
             </li>
