@@ -17,7 +17,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "user:grant-role": "tsx scripts/grant-role.ts",
-    "db:seed:demo": "SEED_DEMO=true prisma db seed"
+    "db:seed:demo": "SEED_DEMO=true prisma db seed",
+    "search:reindex": "tsx scripts/reindex-search.ts"
   },
   "dependencies": {
     "@nestjs/common": "12.1.3",

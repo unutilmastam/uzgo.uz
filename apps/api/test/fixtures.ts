@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { PrismaService } from '../src/prisma/prisma.service.js';
+import { reindexProducts } from '../src/search/search-index.js';
 
 const suffix = () => randomUUID().slice(0, 8);
 
@@ -32,7 +33,7 @@ export async function createProduct(
     where: { slug: data.categorySlug ?? 'smartphones' },
   });
   const slug = `test-product-${suffix()}`;
-  return prisma.product.create({
+  const product = await prisma.product.create({
     data: {
       slug,
       storeId: data.storeId,
@@ -52,4 +53,6 @@ export async function createProduct(
     },
     include: { variants: true },
   });
+  await reindexProducts(prisma, [product.id]);
+  return product;
 }

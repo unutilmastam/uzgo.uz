@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { reindexProducts } from '../../src/search/search-index.js';
 import type { Db, Localized } from './types.js';
 
 type DemoData = {
@@ -132,5 +133,6 @@ export async function seedDemo(prisma: Db): Promise<string> {
       }
     }
   }
-  return `demo stores: ${String(data.stores.length)}, demo products: ${String(data.products.length)}`;
+  const indexed = await reindexProducts(prisma);
+  return `demo stores: ${String(data.stores.length)}, demo products: ${String(data.products.length)}, search-indexed: ${String(indexed)}`;
 }

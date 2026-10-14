@@ -76,3 +76,47 @@ export const storeDetailResponseSchema = z.object({
   }),
 });
 export type StoreDetail = z.infer<typeof storeDetailResponseSchema>['store'];
+
+export const PRODUCT_SORTS = ['relevance', 'newest', 'price_asc', 'price_desc'] as const;
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
+
+const slug = z
+  .string()
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/)
+  .max(120);
+const somAmount = z.coerce.number().int().min(0).max(10_000_000_000);
+
+/**
+ * GET /api/v1/catalog/products — query string. Prices in whole soʻm.
+ * attr: repeatable "code:value" pairs, e.g. attr=color:black&attr=memory:128gb
+ * (values of one attribute are OR-ed, different attributes AND-ed).
+ */
+export const productSearchQuerySchema = z
+  .strictObject({
+    q: z.string().trim().max(100).optional(),
+    category: slug.optional(),
+    store: slug.optional(),
+    minPrice: somAmount.optional(),
+    maxPrice: somAmount.optional(),
+    attr: z
+      .union([z.string(), z.array(z.string())])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .pipe(z.array(z.string().regex(/^[a-z0-9-]{1,40}:[a-z0-9-]{1,40}$/)).max(20))
+      .optional(),
+    sort: z.enum(PRODUCT_SORTS).optional(),
+    page: z.coerce.number().int().min(1).max(500).default(1),
+    pageSize: z.coerce.number().int().min(1).max(48).default(24),
+  })
+  .refine((v) => v.minPrice === undefined || v.maxPrice === undefined || v.minPrice <= v.maxPrice, {
+    message: 'minPrice must not exceed maxPrice',
+    path: ['minPrice'],
+  });
+export type ProductSearchQuery = z.output<typeof productSearchQuerySchema>;
+
+export const productListResponseSchema = z.object({
+  items: z.array(productSummarySchema),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  total: z.number().int(),
+});
+export type ProductList = z.infer<typeof productListResponseSchema>;

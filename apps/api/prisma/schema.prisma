@@ -8,6 +8,7 @@ generator client {
   importFileExtension = "js"
 }
 
+// The pg_trgm extension is created in a migration (product search).
 datasource db {
   provider = "postgresql"
 }
@@ -291,25 +292,31 @@ enum ProductStatus {
 }
 
 model Product {
-  id          String                  @id @default(uuid(7)) @db.Uuid
-  storeId     String                  @db.Uuid
-  store       Store                   @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  categoryId  String                  @db.Uuid
-  category    Category                @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  slug        String                  @unique
-  title       Json
-  description Json
-  status      ProductStatus           @default(DRAFT)
-  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime                @updatedAt @db.Timestamptz(3)
-  deletedAt   DateTime?               @db.Timestamptz(3)
-  variants    ProductVariant[]
-  images      ProductImage[]
-  attributes  ProductAttributeValue[]
+  id           String                   @id @default(uuid(7)) @db.Uuid
+  storeId      String                   @db.Uuid
+  store        Store                    @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  categoryId   String                   @db.Uuid
+  category     Category                 @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  slug         String                   @unique
+  title        Json
+  description  Json
+  status       ProductStatus            @default(DRAFT)
+  /// Normalised text for search (uz + ru titles, Latin/Cyrillic folded, apostrophes removed).
+  searchText   String                   @default("")
+  /// GENERATED ALWAYS AS (to_tsvector('simple', "searchText")) STORED — see migration.
+  searchVector Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, \"searchText\")"))
+  createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime                 @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?                @db.Timestamptz(3)
+  variants     ProductVariant[]
+  images       ProductImage[]
+  attributes   ProductAttributeValue[]
 
   @@index([status, categoryId])
   @@index([storeId, status])
   @@index([categoryId])
+  @@index([searchVector], type: Gin)
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 /// Product-level attribute values (e.g. brand) used for filters.
