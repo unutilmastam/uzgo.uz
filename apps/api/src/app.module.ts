@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthGuard } from './auth/auth.guard.js';
 import { AuthModule } from './auth/auth.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 import { OriginGuard } from './auth/origin.guard.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 import { LoggerModule } from './common/logger.module.js';
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module.js';
     SmsModule,
     HealthModule,
     GeoModule,
+    CatalogModule,
     AuthModule,
     UsersModule,
     TestSupportModule,

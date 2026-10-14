@@ -166,3 +166,65 @@ model AuditEvent {
   @@index([entityType, entityId])
   @@index([action, createdAt])
 }
+
+// ─── Catalog (Phase 4) ─────────────────────────────────────────────────────
+
+model Category {
+  id         String              @id @default(uuid(7)) @db.Uuid
+  parentId   String?             @db.Uuid
+  parent     Category?           @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children   Category[]          @relation("CategoryTree")
+  slug       String              @unique
+  /// { "uz": "...", "ru": "..." }
+  name       Json
+  /// Icon name used by the web app (lucide), e.g. "smartphone"
+  icon       String?
+  sort       Int                 @default(0)
+  active     Boolean             @default(true)
+  createdAt  DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime            @updatedAt @db.Timestamptz(3)
+  attributes CategoryAttribute[]
+
+  @@index([parentId, sort])
+}
+
+enum AttributeType {
+  SELECT
+}
+
+model Attribute {
+  id         String              @id @default(uuid(7)) @db.Uuid
+  code       String              @unique
+  name       Json
+  type       AttributeType       @default(SELECT)
+  sort       Int                 @default(0)
+  createdAt  DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime            @updatedAt @db.Timestamptz(3)
+  values     AttributeValue[]
+  categories CategoryAttribute[]
+}
+
+model AttributeValue {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  attributeId String    @db.Uuid
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  code        String
+  name        Json
+  sort        Int       @default(0)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([attributeId, code])
+}
+
+/// Which attributes a category uses for filters (inherited by its children).
+model CategoryAttribute {
+  categoryId  String    @db.Uuid
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attributeId String    @db.Uuid
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  sort        Int       @default(0)
+
+  @@id([categoryId, attributeId])
+  @@index([attributeId])
+}

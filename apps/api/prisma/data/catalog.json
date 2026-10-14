@@ -1,0 +1,419 @@
+{
+  "note": "Reference catalog structure (not demo data). Brand values are added per store/product.",
+  "attributes": [
+    {
+      "code": "brand",
+      "name": {
+        "uz": "Brend",
+        "ru": "Бренд"
+      },
+      "values": []
+    },
+    {
+      "code": "color",
+      "name": {
+        "uz": "Rang",
+        "ru": "Цвет"
+      },
+      "values": [
+        {
+          "code": "black",
+          "name": {
+            "uz": "Qora",
+            "ru": "Чёрный"
+          }
+        },
+        {
+          "code": "white",
+          "name": {
+            "uz": "Oq",
+            "ru": "Белый"
+          }
+        },
+        {
+          "code": "grey",
+          "name": {
+            "uz": "Kulrang",
+            "ru": "Серый"
+          }
+        },
+        {
+          "code": "blue",
+          "name": {
+            "uz": "Koʻk",
+            "ru": "Синий"
+          }
+        },
+        {
+          "code": "green",
+          "name": {
+            "uz": "Yashil",
+            "ru": "Зелёный"
+          }
+        },
+        {
+          "code": "red",
+          "name": {
+            "uz": "Qizil",
+            "ru": "Красный"
+          }
+        },
+        {
+          "code": "beige",
+          "name": {
+            "uz": "Bej",
+            "ru": "Бежевый"
+          }
+        }
+      ]
+    },
+    {
+      "code": "memory",
+      "name": {
+        "uz": "Xotira",
+        "ru": "Память"
+      },
+      "values": [
+        {
+          "code": "64gb",
+          "name": {
+            "uz": "64 GB",
+            "ru": "64 ГБ"
+          }
+        },
+        {
+          "code": "128gb",
+          "name": {
+            "uz": "128 GB",
+            "ru": "128 ГБ"
+          }
+        },
+        {
+          "code": "256gb",
+          "name": {
+            "uz": "256 GB",
+            "ru": "256 ГБ"
+          }
+        },
+        {
+          "code": "512gb",
+          "name": {
+            "uz": "512 GB",
+            "ru": "512 ГБ"
+          }
+        }
+      ]
+    },
+    {
+      "code": "size",
+      "name": {
+        "uz": "Oʻlcham",
+        "ru": "Размер"
+      },
+      "values": [
+        {
+          "code": "xs",
+          "name": {
+            "uz": "XS",
+            "ru": "XS"
+          }
+        },
+        {
+          "code": "s",
+          "name": {
+            "uz": "S",
+            "ru": "S"
+          }
+        },
+        {
+          "code": "m",
+          "name": {
+            "uz": "M",
+            "ru": "M"
+          }
+        },
+        {
+          "code": "l",
+          "name": {
+            "uz": "L",
+            "ru": "L"
+          }
+        },
+        {
+          "code": "xl",
+          "name": {
+            "uz": "XL",
+            "ru": "XL"
+          }
+        },
+        {
+          "code": "xxl",
+          "name": {
+            "uz": "XXL",
+            "ru": "XXL"
+          }
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "slug": "electronics",
+      "name": {
+        "uz": "Elektronika",
+        "ru": "Электроника"
+      },
+      "icon": "smartphone",
+      "children": [
+        {
+          "slug": "smartphones",
+          "name": {
+            "uz": "Smartfonlar",
+            "ru": "Смартфоны"
+          },
+          "attributes": ["brand", "color", "memory"]
+        },
+        {
+          "slug": "headphones",
+          "name": {
+            "uz": "Quloqchinlar",
+            "ru": "Наушники"
+          },
+          "attributes": ["brand", "color"]
+        },
+        {
+          "slug": "laptops",
+          "name": {
+            "uz": "Noutbuklar",
+            "ru": "Ноутбуки"
+          },
+          "attributes": ["brand", "color", "memory"]
+        },
+        {
+          "slug": "tv",
+          "name": {
+            "uz": "Televizorlar",
+            "ru": "Телевизоры"
+          },
+          "attributes": ["brand"]
+        }
+      ],
+      "attributes": ["brand"]
+    },
+    {
+      "slug": "appliances",
+      "name": {
+        "uz": "Maishiy texnika",
+        "ru": "Бытовая техника"
+      },
+      "icon": "washing-machine",
+      "children": [
+        {
+          "slug": "washing-machines",
+          "name": {
+            "uz": "Kir yuvish mashinalari",
+            "ru": "Стиральные машины"
+          }
+        },
+        {
+          "slug": "refrigerators",
+          "name": {
+            "uz": "Muzlatkichlar",
+            "ru": "Холодильники"
+          }
+        },
+        {
+          "slug": "kettles",
+          "name": {
+            "uz": "Choynaklar",
+            "ru": "Чайники"
+          }
+        },
+        {
+          "slug": "vacuum-cleaners",
+          "name": {
+            "uz": "Changyutgichlar",
+            "ru": "Пылесосы"
+          }
+        }
+      ],
+      "attributes": ["brand", "color"]
+    },
+    {
+      "slug": "clothing",
+      "name": {
+        "uz": "Kiyim",
+        "ru": "Одежда"
+      },
+      "icon": "shirt",
+      "children": [
+        {
+          "slug": "men",
+          "name": {
+            "uz": "Erkaklar kiyimi",
+            "ru": "Мужская одежда"
+          }
+        },
+        {
+          "slug": "women",
+          "name": {
+            "uz": "Ayollar kiyimi",
+            "ru": "Женская одежда"
+          }
+        },
+        {
+          "slug": "kids-clothing",
+          "name": {
+            "uz": "Bolalar kiyimi",
+            "ru": "Детская одежда"
+          }
+        },
+        {
+          "slug": "shoes",
+          "name": {
+            "uz": "Poyabzal",
+            "ru": "Обувь"
+          }
+        }
+      ],
+      "attributes": ["size", "color"]
+    },
+    {
+      "slug": "groceries",
+      "name": {
+        "uz": "Oziq-ovqat",
+        "ru": "Продукты"
+      },
+      "icon": "shopping-basket",
+      "children": [
+        {
+          "slug": "tea-coffee",
+          "name": {
+            "uz": "Choy va qahva",
+            "ru": "Чай и кофе"
+          }
+        },
+        {
+          "slug": "sweets",
+          "name": {
+            "uz": "Shirinliklar",
+            "ru": "Сладости"
+          }
+        },
+        {
+          "slug": "grains",
+          "name": {
+            "uz": "Yorma va donlar",
+            "ru": "Крупы"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "home",
+      "name": {
+        "uz": "Uy va bogʻ",
+        "ru": "Дом и сад"
+      },
+      "icon": "sofa",
+      "children": [
+        {
+          "slug": "bedding",
+          "name": {
+            "uz": "Choyshablar",
+            "ru": "Постельное бельё"
+          }
+        },
+        {
+          "slug": "kitchenware",
+          "name": {
+            "uz": "Oshxona anjomlari",
+            "ru": "Посуда"
+          }
+        },
+        {
+          "slug": "decor",
+          "name": {
+            "uz": "Dekor",
+            "ru": "Декор"
+          }
+        }
+      ],
+      "attributes": ["color"]
+    },
+    {
+      "slug": "beauty",
+      "name": {
+        "uz": "Goʻzallik",
+        "ru": "Красота"
+      },
+      "icon": "sparkles",
+      "children": [
+        {
+          "slug": "skincare",
+          "name": {
+            "uz": "Teri parvarishi",
+            "ru": "Уход за кожей"
+          }
+        },
+        {
+          "slug": "perfume",
+          "name": {
+            "uz": "Atirlar",
+            "ru": "Парфюмерия"
+          }
+        }
+      ],
+      "attributes": ["brand"]
+    },
+    {
+      "slug": "kids",
+      "name": {
+        "uz": "Bolalar uchun",
+        "ru": "Детям"
+      },
+      "icon": "baby",
+      "children": [
+        {
+          "slug": "toys",
+          "name": {
+            "uz": "Oʻyinchoqlar",
+            "ru": "Игрушки"
+          }
+        },
+        {
+          "slug": "baby-care",
+          "name": {
+            "uz": "Chaqaloq parvarishi",
+            "ru": "Уход за малышом"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "sport",
+      "name": {
+        "uz": "Sport",
+        "ru": "Спорт"
+      },
+      "icon": "dumbbell",
+      "children": [
+        {
+          "slug": "fitness",
+          "name": {
+            "uz": "Fitnes",
+            "ru": "Фитнес"
+          }
+        },
+        {
+          "slug": "outdoor",
+          "name": {
+            "uz": "Sayohat va dam olish",
+            "ru": "Туризм и отдых"
+          }
+        }
+      ],
+      "attributes": ["brand"]
+    }
+  ]
+}
