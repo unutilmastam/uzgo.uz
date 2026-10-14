@@ -1,0 +1,29 @@
+{
+  "name": "uzgo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=24.11.0 <25",
+    "pnpm": ">=12.11.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:migrate": "pnpm --filter @uzgo/api db:migrate",
+    "db:deploy": "pnpm --filter @uzgo/api db:deploy",
+    "db:seed": "pnpm --filter @uzgo/api db:seed",
+    "db:studio": "pnpm --filter @uzgo/api db:studio"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "turbo": "2.11.8",
+    "@uzgo/config": "workspace:*"
+  },
+  "prettier": "@uzgo/config/prettier"
+}

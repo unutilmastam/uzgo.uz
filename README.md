@@ -3,42 +3,107 @@
 UZGO Market — an original multi-vendor marketplace for Uzbekistan (many
 sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
+Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 0 (architecture docs) done. No application code yet —
-Phase 1 (foundation) is next. See `docs/ROADMAP.md`.
+**Status:** Phase 1 (foundation) — see `docs/ROADMAP.md`.
 
-## Planned stack
-pnpm + Turborepo monorepo · Next.js (App Router) + Tailwind + shadcn/ui ·
-NestJS REST API · PostgreSQL + Prisma · Zod contracts · Vitest, Supertest,
-Playwright · GitHub Actions CI. Details: `docs/SPEC.md` §4.
+## Stack
 
-## Repository map (target, created phase by phase)
+pnpm 12 + Turborepo monorepo · Node.js 24 LTS · Next.js 16 (App Router) +
+Tailwind CSS 4 · NestJS 12 REST API · PostgreSQL 18 + Prisma 7 · Zod 4 contracts
+· Vitest + Supertest · GitHub Actions CI + CodeQL. Versions and reasons:
+`docs/decisions/0009-toolchain-versions.md`.
+
+## Repository map
+
 ```
-apps/web            Next.js storefront + /seller + /admin   (Phase 1+)
-apps/api            NestJS modular monolith + prisma/       (Phase 1+)
-packages/contracts  Zod schemas shared by web and api       (Phase 1)
-packages/config     tsconfig / eslint / prettier presets    (Phase 1)
-packages/ui         design tokens + components              (Phase 2)
+apps/web            Next.js storefront (+ /seller, /admin later)
+apps/api            NestJS modular monolith
+apps/api/prisma     the only Prisma schema, migrations, seed
+packages/contracts  Zod schemas shared by web and api
+packages/config     shared tsconfig / ESLint / Prettier presets
+packages/ui         design tokens + components (Phase 2)
 docs/               specification, architecture, decisions
 ```
 
-## Documentation
-| File | Contents |
-|---|---|
-| `CLAUDE.md` | Rules for Claude Code (autopilot: "davom et") |
-| `docs/SPEC.md` | Authoritative specification |
-| `docs/REVIEW.md` | What was fixed in the original brief (Uzbek) |
-| `docs/PROMPTS.md` | Prompt for each phase |
-| `docs/ROADMAP.md` | Progress and open decisions |
-| `docs/VISION.md` | Product scope, users, MVP, non-goals, owner brief |
-| `docs/ARCHITECTURE.md` | Modules, topology, request lifecycle, adapters |
-| `docs/DATABASE.md` | Draft ER diagram, conventions, state machines |
-| `docs/API.md` | API conventions |
-| `docs/DESIGN_SYSTEM.md` | Design principles, colour/wordmark proposal, components |
-| `docs/SECURITY.md` | Threat model, auth, RBAC, logging, data residency |
-| `docs/DEPLOYMENT.md` | Hosting requirements and options |
-| `docs/decisions/` | Architecture Decision Records |
+## Working from a phone (owner)
 
-## Working from a phone
 The owner drives Claude Code in the cloud. Write **"davom et"** to run the next
-phase. GitHub Actions CI (from Phase 1) is the source of truth for checks.
+phase. **GitHub Actions CI is the source of truth**: open the repository's
+_Actions_ tab to see whether the latest commit is green.
+
+## Local setup (developers)
+
+Requirements: Node.js 24 (`.nvmrc`), pnpm 12 (`corepack enable` picks the
+version from `packageManager`), PostgreSQL 18 (Docker or native).
+
+```bash
+corepack enable
+pnpm install
+
+# environment (placeholders — edit if needed)
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+```
+
+### Database with Docker
+
+```bash
+docker compose up -d postgres     # PostgreSQL on 127.0.0.1:5432
+pnpm db:deploy                    # apply migrations
+```
+
+### Database without Docker (native PostgreSQL)
+
+```bash
+# Ubuntu/Debian example
+sudo apt install postgresql
+sudo -u postgres psql -c "CREATE USER uzgo WITH PASSWORD 'uzgo_dev_password' CREATEDB;"
+sudo -u postgres psql -c "CREATE DATABASE uzgo OWNER uzgo;"
+pnpm db:deploy
+```
+
+### Run
+
+```bash
+pnpm dev            # web on http://localhost:3000, API on http://localhost:4000
+```
+
+- Web page shows the live API/database status.
+- API health: `GET /api/v1/health/live`, `GET /api/v1/health/ready`.
+- In development the web forwards `/api/*` to the API (same-site, ADR 0007).
+- Swagger UI: http://localhost:4000/api/docs (off in production by default).
+
+### Checks (same as CI)
+
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test           # API integration tests use DATABASE_URL from apps/api/.env (real PostgreSQL)
+pnpm build
+pnpm audit
+```
+
+### Database scripts
+
+`pnpm db:migrate` (create/apply a migration in development) · `pnpm db:deploy`
+(apply migrations) · `pnpm db:seed` · `pnpm db:studio`.
+
+## Documentation
+
+| File                    | Contents                                          |
+| ----------------------- | ------------------------------------------------- |
+| `CLAUDE.md`             | Rules for Claude Code (autopilot: "davom et")     |
+| `docs/SPEC.md`          | Authoritative specification                       |
+| `docs/REVIEW.md`        | What was fixed in the original brief (Uzbek)      |
+| `docs/PROMPTS.md`       | Prompt for each phase                             |
+| `docs/ROADMAP.md`       | Progress and open decisions                       |
+| `docs/VISION.md`        | Product scope, users, MVP, non-goals, owner brief |
+| `docs/ARCHITECTURE.md`  | Modules, topology, request lifecycle, adapters    |
+| `docs/DATABASE.md`      | Draft ER diagram, conventions, state machines     |
+| `docs/API.md`           | API conventions                                   |
+| `docs/DESIGN_SYSTEM.md` | Design principles, colour/wordmark proposal       |
+| `docs/SECURITY.md`      | Threat model, auth, RBAC, logging, data residency |
+| `docs/DEPLOYMENT.md`    | Hosting requirements and options                  |
+| `docs/decisions/`       | Architecture Decision Records                     |

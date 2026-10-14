@@ -1,0 +1,12 @@
+{
+  "extends": "@uzgo/config/tsconfig.node.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "noEmit": true
+  },
+  "include": ["src", "test", "prisma", "*.ts"]
+}

@@ -1,0 +1,13 @@
+// UZGO — the only Prisma schema (see docs/decisions/0002-prisma-in-api.md).
+// Phase 1: connection only. Business models start in Phase 3 (docs/DATABASE.md).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

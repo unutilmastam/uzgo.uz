@@ -1,0 +1,23 @@
+# Local development database. Optional — native PostgreSQL works too (README.md).
+# Credentials are development placeholders from .env.example, never production values.
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-uzgo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uzgo_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-uzgo}
+    ports:
+      # Bound to localhost only: the database is never exposed to the network.
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - uzgo_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  uzgo_postgres_data:

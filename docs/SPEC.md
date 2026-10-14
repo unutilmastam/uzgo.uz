@@ -51,22 +51,22 @@ No cloud-computing product. Ordinary hosting is fine.
 
 Use current stable versions (verify at implementation time).
 
-| Layer | Choice |
-|---|---|
-| Monorepo | pnpm workspaces + Turborepo (task caching/orchestration only) |
-| Runtime | Node.js LTS, pinned via `.nvmrc` and `engines` |
-| Web | Next.js (App Router), TypeScript strict, Tailwind CSS, shadcn/ui |
-| Web i18n | `next-intl` with locale-prefixed routes (`/uz/...`, `/ru/...`) |
-| API | NestJS, REST, OpenAPI (Swagger) at `/api/docs` |
-| Validation | **Zod** schemas in `packages/contracts`, shared by web and API (API uses a Zod validation pipe). One source of truth instead of duplicated class-validator DTOs + frontend schemas |
-| API client | Typed client generated from the OpenAPI document (Phase 4+), or thin typed fetch wrapper using `packages/contracts` until then |
-| DB | PostgreSQL + Prisma, versioned migrations, seed script |
-| Cache/queues | **None initially.** Redis is added only with a written ADR (e.g. job queue for notifications, distributed rate limiting) |
-| File storage | S3-compatible object storage behind a `StorageAdapter`; dev adapter writes to local disk. No product images in the database or in git |
-| Tests | Vitest (unit), Supertest + real PostgreSQL (API integration), Playwright (E2E) |
-| Lint/format | ESLint (flat config) + Prettier, shared config package |
-| CI | GitHub Actions with a PostgreSQL service container |
-| Local dev | Docker Compose for PostgreSQL (optional — native PostgreSQL also documented) |
+| Layer        | Choice                                                                                                                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo     | pnpm workspaces + Turborepo (task caching/orchestration only)                                                                                                                      |
+| Runtime      | Node.js LTS, pinned via `.nvmrc` and `engines`                                                                                                                                     |
+| Web          | Next.js (App Router), TypeScript strict, Tailwind CSS, shadcn/ui                                                                                                                   |
+| Web i18n     | `next-intl` with locale-prefixed routes (`/uz/...`, `/ru/...`)                                                                                                                     |
+| API          | NestJS, REST, OpenAPI (Swagger) at `/api/docs`                                                                                                                                     |
+| Validation   | **Zod** schemas in `packages/contracts`, shared by web and API (API uses a Zod validation pipe). One source of truth instead of duplicated class-validator DTOs + frontend schemas |
+| API client   | Typed client generated from the OpenAPI document (Phase 4+), or thin typed fetch wrapper using `packages/contracts` until then                                                     |
+| DB           | PostgreSQL + Prisma, versioned migrations, seed script                                                                                                                             |
+| Cache/queues | **None initially.** Redis is added only with a written ADR (e.g. job queue for notifications, distributed rate limiting)                                                           |
+| File storage | S3-compatible object storage behind a `StorageAdapter`; dev adapter writes to local disk. No product images in the database or in git                                              |
+| Tests        | Vitest (unit), Supertest + real PostgreSQL (API integration), Playwright (E2E)                                                                                                     |
+| Lint/format  | ESLint (flat config) + Prettier, shared config package                                                                                                                             |
+| CI           | GitHub Actions with a PostgreSQL service container                                                                                                                                 |
+| Local dev    | Docker Compose for PostgreSQL (optional — native PostgreSQL also documented)                                                                                                       |
 
 Do not add other technologies without an ADR.
 
@@ -99,6 +99,7 @@ uzgo/
 ```
 
 Decisions behind this layout:
+
 - Prisma lives in `apps/api/prisma` because only the API touches the database.
   The web app never imports Prisma.
 - `shared-types` and `validation` are merged into `contracts` (types are inferred
@@ -147,19 +148,19 @@ Decisions behind this layout:
 
 Plan around these modules (implemented progressively):
 
-| Module | First phase |
-|---|---|
-| config, health, logging, errors | 1 |
-| auth (OTP + sessions), users, roles/permissions | 3 |
-| geo (regions, districts), audit | 3 |
-| catalog (categories, attributes), products, variants, media | 4 |
-| stores (seller storefronts), inventory | 4 |
-| cart, checkout, orders (split per seller), search | 4 |
-| seller onboarding & management, moderation, admin | 5 |
-| payments (adapters), fiscalisation data, refunds/returns | 6 |
-| delivery (zones, pickup points, tracking), notifications | 6 |
-| seller ledger & payouts | 6 |
-| reviews & ratings, promo codes | after MVP |
+| Module                                                      | First phase |
+| ----------------------------------------------------------- | ----------- |
+| config, health, logging, errors                             | 1           |
+| auth (OTP + sessions), users, roles/permissions             | 3           |
+| geo (regions, districts), audit                             | 3           |
+| catalog (categories, attributes), products, variants, media | 4           |
+| stores (seller storefronts), inventory                      | 4           |
+| cart, checkout, orders (split per seller), search           | 4           |
+| seller onboarding & management, moderation, admin           | 5           |
+| payments (adapters), fiscalisation data, refunds/returns    | 6           |
+| delivery (zones, pickup points, tracking), notifications    | 6           |
+| seller ledger & payouts                                     | 6           |
+| reviews & ratings, promo codes                              | after MVP   |
 
 ## 9. Authentication and accounts
 
@@ -184,6 +185,7 @@ Plan around these modules (implemented progressively):
 ## 10. Marketplace domain (key rules)
 
 **Catalog**
+
 - `Category` tree (parent/child, slug, sort, per-locale names, active flag).
 - `Product` belongs to one `Store`. Has status
   `DRAFT → PENDING_REVIEW → APPROVED | REJECTED`, and `ARCHIVED`. Only
@@ -199,13 +201,15 @@ Plan around these modules (implemented progressively):
   the chosen payment provider.
 
 **Inventory**
+
 - Stock per variant (per warehouse later). Reservation on order creation inside
   a transaction using conditional updates (`UPDATE … SET stock = stock - n
-  WHERE id = … AND stock >= n`) or row locks. Stock can never go negative
+WHERE id = … AND stock >= n`) or row locks. Stock can never go negative
   (DB `CHECK` constraint too).
 - Unpaid reservations expire and are released by a scheduled job.
 
 **Cart and checkout**
+
 - Cart per user (guest cart in a cookie, merged at login).
 - Prices in the cart are **always recalculated on the server** at checkout.
 - One checkout can contain items from several sellers: it creates one
@@ -225,6 +229,7 @@ SellerOrder: NEW → ACCEPTED → PACKED → HANDED_TO_DELIVERY → DELIVERED
              NEW/ACCEPTED → CANCELLED_BY_SELLER
              DELIVERED → RETURN_REQUESTED → RETURNED
 ```
+
 Final states are defined in `docs/DATABASE.md` in Phase 0 and may be refined
 with an ADR. Every transition writes an `OrderEvent` row (who, when, from, to).
 
@@ -298,6 +303,7 @@ In Phase 2, product data is static fixture data clearly marked as such.
 ## 17. Security
 
 Progressive, starting in Phase 1:
+
 - Helmet-style security headers, strict CORS allow-list, body size limits.
 - Rate limiting on auth/OTP and write endpoints (in-memory store first; Redis
   only via ADR when running multiple instances).
@@ -329,18 +335,18 @@ operations. No unnecessary packages.
 
 ## 20. Phases
 
-| # | Phase | Summary |
-|---|---|---|
-| 0 | Discovery & architecture | Docs only: VISION, ARCHITECTURE, DATABASE (draft ERD), API conventions, DESIGN_SYSTEM (principles), SECURITY, DEPLOYMENT options, ROADMAP, ADRs |
-| 1 | Foundation | Monorepo, web + api skeletons, strict TS, lint/format, env validation, health endpoints, Prisma connected (no business models), Docker Compose for Postgres, CI |
-| 2 | Design system & web shell | `packages/ui` tokens/components, i18n routing uz/ru, header/footer/nav, homepage with fixture data, responsive checks, Playwright smoke |
-| 3 | Data & auth | Geo reference data, User/Session/Role models, OTP auth with DevSmsProvider, guards, audit log, security tests |
-| 4 | Marketplace core | Categories, attributes, stores, products + variants, media storage adapter, catalog pages, search (Postgres FTS + normalisation), cart, checkout (COD), split orders, idempotency, concurrency tests |
-| 5 | Seller & admin | Seller onboarding, product management, moderation, seller order fulfilment, admin panel, audit |
-| 6 | Payments & delivery | Provider selection, payment adapters + verified callbacks, fiscal data, refunds/returns, delivery zones, pickup points, tracking, notifications, ledger & payouts |
-| 7 | Production readiness | Hosting decision executed, security review, performance, monitoring, backups, E2E, legal pages, deployment docs |
-| 8 | Mobile | Flutter vs React Native reassessed, same API |
-| 9 | Ecosystem | Further services as separate modules, only when justified |
+| #   | Phase                     | Summary                                                                                                                                                                                              |
+| --- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Discovery & architecture  | Docs only: VISION, ARCHITECTURE, DATABASE (draft ERD), API conventions, DESIGN_SYSTEM (principles), SECURITY, DEPLOYMENT options, ROADMAP, ADRs                                                      |
+| 1   | Foundation                | Monorepo, web + api skeletons, strict TS, lint/format, env validation, health endpoints, Prisma connected (no business models), Docker Compose for Postgres, CI                                      |
+| 2   | Design system & web shell | `packages/ui` tokens/components, i18n routing uz/ru, header/footer/nav, homepage with fixture data, responsive checks, Playwright smoke                                                              |
+| 3   | Data & auth               | Geo reference data, User/Session/Role models, OTP auth with DevSmsProvider, guards, audit log, security tests                                                                                        |
+| 4   | Marketplace core          | Categories, attributes, stores, products + variants, media storage adapter, catalog pages, search (Postgres FTS + normalisation), cart, checkout (COD), split orders, idempotency, concurrency tests |
+| 5   | Seller & admin            | Seller onboarding, product management, moderation, seller order fulfilment, admin panel, audit                                                                                                       |
+| 6   | Payments & delivery       | Provider selection, payment adapters + verified callbacks, fiscal data, refunds/returns, delivery zones, pickup points, tracking, notifications, ledger & payouts                                    |
+| 7   | Production readiness      | Hosting decision executed, security review, performance, monitoring, backups, E2E, legal pages, deployment docs                                                                                      |
+| 8   | Mobile                    | Flutter vs React Native reassessed, same API                                                                                                                                                         |
+| 9   | Ecosystem                 | Further services as separate modules, only when justified                                                                                                                                            |
 
 A phase is complete only when its requirements are implemented, lint/typecheck/
 tests/build pass (in CI at minimum), docs are updated, limitations are recorded

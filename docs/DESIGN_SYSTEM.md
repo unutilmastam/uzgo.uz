@@ -1,6 +1,7 @@
 # DESIGN SYSTEM (principles — values finalised in Phase 2)
 
 ## Brand brief (from the owner)
+
 - Style: modern, clean, premium, mobile-friendly.
 - Mood: trustworthy, fast, bright — but not excessive.
 - Light **and** dark mode.
@@ -13,19 +14,22 @@
   marketplaces in Uzbekistan (purple, bright yellow) as the primary brand colour.
 
 ## Colour proposal (owner confirms in Phase 2)
+
 Working direction: **deep blue + fresh green**.
+
 - Deep blue (trust, premium) as primary: around `#0B3D91`–`#123C8C` family.
 - Fresh green (speed, "go", positive actions) as accent: emerald family.
 - Warm accent for discounts/badges only (coral/orange), used sparingly.
 - Neutral greys slightly cool; pure white surfaces in light mode,
   near-black blue-grey surfaces in dark mode (not pure black).
-Exact values, contrast checks (WCAG AA ≥ 4.5:1 text, 3:1 UI) and dark-mode
-pairs are fixed in Phase 2.
+  Exact values, contrast checks (WCAG AA ≥ 4.5:1 text, 3:1 UI) and dark-mode
+  pairs are fixed in Phase 2.
 
 Alternatives the owner mentioned: purple (rejected — too close to an existing
 marketplace), dark orange (possible as accent instead of primary).
 
 ## Wordmark proposal
+
 - "UZGO" in a geometric sans, bold, slightly tight letter spacing.
 - "GO" coloured with the green accent, "UZ" in deep blue (inverted in dark mode).
 - Optional small forward chevron/arrow cue in the "O" later — only if it stays
@@ -33,6 +37,7 @@ marketplace), dark orange (possible as accent instead of primary).
   (logo is a component).
 
 ## Principles
+
 1. Mobile-first: designed at 360px, then 768px and 1280px+.
 2. Content first: product photos and prices dominate; chrome stays quiet.
 3. Speed is a feature: skeletons, no layout shift, small JS, optimised images.
@@ -43,18 +48,20 @@ marketplace), dark orange (possible as accent instead of primary).
 8. Restraint: one primary action per view; colour accents used sparingly.
 
 ## Token categories (values in Phase 2, implemented in `packages/ui`)
-| Category | Contents |
-|---|---|
-| Colour | brand (primary, accent), semantic (success, warning, danger, info), neutrals, surfaces, text, border, focus ring — each with light and dark values |
-| Typography | font families (must cover Uzbek Latin incl. ʻ U+02BB, ʼ U+02BC, and Cyrillic — e.g. Inter, Manrope or Golos-like candidates, checked in Phase 2), size scale, weights, line heights |
-| Spacing | 4px base scale |
-| Radius | sm / md / lg / full |
-| Shadow / elevation | 3–4 levels, softer in dark mode |
-| Motion | durations, easings; respects `prefers-reduced-motion` |
-| Breakpoints | 360, 768, 1024, 1280 |
-| Z-index | header, sheet, dialog, toast |
+
+| Category           | Contents                                                                                                                                                                            |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Colour             | brand (primary, accent), semantic (success, warning, danger, info), neutrals, surfaces, text, border, focus ring — each with light and dark values                                  |
+| Typography         | font families (must cover Uzbek Latin incl. ʻ U+02BB, ʼ U+02BC, and Cyrillic — e.g. Inter, Manrope or Golos-like candidates, checked in Phase 2), size scale, weights, line heights |
+| Spacing            | 4px base scale                                                                                                                                                                      |
+| Radius             | sm / md / lg / full                                                                                                                                                                 |
+| Shadow / elevation | 3–4 levels, softer in dark mode                                                                                                                                                     |
+| Motion             | durations, easings; respects `prefers-reduced-motion`                                                                                                                               |
+| Breakpoints        | 360, 768, 1024, 1280                                                                                                                                                                |
+| Z-index            | header, sheet, dialog, toast                                                                                                                                                        |
 
 ## Component inventory
+
 - Primitives: Button, IconButton, Input, PhoneInput (+998), Select, Checkbox,
   Radio, Switch, Textarea, Label, Badge, Tooltip.
 - Feedback: Toast, Skeleton, Spinner, EmptyState, ErrorState, Alert.

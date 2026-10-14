@@ -4,10 +4,12 @@ This file is loaded automatically in every session. Keep it short. The full,
 authoritative specification is `docs/SPEC.md` — read it before any change.
 
 ## What UZGO is
+
 A multi-vendor marketplace for Uzbekistan (customers, sellers, admins), built as
 the first module of a future UZGO ecosystem. Web first. Mobile later.
 
 ## How to work in this repo
+
 1. Read `docs/SPEC.md`, `docs/ROADMAP.md`, and the docs for the area you touch.
 2. Find the current phase in `docs/ROADMAP.md`. Work on that phase only.
 3. Before editing: list the files you will change, a short plan, assumptions, risks.
@@ -20,8 +22,10 @@ the first module of a future UZGO ecosystem. Web first. Mobile later.
 7. Commit with a clear message. Stop at the end of the phase and wait.
 
 ## Autopilot (owner does not copy prompts)
+
 When the owner writes a short command such as **"davom et"**, **"boshla"**,
 **"keyingi"**, "continue" or "next":
+
 1. Open `docs/ROADMAP.md` and find the first phase that is not fully VERIFIED.
 2. If that phase is IN PROGRESS or BLOCKED, finish or unblock it first.
 3. Otherwise take that phase's prompt block from `docs/PROMPTS.md` and treat it
@@ -39,6 +43,7 @@ If the owner writes **"xato"** / **"tuzat"** with a description or CI error, use
 the "Har qanday faza ichida xato bo'lsa" prompt from `docs/PROMPTS.md`.
 
 ## Owner's environment (important)
+
 - The owner has **no computer**. He works from a phone/iPad and drives Claude Code
   in the cloud against this GitHub repo.
 - Therefore **GitHub Actions CI is the source of truth** for lint/typecheck/test/build.
@@ -51,6 +56,7 @@ the "Har qanday faza ichida xato bo'lsa" prompt from `docs/PROMPTS.md`.
   decision — see `docs/SPEC.md` §14.
 
 ## Hard rules
+
 - Modular monolith. No microservices.
 - Money: integer minor units (tiyin, `BigInt`) — never floats.
 - All prices, totals, stock, permissions are decided on the server.

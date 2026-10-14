@@ -1,0 +1,36 @@
+packages:
+  - apps/*
+  - packages/*
+minimumReleaseAgeExclude:
+  - '@next/eslint-plugin-next@16.4.1'
+  - '@turbo/darwin-64@2.11.8'
+  - '@turbo/darwin-arm64@2.11.8'
+  - '@turbo/linux-64@2.11.8'
+  - '@turbo/linux-arm64@2.11.8'
+  - '@turbo/windows-64@2.11.8'
+  - '@turbo/windows-arm64@2.11.8'
+  - turbo@2.11.8
+  - react-dom@19.3.1
+  - react@19.3.1
+
+# Dependency install scripts are blocked unless listed here (supply-chain safety).
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+  '@swc/core': true
+  # Usage telemetry only — not needed.
+  '@scarf/scarf': false
+
+# Security overrides for vulnerable transitive dependencies (pnpm audit).
+# Remove once upstream packages ship the fixed versions.
+overrides:
+  deepmerge-ts: ^8.0.0
+  mysql2: ^3.23.1
+
+# Accepted audit findings. Each entry needs a reason and is reviewed every phase.
+auditConfig:
+  ignoreGhsas:
+    # braces <=3.0.3 ReDoS-style stack exhaustion; no patched version exists.
+    # Reached only via @next/eslint-plugin-next at lint time with our own
+    # glob patterns — never at runtime and never with user input.
+    - GHSA-vfj7-8cjw-p6xm

@@ -4,17 +4,18 @@ PostgreSQL + Prisma. The only schema lives in `apps/api/prisma/schema.prisma`.
 This is a **draft**: models are created in Phases 3–6 and may be refined by ADR.
 
 ## Conventions
-| Topic | Rule |
-|---|---|
-| IDs | UUID v7 primary keys (time-ordered, index friendly). Human-readable order numbers separately: `UZ-2026-000123` (per-year sequence). |
-| Money | `BigInt` **tiyin** (1 soʻm = 100 tiyin). Never floats. `CHECK (amount >= 0)` where negative is meaningless; signed only in ledger. Currency is UZS only. See `decisions/0005-money-in-tiyin.md`. |
-| Time | `timestamptz`, stored UTC, displayed `Asia/Tashkent`. `createdAt`, `updatedAt` on every table. |
-| Phones | E.164 string (`+998901234567`), unique per user. |
-| Localised content | `Json` column `{ "uz": "...", "ru": "..." }` validated by Zod, with fallback locale `uz`. New locales (`uz-Cyrl`, `en`) need no schema change. |
-| Soft delete | `deletedAt` on User, Store, Product. Orders, payments, ledger, audit, order events are **never** deleted. |
-| Enums | PostgreSQL enums via Prisma for statuses and roles. |
-| Constraints | Foreign keys everywhere; `CHECK` for money ≥ 0, stock ≥ 0, quantity > 0. Some CHECKs are added in raw SQL inside Prisma migrations. |
-| Indexes | Every foreign key; every storefront filter/sort column; search vectors (GIN). |
+
+| Topic             | Rule                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| IDs               | UUID v7 primary keys (time-ordered, index friendly). Human-readable order numbers separately: `UZ-2026-000123` (per-year sequence).                                                              |
+| Money             | `BigInt` **tiyin** (1 soʻm = 100 tiyin). Never floats. `CHECK (amount >= 0)` where negative is meaningless; signed only in ledger. Currency is UZS only. See `decisions/0005-money-in-tiyin.md`. |
+| Time              | `timestamptz`, stored UTC, displayed `Asia/Tashkent`. `createdAt`, `updatedAt` on every table.                                                                                                   |
+| Phones            | E.164 string (`+998901234567`), unique per user.                                                                                                                                                 |
+| Localised content | `Json` column `{ "uz": "...", "ru": "..." }` validated by Zod, with fallback locale `uz`. New locales (`uz-Cyrl`, `en`) need no schema change.                                                   |
+| Soft delete       | `deletedAt` on User, Store, Product. Orders, payments, ledger, audit, order events are **never** deleted.                                                                                        |
+| Enums             | PostgreSQL enums via Prisma for statuses and roles.                                                                                                                                              |
+| Constraints       | Foreign keys everywhere; `CHECK` for money ≥ 0, stock ≥ 0, quantity > 0. Some CHECKs are added in raw SQL inside Prisma migrations.                                                              |
+| Indexes           | Every foreign key; every storefront filter/sort column; search vectors (GIN).                                                                                                                    |
 
 ## Draft ER diagram
 
@@ -64,6 +65,7 @@ erDiagram
 ## Entities (summary)
 
 **Phase 3 — geo, users, auth, audit**
+
 - `Region` (code, name Json, sort) · `District` (regionId, code, name Json, sort, active).
 - `User` (phone unique, name?, locale, status, deletedAt).
 - `UserRole` (userId, role enum: CUSTOMER, MODERATOR, ADMIN, SUPER_ADMIN).
@@ -74,6 +76,7 @@ erDiagram
 - `AuditLog` (actorId, action, entityType, entityId, before/after Json (masked), requestId, ip, createdAt). Append-only.
 
 **Phase 4 — marketplace core**
+
 - `Store` (slug unique, name Json, status, deletedAt) · `StoreMember` (storeId, userId, role: SELLER_OWNER | SELLER_STAFF; unique pair).
 - `Category` (parentId, slug unique, name Json, sort, active).
 - `Attribute` (code, name Json, type) · `AttributeValue` · `CategoryAttribute`.
@@ -90,6 +93,7 @@ erDiagram
 - `IdempotencyKey` (userId, key, requestHash, response Json, createdAt; unique userId+key).
 
 **Phase 6 — payments, delivery, money**
+
 - `PaymentAttempt` (orderId, provider, externalId, amountTiyin, status, idempotencyKey, rawPayload Json without secrets).
 - `Refund` (paymentAttemptId, amountTiyin, status, reason).
 - `DeliveryZone`, `DeliveryZoneDistrict`, `PickupPoint` (address, coordinates, hours).
@@ -98,10 +102,12 @@ erDiagram
 - `CommissionRule` (categoryId? / storeId?, rateBasisPoints).
 
 ## State machines
+
 Implemented as explicit transition tables in code and tested. Every transition
 writes an `OrderEvent`.
 
 ### Order (customer-facing)
+
 ```mermaid
 stateDiagram-v2
   [*] --> CREATED: cash/card on delivery
@@ -117,11 +123,13 @@ stateDiagram-v2
   COMPLETED --> [*]
   CANCELLED --> [*]
 ```
+
 **Final states:** `COMPLETED`, `CANCELLED`. "All shipments resolved" = every
 `SellerOrder` is in a final state. Returns after completion are handled at
 `SellerOrder` level (and refunds in Phase 6); the `Order` stays `COMPLETED`.
 
 ### SellerOrder (shipment per store)
+
 ```mermaid
 stateDiagram-v2
   [*] --> NEW
@@ -137,6 +145,7 @@ stateDiagram-v2
   RETURN_REQUESTED --> RETURNED
   RETURN_REQUESTED --> RETURN_REJECTED
 ```
+
 **Final states:** `CANCELLED_BY_SELLER`, `CANCELLED_BY_CUSTOMER`,
 `DELIVERY_FAILED`, `RETURNED`, `RETURN_REJECTED`, and `DELIVERED` once the
 return window (configurable, default 10 days — to verify against consumer law)
@@ -144,12 +153,14 @@ has closed. `DELIVERY_FAILED` releases stock back. Cancellation releases the
 reservation.
 
 ### Product
+
 `DRAFT → PENDING_REVIEW → APPROVED | REJECTED`; `REJECTED → DRAFT` (edit);
 any → `ARCHIVED`. Editing an `APPROVED` product's title/images/category sends it
 back to `PENDING_REVIEW` (price/stock edits do not). Only `APPROVED`, not
 deleted, with an active in-stock variant, from an active store is visible.
 
 ## Inventory and concurrency
+
 - Reservation inside the order transaction using a conditional update:
   `UPDATE "ProductVariant" SET stock = stock - $n WHERE id = $id AND stock >= $n`.
   0 rows updated → out of stock → whole transaction rolls back.
@@ -158,6 +169,7 @@ deleted, with an active in-stock variant, from an active store is visible.
 - Concurrency test with parallel requests against real PostgreSQL (Phase 4).
 
 ## Constraints and indexes to enforce
+
 - Unique: `User.phone`, `Store.slug`, `Category.slug`, `(storeId, sku)`,
   `(userId, idempotency key)`, `Order.number`, `Session.tokenHash`,
   `(provider, externalId)` on payments, `(storeId, userId)` on members.
@@ -168,14 +180,15 @@ deleted, with an active in-stock variant, from an active store is visible.
   `OtpChallenge(phone, createdAt)`, GIN on product search vector.
 
 ## Deletion and retention
-| Data | Rule |
-|---|---|
-| User | Soft delete; personal fields anonymised on account deletion request, orders kept with snapshots. |
-| Store, Product | Soft delete; never hard-deleted while referenced by orders. |
-| Order, OrderItem, OrderEvent, PaymentAttempt, Refund, LedgerEntry, Payout, AuditLog | Never deleted. |
-| Session | Expired/revoked rows purged after 30 days. |
-| OtpChallenge | Purged after 24 hours. |
-| IdempotencyKey | Purged after 7 days. |
+
+| Data                                                                                | Rule                                                                                             |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| User                                                                                | Soft delete; personal fields anonymised on account deletion request, orders kept with snapshots. |
+| Store, Product                                                                      | Soft delete; never hard-deleted while referenced by orders.                                      |
+| Order, OrderItem, OrderEvent, PaymentAttempt, Refund, LedgerEntry, Payout, AuditLog | Never deleted.                                                                                   |
+| Session                                                                             | Expired/revoked rows purged after 30 days.                                                       |
+| OtpChallenge                                                                        | Purged after 24 hours.                                                                           |
+| IdempotencyKey                                                                      | Purged after 7 days.                                                                             |
 
 Exact legal retention periods (tax, consumer protection, personal data) are to
 be verified with a lawyer — see `SECURITY.md`.
