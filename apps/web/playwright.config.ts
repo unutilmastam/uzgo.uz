@@ -37,6 +37,7 @@ export default defineConfig({
         CORS_ORIGINS: `http://localhost:${String(PORT)}`,
         AUTH_SECRET: 'e2e-only-secret-'.padEnd(48, 'x'),
         SMS_PROVIDER: 'fake',
+        TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
         OTP_IP_HOURLY_LIMIT: '10000',
       },
     },

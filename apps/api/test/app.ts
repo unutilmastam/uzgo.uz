@@ -4,6 +4,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { base32Decode, timeStep, totpCode } from '../src/auth/totp.js';
+import { SessionService } from '../src/auth/session.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { SMS_PROVIDER } from '../src/sms/sms.provider.js';
 import type { FakeSmsProvider } from '../src/sms/fake-sms.provider.js';
@@ -23,6 +25,8 @@ export async function createTestApp(
     BODY_LIMIT: '1kb',
     AUTH_SECRET: 'test-secret-'.padEnd(48, 'x'),
     SMS_PROVIDER: 'fake',
+    TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+    STAFF_TOTP_REQUIRED: 'true',
     OTP_IP_HOURLY_LIMIT: '10000',
     // Lets each test simulate its own client IP via X-Forwarded-For.
     TRUST_PROXY: '1',
@@ -73,4 +77,35 @@ export async function login(
   const cookie = setCookie[0]?.split(';')[0];
   if (!cookie) throw new Error('No session cookie');
   return { cookie, phone, userId: (res.body as { user: { id: string } }).user.id };
+}
+
+/** Grants a staff role and completes TOTP enrolment, so the session passes the second factor. */
+export async function loginStaff(
+  app: NestExpressApplication,
+  role: 'MODERATOR' | 'ADMIN' | 'SUPER_ADMIN',
+): Promise<{ cookie: string; phone: string; userId: string; secret: string }> {
+  const session = await login(app);
+  await app.get(PrismaService).userRole.create({ data: { userId: session.userId, role } });
+  const setup = await request(app.getHttpServer())
+    .post('/api/v1/auth/totp/setup')
+    .set('Cookie', session.cookie)
+    .set('Origin', TEST_ORIGIN)
+    .set('X-Forwarded-For', randomIp())
+    .expect(200);
+  const secret = (setup.body as { secret: string }).secret;
+  await request(app.getHttpServer())
+    .post('/api/v1/auth/totp/enable')
+    .set('Cookie', session.cookie)
+    .set('Origin', TEST_ORIGIN)
+    .set('X-Forwarded-For', randomIp())
+    .send({ code: totpCode(base32Decode(secret), timeStep()) })
+    .expect(204);
+  return { ...session, secret };
+}
+
+/** Another signed-in device for an existing user (skips the OTP cooldown). */
+export async function newSession(app: NestExpressApplication, userId: string): Promise<string> {
+  const sessions = app.get(SessionService);
+  const { token } = await sessions.create(userId, { ip: randomIp() });
+  return `${sessions.cookieName}=${token}`;
 }

@@ -94,6 +94,7 @@ model User {
   orders          Order[]
   orderEvents     OrderEvent[]
   idempotencyKeys IdempotencyKey[]
+  staffTotps      StaffTotp[]
 }
 
 model UserProfile {
@@ -122,18 +123,20 @@ model UserRole {
 }
 
 model Session {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  userId     String    @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid(7)) @db.Uuid
+  userId         String    @db.Uuid
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// SHA-256 of the opaque token; the token itself is never stored.
-  tokenHash  String    @unique
-  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
-  lastSeenAt DateTime  @default(now()) @db.Timestamptz(3)
-  expiresAt  DateTime  @db.Timestamptz(3)
-  revokedAt  DateTime? @db.Timestamptz(3)
+  tokenHash      String    @unique
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  lastSeenAt     DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt      DateTime  @db.Timestamptz(3)
+  revokedAt      DateTime? @db.Timestamptz(3)
+  /// When this session passed the staff second factor (TOTP).
+  totpVerifiedAt DateTime? @db.Timestamptz(3)
   /// HMAC of the client IP (privacy: raw IPs are not stored).
-  ipHash     String?
-  userAgent  String?
+  ipHash         String?
+  userAgent      String?
 
   @@index([userId])
   @@index([expiresAt])
@@ -152,6 +155,20 @@ model OtpCode {
 
   @@index([phone, createdAt])
   @@index([ipHash, createdAt])
+}
+
+/// Staff second factor (RFC 6238 TOTP). The secret is encrypted (AES-256-GCM).
+model StaffTotp {
+  userId          String    @id @db.Uuid
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secretEncrypted String
+  enabledAt       DateTime? @db.Timestamptz(3)
+  /// Last accepted 30-second time step (codes cannot be replayed).
+  lastUsedStep    BigInt?
+  failedAttempts  Int       @default(0)
+  lockedUntil     DateTime? @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
 }
 
 // ─── Audit (append-only; UPDATE/DELETE blocked by a trigger) ────────────────
@@ -243,9 +260,15 @@ model CategoryAttribute {
 // ─── Stores and products (Phase 4) ─────────────────────────────────────────
 
 enum StoreStatus {
-  PENDING // created, awaiting approval (Phase 5 onboarding)
+  PENDING // application submitted, awaiting admin review
   ACTIVE
+  REJECTED
   SUSPENDED
+}
+
+enum LegalType {
+  INDIVIDUAL_ENTREPRENEUR // YaTT / ИП
+  LEGAL_ENTITY // MChJ etc.
 }
 
 model Store {
@@ -259,6 +282,15 @@ model Store {
   districtId   String?          @db.Uuid
   district     District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
   logoKey      String?
+  /// Seller details from the application (fields only; verified manually by staff).
+  legalType    LegalType?
+  legalName    String?
+  /// STIR / INN (9 digits) of the entity or entrepreneur.
+  taxId        String?
+  contactPhone String?
+  reviewedAt   DateTime?        @db.Timestamptz(3)
+  reviewedById String?          @db.Uuid
+  reviewNote   String?
   createdAt    DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
   deletedAt    DateTime?        @db.Timestamptz(3)
@@ -298,25 +330,29 @@ enum ProductStatus {
 }
 
 model Product {
-  id           String                   @id @default(uuid(7)) @db.Uuid
-  storeId      String                   @db.Uuid
-  store        Store                    @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  categoryId   String                   @db.Uuid
-  category     Category                 @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  slug         String                   @unique
-  title        Json
-  description  Json
-  status       ProductStatus            @default(DRAFT)
+  id             String                   @id @default(uuid(7)) @db.Uuid
+  storeId        String                   @db.Uuid
+  store          Store                    @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  categoryId     String                   @db.Uuid
+  category       Category                 @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  slug           String                   @unique
+  title          Json
+  description    Json
+  status         ProductStatus            @default(DRAFT)
+  /// Moderator note shown to the seller (e.g. rejection reason).
+  moderationNote String?
+  submittedAt    DateTime?                @db.Timestamptz(3)
+  reviewedAt     DateTime?                @db.Timestamptz(3)
   /// Normalised text for search (uz + ru titles, Latin/Cyrillic folded, apostrophes removed).
-  searchText   String                   @default("")
+  searchText     String                   @default("")
   /// GENERATED ALWAYS AS (to_tsvector('simple', "searchText")) STORED — see migration.
-  searchVector Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, \"searchText\")"))
-  createdAt    DateTime                 @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime                 @updatedAt @db.Timestamptz(3)
-  deletedAt    DateTime?                @db.Timestamptz(3)
-  variants     ProductVariant[]
-  images       ProductImage[]
-  attributes   ProductAttributeValue[]
+  searchVector   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, \"searchText\")"))
+  createdAt      DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                 @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?                @db.Timestamptz(3)
+  variants       ProductVariant[]
+  images         ProductImage[]
+  attributes     ProductAttributeValue[]
 
   @@index([status, categoryId])
   @@index([storeId, status])

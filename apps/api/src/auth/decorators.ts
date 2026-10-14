@@ -12,6 +12,14 @@ export const Public = () => SetMetadata(IS_PUBLIC, true);
 /** Require at least one of the given roles (checked on the server for every request). */
 export const Roles = (...roles: Role[]) => SetMetadata(REQUIRED_ROLES, roles);
 
+export const REQUIRE_STAFF_TOTP = 'auth:staffTotp';
+
+/**
+ * Staff routes (moderation, administration): the session must have passed the
+ * TOTP second factor (unless STAFF_TOTP_REQUIRED=false outside production).
+ */
+export const RequireStaffTotp = () => SetMetadata(REQUIRE_STAFF_TOTP, true);
+
 /** The authenticated session of the current request. */
 export const CurrentAuth = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): AuthContext => {

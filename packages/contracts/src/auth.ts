@@ -84,3 +84,22 @@ export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 
 /** POST /api/v1/admin/users/:userId/roles */
 export const grantRoleSchema = z.strictObject({ role: roleSchema });
+
+/** POST /api/v1/auth/totp/enable and /auth/totp/verify */
+export const totpCodeSchema = z.strictObject({ code: otpCodeSchema });
+export type TotpCode = z.infer<typeof totpCodeSchema>;
+
+/** GET /api/v1/auth/totp/status */
+export const totpStatusSchema = z.object({
+  enabled: z.boolean(),
+  sessionVerified: z.boolean(),
+  required: z.boolean(),
+});
+export type TotpStatus = z.infer<typeof totpStatusSchema>;
+
+/** POST /api/v1/auth/totp/setup — the secret is shown once. */
+export const totpSetupResponseSchema = z.object({
+  secret: z.string(),
+  otpauthUri: z.string(),
+});
+export type TotpSetupResponse = z.infer<typeof totpSetupResponseSchema>;

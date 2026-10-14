@@ -18,7 +18,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { clientIp } from '../common/http.js';
 import { AppException } from '../common/http-exception.filter.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
-import { CurrentAuth, Roles } from '../auth/decorators.js';
+import { CurrentAuth, RequireStaffTotp, Roles } from '../auth/decorators.js';
 import type { AuthContext } from '../auth/auth.types.js';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -29,6 +29,7 @@ const PRIVILEGED: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
 @ApiTags('admin')
 @Controller('admin/users/:userId/roles')
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+@RequireStaffTotp()
 export class AdminRolesController {
   constructor(
     private readonly prisma: PrismaService,

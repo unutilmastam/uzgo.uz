@@ -7,6 +7,7 @@ const valid = {
   CORS_ORIGINS: 'http://localhost:3000, https://uzgo.uz',
   AUTH_SECRET: 'x'.repeat(40),
   SMS_PROVIDER: 'dev',
+  TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
 };
 
 function errorOf(fn: () => unknown): EnvValidationError {
@@ -80,6 +81,22 @@ describe('parseEnv', () => {
       }),
     );
     expect(error.issues.some((issue) => issue.startsWith('STORAGE_DRIVER'))).toBe(true);
+  });
+
+  it('requires a 32-byte TOTP key and keeps staff 2FA on in production', () => {
+    expect(() => parseEnv({ ...valid, TOTP_ENCRYPTION_KEY: 'c2hvcnQ=' })).toThrow(
+      EnvValidationError,
+    );
+    expect(parseEnv(valid).STAFF_TOTP_REQUIRED).toBe(true);
+    const error = errorOf(() =>
+      parseEnv({
+        ...valid,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://uzgo.uz',
+        STAFF_TOTP_REQUIRED: 'false',
+      }),
+    );
+    expect(error.issues.some((issue) => issue.startsWith('STAFF_TOTP_REQUIRED'))).toBe(true);
   });
 
   it('requires a long AUTH_SECRET', () => {

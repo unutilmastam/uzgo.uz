@@ -45,6 +45,12 @@ export const envSchema = z
     SMS_PROVIDER: z.enum(['dev', 'fake']),
     /** Max OTP requests per client IP per hour (abuse / SMS pumping protection). */
     OTP_IP_HOURLY_LIMIT: z.coerce.number().int().min(1).max(10_000).default(20),
+    /** 32-byte key (base64) that encrypts staff TOTP secrets at rest. */
+    TOTP_ENCRYPTION_KEY: z
+      .string()
+      .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64-encoded'),
+    /** Staff (moderator/admin) routes require a verified TOTP second factor. Always true in production. */
+    STAFF_TOTP_REQUIRED: booleanString.default(true),
     /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),
@@ -67,6 +73,13 @@ export const envSchema = z
       });
     }
     if (env.NODE_ENV !== 'production') return;
+    if (!env.STAFF_TOTP_REQUIRED) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STAFF_TOTP_REQUIRED'],
+        message: 'the staff second factor cannot be disabled in production',
+      });
+    }
     // Only the local-disk adapter exists so far; production needs object storage
     // (S3-compatible adapter, added with the hosting decision before Phase 7).
     ctx.addIssue({

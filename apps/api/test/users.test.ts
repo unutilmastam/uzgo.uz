@@ -8,7 +8,7 @@ import {
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { createTestApp, login, TEST_ORIGIN } from './app.js';
+import { createTestApp, login, loginStaff, TEST_ORIGIN } from './app.js';
 
 const errorCode = (body: unknown) => apiErrorSchema.parse(body).error.code;
 
@@ -107,11 +107,7 @@ describe('geo, profile and roles', () => {
   });
 
   describe('role management (RBAC)', () => {
-    async function makeRole(role: 'ADMIN' | 'SUPER_ADMIN') {
-      const session = await login(app);
-      await prisma.userRole.create({ data: { userId: session.userId, role } });
-      return session;
-    }
+    const makeRole = (role: 'ADMIN' | 'SUPER_ADMIN') => loginStaff(app, role);
 
     const grant = (cookie: string, userId: string, role: string) =>
       http()

@@ -6,6 +6,7 @@ import { hmac, randomToken, sha256 } from '../common/crypto.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { AuthContext } from './auth.types.js';
+import { TOTP_SESSION_TTL_MS } from './totp.service.js';
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const TOUCH_INTERVAL_MS = 5 * 60 * 1000;
@@ -64,6 +65,7 @@ export class SessionService {
         expiresAt: true,
         revokedAt: true,
         lastSeenAt: true,
+        totpVerifiedAt: true,
         user: {
           select: {
             id: true,
@@ -89,6 +91,9 @@ export class SessionService {
     }
     return {
       sessionId: session.id,
+      totpVerified:
+        session.totpVerifiedAt !== null &&
+        now.getTime() - session.totpVerifiedAt.getTime() < TOTP_SESSION_TTL_MS,
       user: {
         id: session.user.id,
         phone: session.user.phone,
