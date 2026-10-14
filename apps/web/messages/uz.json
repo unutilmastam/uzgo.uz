@@ -93,7 +93,45 @@
     "languagesTitle": "Oʻzbek va rus tilida",
     "languagesText": "Oʻzingizga qulay tilda xarid qiling"
   },
+  "catalog": {
+    "title": "Katalog",
+    "subcategories": "Boʻlimlar",
+    "breadcrumbs": "Navigatsiya zanjiri"
+  },
+  "listing": {
+    "results": "{count, plural, other {# ta mahsulot}}",
+    "sort": "Saralash",
+    "sort_relevance": "Mosligi boʻyicha",
+    "sort_newest": "Yangilari",
+    "sort_price_asc": "Avval arzonlari",
+    "sort_price_desc": "Avval qimmatlari",
+    "filters": "Filtrlar",
+    "price": "Narx, soʻm",
+    "priceFrom": "dan",
+    "priceTo": "gacha",
+    "apply": "Qoʻllash",
+    "reset": "Tozalash",
+    "emptyTitle": "Hech narsa topilmadi",
+    "emptyDescription": "Soʻrovni yoki filtrlarni oʻzgartirib koʻring."
+  },
+  "store": {
+    "products": "Doʻkon mahsulotlari",
+    "location": "Manzil",
+    "demoStore": "Demo doʻkon: nomi va mahsulotlari namuna uchun."
+  },
   "product": {
+    "description": "Tavsif",
+    "specs": "Xususiyatlar",
+    "seller": "Sotuvchi",
+    "inStock": "Sotuvda bor",
+    "fewLeft": "{count} ta qoldi",
+    "outOfStock": "Sotuvda yoʻq",
+    "quantity": "Soni",
+    "decrease": "Kamaytirish",
+    "increase": "Koʻpaytirish",
+    "noImage": "Rasm hozircha yoʻq",
+    "payOnDelivery": "Yetkazib berishda naqd yoki karta bilan toʻlov",
+    "demoProduct": "Bu demo mahsulot: nomi, doʻkoni va narxi namuna uchun.",
     "addToCart": "Savatga",
     "addToCartLabel": "{title} — savatga qoʻshish",
     "cartSoon": "Savat tez orada ishga tushadi.",
@@ -103,8 +141,6 @@
   "search": {
     "title": "Qidiruv",
     "resultsFor": "“{query}” boʻyicha natijalar",
-    "emptyTitle": "Hozircha mahsulotlar yoʻq",
-    "emptyDescription": "Katalog tez orada ishga tushadi. Keyinroq qayta urinib koʻring.",
     "backHome": "Bosh sahifaga"
   },
   "cart": {

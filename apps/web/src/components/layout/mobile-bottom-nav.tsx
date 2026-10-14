@@ -7,7 +7,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 
 const ITEMS = [
   { href: '/', icon: House, label: 'common.home' },
-  { href: '/search', icon: LayoutGrid, label: 'header.catalog' },
+  { href: '/catalog', icon: LayoutGrid, label: 'header.catalog' },
   { href: '/cart', icon: ShoppingCart, label: 'header.cart' },
   { href: '/account', icon: UserRound, label: 'header.account' },
 ] as const;
@@ -25,7 +25,12 @@ export function MobileBottomNav() {
     >
       <ul className="grid grid-cols-4">
         {ITEMS.map(({ href, icon: Icon, label }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const active =
+            href === '/'
+              ? pathname === '/'
+              : href === '/catalog'
+                ? /^\/(catalog|c|p|s|search)(\/|$)/.test(pathname)
+                : pathname.startsWith(href);
           return (
             <li key={href}>
               <Link

@@ -57,15 +57,18 @@ test('language switch keeps the current page and query', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Электроника');
 });
 
-test('search form submits to the search page', async ({ page }) => {
+test('search finds products across scripts and apostrophe variants', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/uz');
   const search = page.getByRole('search').getByRole('searchbox');
-  await search.fill('choynak');
+  await search.fill('чойнак');
   await search.press('Enter');
-  await expect(page).toHaveURL(/\/uz\/search\?q=choynak/);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('choynak');
-  await expect(page.getByRole('status')).toContainText('Hozircha mahsulotlar yoʻq');
+  await expect(page).toHaveURL(/\/uz\/search\?q=/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('чойнак');
+  await expect(page.getByRole('link', { name: /Bahor elektr choynagi/ })).toBeVisible();
+
+  await page.goto(`/ru/search?q=${encodeURIComponent("ko'k choy")}`);
+  await expect(page.getByRole('link', { name: /Зелёный чай/ })).toBeVisible();
 });
 
 test('catalog sheet opens, lists categories and closes', async ({ page }) => {
@@ -74,18 +77,59 @@ test('catalog sheet opens, lists categories and closes', async ({ page }) => {
   await page.getByRole('button', { name: 'Каталог' }).click();
   const dialog = page.getByRole('dialog', { name: 'Все категории' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('link')).toHaveCount(8);
+  await expect(dialog.getByRole('link', { name: 'Электроника' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Смартфоны' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 });
 
-test('demo add-to-cart shows an honest toast', async ({ page }) => {
-  await page.goto('/uz');
-  await page
-    .getByRole('button', { name: /savatga qoʻshish/ })
-    .first()
-    .click();
-  await expect(page.getByText('Savat tez orada ishga tushadi.')).toBeVisible();
+test('category page filters by attribute and sorts by price', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/uz/c/smartphones');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Smartfonlar');
+  const filters = page.locator('aside');
+  await filters.getByLabel('256 GB').check();
+  await filters.getByRole('button', { name: 'Qoʻllash' }).click();
+  await expect(page).toHaveURL(/attr=memory%3A256gb/);
+  await expect(page.getByRole('article')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: /Nova X5/ })).toBeVisible();
+
+  await page.goto('/uz/c/electronics?sort=price_asc');
+  const prices = await page.getByRole('article').locator('.text-lg').allTextContents();
+  const numbers = prices.map((p) => Number(p.replace(/\D/g, '')));
+  expect(numbers.length).toBeGreaterThan(1);
+  expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+});
+
+test('product page switches variants and shows the right price', async ({ page }) => {
+  await page.goto('/uz/p/nova-x5-smartfon');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Nova X5 smartfon, 6,5"');
+  await expect(page.getByText('2 799 000 soʻm').first()).toBeVisible();
+  await page.getByRole('button', { name: '256 GB' }).click();
+  await expect(page.getByRole('button', { name: '256 GB' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByText('3 199 000 soʻm').first()).toBeVisible();
+  await expect(page.getByTestId('availability')).toHaveText('5 ta qoldi');
+  await page.getByRole('link', { name: /Demo Elektronika/ }).click();
+  await expect(page).toHaveURL(/\/uz\/s\/demo-elektronika$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Demo Elektronika');
+});
+
+test('product pages carry SEO metadata and structured data', async ({ page, request }) => {
+  await page.goto('/ru/p/bahor-elektr-choynak');
+  await expect(page).toHaveTitle(/Электрочайник Bahor/);
+  const ld = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}',
+  ) as {
+    offers: { priceCurrency: string; price: string };
+  };
+  expect(ld.offers).toMatchObject({ priceCurrency: 'UZS', price: '249000' });
+  const sitemap = await (await request.get('/sitemap.xml')).text();
+  expect(sitemap).toContain('/uz/p/nova-x5-smartfon');
+  expect(sitemap).not.toContain('moderatsiyadagi-smartfon');
+  expect(await (await request.get('/robots.txt')).text()).toContain('Disallow: /');
 });
 
 test('theme toggle switches to dark mode and persists', async ({ page }) => {

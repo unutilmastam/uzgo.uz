@@ -93,7 +93,45 @@
     "languagesTitle": "На узбекском и русском",
     "languagesText": "Покупайте на удобном языке"
   },
+  "catalog": {
+    "title": "Каталог",
+    "subcategories": "Разделы",
+    "breadcrumbs": "Навигационная цепочка"
+  },
+  "listing": {
+    "results": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
+    "sort": "Сортировка",
+    "sort_relevance": "По релевантности",
+    "sort_newest": "Новинки",
+    "sort_price_asc": "Сначала дешевле",
+    "sort_price_desc": "Сначала дороже",
+    "filters": "Фильтры",
+    "price": "Цена, сум",
+    "priceFrom": "от",
+    "priceTo": "до",
+    "apply": "Применить",
+    "reset": "Сбросить",
+    "emptyTitle": "Ничего не найдено",
+    "emptyDescription": "Попробуйте изменить запрос или фильтры."
+  },
+  "store": {
+    "products": "Товары магазина",
+    "location": "Адрес",
+    "demoStore": "Демо-магазин: название и товары для примера."
+  },
   "product": {
+    "description": "Описание",
+    "specs": "Характеристики",
+    "seller": "Продавец",
+    "inStock": "В наличии",
+    "fewLeft": "Осталось {count} шт.",
+    "outOfStock": "Нет в наличии",
+    "quantity": "Количество",
+    "decrease": "Уменьшить",
+    "increase": "Увеличить",
+    "noImage": "Фото пока нет",
+    "payOnDelivery": "Оплата наличными или картой при получении",
+    "demoProduct": "Это демо-товар: название, магазин и цена для примера.",
     "addToCart": "В корзину",
     "addToCartLabel": "Добавить в корзину: {title}",
     "cartSoon": "Корзина скоро заработает.",
@@ -103,8 +141,6 @@
   "search": {
     "title": "Поиск",
     "resultsFor": "Результаты по запросу «{query}»",
-    "emptyTitle": "Пока нет товаров",
-    "emptyDescription": "Каталог скоро заработает. Попробуйте позже.",
     "backHome": "На главную"
   },
   "cart": {

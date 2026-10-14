@@ -2,6 +2,7 @@ import {
   Baby,
   Dumbbell,
   type LucideProps,
+  Package,
   Shirt,
   ShoppingBasket,
   Smartphone,
@@ -9,7 +10,6 @@ import {
   Sparkles,
   WashingMachine,
 } from 'lucide-react';
-import type { CategoryIcon as IconName } from '@/fixtures/catalog';
 
 const ICONS = {
   shirt: Shirt,
@@ -20,9 +20,19 @@ const ICONS = {
   sparkles: Sparkles,
   baby: Baby,
   dumbbell: Dumbbell,
-} satisfies Record<IconName, unknown>;
+} as const;
 
-export function CategoryIcon({ name, ...props }: LucideProps & { name: IconName }) {
-  const Icon = ICONS[name];
+export type CategoryIconName = keyof typeof ICONS;
+
+export function isCategoryIcon(name: string | null | undefined): name is CategoryIconName {
+  return typeof name === 'string' && name in ICONS;
+}
+
+/** Category icon by name (from the API); a neutral package icon for unknown names. */
+export function CategoryIcon({
+  icon,
+  ...props
+}: Omit<LucideProps, 'icon'> & { icon: string | null | undefined }) {
+  const Icon = isCategoryIcon(icon) ? ICONS[icon] : Package;
   return <Icon aria-hidden="true" {...props} />;
 }

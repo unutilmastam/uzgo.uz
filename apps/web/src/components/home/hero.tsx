@@ -5,10 +5,10 @@ import { ChevronRight } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { HeroArt } from '@/components/art/service-art';
 import { CategoryIcon } from '@/components/category-icon';
-import { categories } from '@/fixtures/catalog';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
-import { CATEGORY_TINT } from '@/lib/category-style';
+import { getCategoryTreeSafe } from '@/lib/catalog-api';
+import { categoryTint } from '@/lib/category-style';
 
 const PROMOS = [
   { key: 'banner2', href: '/info/sell', tone: 'from-[#024d32] via-[#03653f] to-[#047a4e]' },
@@ -22,6 +22,7 @@ const PROMOS = [
 export async function Hero() {
   const t = await getTranslations();
   const locale = (await getLocale()) as Locale;
+  const categories = await getCategoryTreeSafe();
 
   return (
     <section aria-label={t('home.bannersLabel')} className="grid gap-3 lg:grid-cols-[15rem_1fr]">
@@ -33,17 +34,17 @@ export async function Hero() {
           {categories.map((category) => (
             <li key={category.slug}>
               <Link
-                href={{ pathname: '/search', query: { category: category.slug } }}
+                href={`/c/${category.slug}`}
                 className="group flex min-h-10 items-center gap-3 rounded-lg px-2 text-sm font-medium hover:bg-muted"
               >
                 <span
                   aria-hidden="true"
                   className={cn(
                     'flex size-8 items-center justify-center rounded-md',
-                    CATEGORY_TINT[category.icon],
+                    categoryTint(category.icon),
                   )}
                 >
-                  <CategoryIcon name={category.icon} className="size-4.5" />
+                  <CategoryIcon icon={category.icon} className="size-4.5" />
                 </span>
                 <span className="flex-1">{category.name[locale]}</span>
                 <ChevronRight
@@ -72,7 +73,7 @@ export async function Hero() {
               size="sm"
               className="w-fit border-0 bg-white text-[#0f2e6e] hover:bg-white/90 md:h-11 md:px-5"
             >
-              <Link href="/search">{t('home.banner1Cta')}</Link>
+              <Link href="/catalog">{t('home.banner1Cta')}</Link>
             </Button>
           </div>
           <HeroArt className="pointer-events-none absolute right-0 bottom-0 hidden h-[92%] w-[46%] md:block" />

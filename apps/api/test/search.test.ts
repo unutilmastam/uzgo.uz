@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { reindexProducts } from '../src/search/search-index.js';
 import { createTestApp } from './app.js';
-import { createProduct, createStore } from './fixtures.js';
+import { createProduct, createStore, retireTestStores } from './fixtures.js';
 
 describe('product search and listings', () => {
   let app: NestExpressApplication;
@@ -66,6 +66,7 @@ describe('product search and listings', () => {
   });
 
   afterAll(async () => {
+    await retireTestStores(prisma);
     await app.close();
   });
 

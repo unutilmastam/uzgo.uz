@@ -11,6 +11,7 @@ import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { themeInitScript } from '@/components/theme';
 import { routing } from '@/i18n/routing';
+import { getServerEnv } from '@/lib/server-env';
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
@@ -23,8 +24,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: t('title'), template: `%s · UZGO` },
     description: t('description'),
+    metadataBase: new URL(getServerEnv().PUBLIC_SITE_URL),
     // Not public yet: keep search engines out until launch (Phase 7).
-    robots: { index: false, follow: false },
+    ...(getServerEnv().PUBLIC_INDEXING ? {} : { robots: { index: false, follow: false } }),
     alternates: { languages: { uz: '/uz', ru: '/ru' } },
   };
 }

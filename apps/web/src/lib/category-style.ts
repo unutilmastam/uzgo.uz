@@ -1,7 +1,7 @@
-import type { CategoryIcon } from '@/fixtures/catalog';
+import { isCategoryIcon, type CategoryIconName } from '@/components/category-icon';
 
-/** Decorative pastel tint per category (icons are aria-hidden). */
-export const CATEGORY_TINT: Record<CategoryIcon, string> = {
+/** Decorative pastel tint per category icon (icons are aria-hidden). */
+const CATEGORY_TINT: Record<CategoryIconName, string> = {
   shirt: 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300',
   smartphone: 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
   'washing-machine': 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
@@ -11,3 +11,7 @@ export const CATEGORY_TINT: Record<CategoryIcon, string> = {
   baby: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300',
   dumbbell: 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300',
 };
+
+export function categoryTint(icon: string | null | undefined): string {
+  return isCategoryIcon(icon) ? CATEGORY_TINT[icon] : 'bg-secondary text-primary';
+}

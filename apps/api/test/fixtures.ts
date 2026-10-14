@@ -56,3 +56,14 @@ export async function createProduct(
   await reindexProducts(prisma, [product.id]);
   return product;
 }
+
+/**
+ * Hides stores created by tests so they never show up on the storefront of
+ * the shared development/CI database (call in afterAll).
+ */
+export async function retireTestStores(prisma: PrismaService): Promise<void> {
+  await prisma.store.updateMany({
+    where: { slug: { startsWith: 'test-store-' }, status: { not: 'SUSPENDED' } },
+    data: { status: 'SUSPENDED' },
+  });
+}

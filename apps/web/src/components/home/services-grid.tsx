@@ -38,7 +38,7 @@ export async function ServicesGrid() {
               title={t(`services.${key}Title`)}
               description={t(`services.${key}Text`)}
               statusLabel={live ? t('services.live') : t('common.comingSoon')}
-              {...(live ? { href: '/search', linkAs: Link } : {})}
+              {...(live ? { href: '/catalog', linkAs: Link } : {})}
             />
           </li>
         ))}

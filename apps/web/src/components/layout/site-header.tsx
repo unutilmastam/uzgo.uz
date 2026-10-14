@@ -1,10 +1,11 @@
 import { Logo } from '@uzgo/ui/components/logo';
 import { ShoppingCart, UserRound } from 'lucide-react';
+import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ThemeToggle } from '@/components/theme';
-import { categories } from '@/fixtures/catalog';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
+import { getCategoryTreeSafe } from '@/lib/catalog-api';
 import { CatalogSheet } from './catalog-sheet';
 import { LocaleSwitcher } from './locale-switcher';
 import { SearchForm } from './search-form';
@@ -13,8 +14,13 @@ const iconLink =
   'hidden h-11 flex-col items-center justify-center gap-0.5 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground md:flex [&_svg]:size-5';
 
 export async function SiteHeader() {
-  const t = await getTranslations();
-  const locale = (await getLocale()) as Locale;
+  // Catalog data is live (cached briefly by the data cache), so pages render per request.
+  await connection();
+  const [t, locale, categories] = await Promise.all([
+    getTranslations(),
+    getLocale() as Promise<Locale>,
+    getCategoryTreeSafe(),
+  ]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -40,13 +46,13 @@ export async function SiteHeader() {
         <SearchForm id="search-mobile" />
       </div>
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 pb-2">
-        <CatalogSheet />
+        <CatalogSheet categories={categories} />
         <nav aria-label={t('header.categoriesNav')} className="min-w-0 flex-1">
           <ul className="flex snap-x gap-1 overflow-x-auto [scrollbar-width:none]">
             {categories.map((category) => (
               <li key={category.slug} className="snap-start">
                 <Link
-                  href={{ pathname: '/search', query: { category: category.slug } }}
+                  href={`/c/${category.slug}`}
                   className="inline-flex h-9 items-center rounded-md px-3 text-sm whitespace-nowrap text-foreground/80 hover:bg-muted hover:text-foreground"
                 >
                   {category.name[locale]}

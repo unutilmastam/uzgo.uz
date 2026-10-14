@@ -4,7 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { createTestApp } from './app.js';
-import { createProduct, createStore } from './fixtures.js';
+import { createProduct, createStore, retireTestStores } from './fixtures.js';
 
 describe('products and stores (storefront visibility)', () => {
   let app: NestExpressApplication;
@@ -17,6 +17,7 @@ describe('products and stores (storefront visibility)', () => {
   });
 
   afterAll(async () => {
+    await retireTestStores(prisma);
     await app.close();
   });
 

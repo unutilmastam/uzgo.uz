@@ -24,7 +24,16 @@ export class ProductsService {
         slug: true,
         title: true,
         description: true,
-        category: { select: { id: true, slug: true, name: true, icon: true, parentId: true } },
+        category: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            icon: true,
+            parentId: true,
+            parent: { select: { icon: true } },
+          },
+        },
         store: { select: { id: true, slug: true, name: true, isDemo: true } },
         attributes: {
           select: {
@@ -96,7 +105,7 @@ export class ProductsService {
       category: {
         slug: product.category.slug,
         name: product.category.name as Names,
-        icon: product.category.icon,
+        icon: product.category.icon ?? product.category.parent?.icon ?? null,
       },
       breadcrumbs,
       store: { ...product.store, name: product.store.name as Names },
