@@ -26,6 +26,8 @@ allowBuilds:
   '@scarf/scarf': false
   # File watcher used by dev tooling; ships prebuilt binaries.
   '@parcel/watcher': false
+  # Used by tsx; the platform binary comes from an optional dependency.
+  esbuild: false
 
 # Security overrides for vulnerable transitive dependencies (pnpm audit).
 # Remove once upstream packages ship the fixed versions.
