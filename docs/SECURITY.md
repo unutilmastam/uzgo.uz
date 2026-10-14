@@ -37,20 +37,64 @@ callbacks (Phase 6).
 | Dependency vulnerabilities                         | Lockfile, `pnpm audit`/dependency review in CI, secret scanning                                                                         |
 | Abuse / scraping / DoS (app level)                 | Rate limits, body size limits; network-level DoS handled by hosting/proxy                                                               |
 
-## Authentication rules
+## Authentication rules (implemented in Phase 3)
 
-- Customers: phone + OTP only. See `decisions/0004-otp-and-db-sessions.md`.
-- `DevSmsProvider` logs the code only when `NODE_ENV=development` and refuses to
-  start otherwise.
-- Staff (moderator/admin/super admin): OTP + TOTP before production.
-- Session lifetime: sliding (e.g. 30 days customers, shorter for staff — fixed in Phase 3).
+Customers log in with **phone + one-time SMS code** (ADR 0004, 0013).
+
+| Rule            | Value                                                                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code            | 6 digits from a CSPRNG; stored only as `HMAC-SHA256(AUTH_SECRET, phone:code)`                                                                                     |
+| Lifetime        | 180 s; single use (atomic consume — concurrent verifications cannot both succeed)                                                                                 |
+| Wrong attempts  | 5 per code, then the code is locked (audited `auth.otp_locked`)                                                                                                   |
+| Resend cooldown | 60 s per phone                                                                                                                                                    |
+| Per phone       | 5 codes / hour, 10 / day                                                                                                                                          |
+| Per IP          | `OTP_IP_HOURLY_LIMIT` codes / hour (default 20) + 5 requests / min burst limit                                                                                    |
+| Verify endpoint | 10 requests / min per IP                                                                                                                                          |
+| Concurrency     | requests for one phone are serialised with a PostgreSQL advisory lock                                                                                             |
+| Errors          | one generic `INVALID_CODE` for wrong / expired / used / locked codes; the request endpoint answers the same for known and unknown phones (no account enumeration) |
+| Phones          | normalised to E.164 with libphonenumber; DB `CHECK` enforces E.164                                                                                                |
+
+- **SMS adapters:** `DevSmsProvider` prints the code to the console and refuses
+  to exist unless `NODE_ENV=development`; `FakeSmsProvider` (in-memory) only
+  with `NODE_ENV=test`. Env validation rejects both in production, so a real
+  provider must be configured before launch (open decision).
+- **Sessions:** 256-bit random opaque token; only its SHA-256 is stored.
+  Cookie `__Host-uzgo_session` in production (`uzgo_session` in dev),
+  `HttpOnly; Secure (prod); SameSite=Lax; Path=/`, 30-day absolute expiry.
+  Logout revokes the session; logout-all revokes every session of the user.
+  Blocked or deleted users lose access immediately (checked on every request).
+- **Roles** are read from the database on every request, so granting or
+  revoking takes effect immediately.
+- **First super admin:** no default admin exists. After the owner logs in once:
+  `pnpm --filter @uzgo/api user:grant-role +998XXXXXXXXX SUPER_ADMIN` on the
+  server (audited `role.granted`, `via: cli`).
+- **Staff second factor (TOTP):** still required before production (Phase 5/7).
+- **Privacy:** client IPs are stored only as HMACs; audit metadata holds field
+  names and masked phones, never personal values or codes.
 
 ## Authorisation (RBAC)
 
 Roles: `CUSTOMER`, `SELLER_OWNER`, `SELLER_STAFF` (scoped per store via
-membership), `MODERATOR`, `ADMIN`, `SUPER_ADMIN`. Guards check role; services
-check ownership (store membership, order owner). UI hiding is cosmetic only.
-Deny by default.
+membership, Phase 5), `MODERATOR`, `ADMIN`, `SUPER_ADMIN`.
+
+- A global guard denies every route unless it is marked `@Public()`;
+  `@Roles(...)` adds role checks. UI hiding is cosmetic only.
+- Only `SUPER_ADMIN` can grant or revoke `ADMIN`/`SUPER_ADMIN`; nobody can
+  change their own roles. All role changes are audited.
+- Services add ownership checks (store membership, order owner) from Phase 4.
+
+## CSRF
+
+`SameSite=Lax` cookies plus an origin guard: every state-changing request
+(POST/PUT/PATCH/DELETE) must carry an allow-listed `Origin` or `Referer`;
+without either it is accepted only if it carries no cookies at all.
+
+## Audit log
+
+`AuditEvent` rows: `user.created`, `auth.login`, `auth.logout`,
+`auth.logout_all`, `auth.otp_locked`, `user.profile_updated`, `role.granted`,
+`role.revoked`. A PostgreSQL trigger rejects UPDATE and DELETE on the table.
+(Before production: run the app with a DB role without TRUNCATE on it.)
 
 ## HTTP hardening
 

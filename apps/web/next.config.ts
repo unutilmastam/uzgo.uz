@@ -3,7 +3,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
-const isDev = process.env.NODE_ENV !== 'production';
 const apiInternalUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
 
 // Baseline headers. A full nonce-based Content-Security-Policy is added with
@@ -27,13 +26,14 @@ const nextConfig: NextConfig = {
   headers() {
     return Promise.resolve([{ source: '/:path*', headers: securityHeaders }]);
   },
-  // Same-site API (docs/decisions/0007-same-site-api.md): in development the
-  // browser calls /api/* on the web origin and Next.js forwards it to the API.
-  // In production the reverse proxy does this.
+  // Same-site API (docs/decisions/0007-same-site-api.md): the browser calls
+  // /api/* on the web origin and Next.js forwards it to the API. In production
+  // the reverse proxy routes /api before it reaches Next.js; this rewrite then
+  // only serves single-host setups. API_INTERNAL_URL is read at build time here.
   rewrites() {
-    return Promise.resolve(
-      isDev ? [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }] : [],
-    );
+    return Promise.resolve([
+      { source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` },
+    ]);
   },
 };
 

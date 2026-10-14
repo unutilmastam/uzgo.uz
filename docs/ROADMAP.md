@@ -11,7 +11,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 1     | Env validation, health endpoints, Prisma connected, Docker Compose             | VERIFIED    |
 | 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
-| 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | NOT STARTED |
+| 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | IN PROGRESS |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | NOT STARTED |
 | 5     | Seller panel, moderation, admin panel                                          | NOT STARTED |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
@@ -29,6 +29,10 @@ commit 10f7c59 passed.
 
 Phase 2 notes: e2e ran locally with the session's preinstalled Chromium
 (`PLAYWRIGHT_CHROMIUM_EXECUTABLE`); CI installs Playwright's own Chromium.
+
+Phase 3 notes: API integration tests run against real PostgreSQL (64 tests);
+browser e2e logs in through the real API with the FakeSmsProvider. Staff TOTP
+is deliberately left for Phase 5 (admin panel) / Phase 7 (before production).
 
 ## Open decisions
 

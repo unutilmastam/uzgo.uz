@@ -8,12 +8,14 @@ import {
 } from '@uzgo/contracts';
 import type { Response } from 'express';
 import { z } from 'zod';
+import { Public } from '../auth/decorators.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const liveJsonSchema = z.toJSONSchema(healthLiveSchema) as Record<string, unknown>;
 const readyJsonSchema = z.toJSONSchema(healthReadySchema) as Record<string, unknown>;
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}

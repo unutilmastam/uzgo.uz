@@ -62,6 +62,31 @@ erDiagram
   User ||--o{ IdempotencyKey : sends
 ```
 
+## Implemented so far
+
+- **Phase 3:** `Region`, `District` (seeded), `User`, `UserProfile`,
+  `UserRole`, `Session`, `OtpCode`, `AuditEvent` — see
+  `apps/api/prisma/schema.prisma`. Store membership arrives with stores (Phase 4/5).
+  Hand-written SQL in the migration adds E.164 `CHECK`s, `attempts >= 0`,
+  `expiresAt > createdAt` and the append-only trigger on `AuditEvent`.
+
+## Geography reference data
+
+`apps/api/prisma/data/geo.json`, loaded by `pnpm db:seed` (idempotent upserts):
+14 top-level units (12 viloyat, Qoraqalpogʻiston Respublikasi, Toshkent shahri)
+and 206 districts = 175 tumans + 31 cities of regional significance, with Uzbek
+(Latin) and Russian names.
+
+- **Source:** State Statistics Committee of the Republic of Uzbekistan, SDMX
+  dataset 2.01.01.0036 "Tumanlar / Районы / Districts", updated 2025-03-26
+  (https://api.siat.stat.uz/media/uploads/sdmx/sdmx_data_307.pdf), taken via the
+  MIT-licensed package `uzbgeo@2.2.0` (ISO 3166-2 codes included). Not a runtime
+  dependency — the data was copied once.
+- Uzbek apostrophes normalised to U+02BB (oʻ, gʻ) and U+02BC (ʼ).
+- Districts are ordered: cities first, then tumans alphabetically. Example
+  Surxondaryo: Termiz shahri + 14 tumans.
+- Admin editing and delivery coverage per district come in Phases 5–6.
+
 ## Entities (summary)
 
 **Phase 3 — geo, users, auth, audit**

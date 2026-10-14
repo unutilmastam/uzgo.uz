@@ -39,8 +39,28 @@ export const envSchema = z
       .default('1mb'),
     SWAGGER_ENABLED: booleanString.optional(),
     TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
+    /** Secret for HMAC of OTP codes and IP addresses. Rotate = invalidates pending codes. */
+    AUTH_SECRET: z.string().min(32, 'must be at least 32 characters'),
+    /** dev: logs codes (development only). fake: in-memory (tests only). Real providers later. */
+    SMS_PROVIDER: z.enum(['dev', 'fake']),
+    /** Max OTP requests per client IP per hour (abuse / SMS pumping protection). */
+    OTP_IP_HOURLY_LIMIT: z.coerce.number().int().min(1).max(10_000).default(20),
   })
   .superRefine((env, ctx) => {
+    if (env.SMS_PROVIDER === 'dev' && env.NODE_ENV !== 'development') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMS_PROVIDER'],
+        message: 'the dev SMS provider is allowed only when NODE_ENV=development',
+      });
+    }
+    if (env.SMS_PROVIDER === 'fake' && env.NODE_ENV !== 'test') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMS_PROVIDER'],
+        message: 'the fake SMS provider is allowed only when NODE_ENV=test',
+      });
+    }
     if (env.NODE_ENV !== 'production') return;
     for (const origin of env.CORS_ORIGINS) {
       if (!origin.startsWith('https://')) {

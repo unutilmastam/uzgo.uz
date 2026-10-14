@@ -5,6 +5,8 @@ const valid = {
   NODE_ENV: 'development',
   DATABASE_URL: 'postgresql://user:secret-password@localhost:5432/uzgo',
   CORS_ORIGINS: 'http://localhost:3000, https://uzgo.uz',
+  AUTH_SECRET: 'x'.repeat(40),
+  SMS_PROVIDER: 'dev',
 };
 
 function errorOf(fn: () => unknown): EnvValidationError {
@@ -52,10 +54,24 @@ describe('parseEnv', () => {
     );
   });
 
-  it('requires https origins and disables Swagger by default in production', () => {
-    expect(() => parseEnv({ ...valid, NODE_ENV: 'production' })).toThrow(EnvValidationError);
-    const env = parseEnv({ ...valid, NODE_ENV: 'production', CORS_ORIGINS: 'https://uzgo.uz' });
-    expect(env.SWAGGER_ENABLED).toBe(false);
+  it('requires https origins in production', () => {
+    const error = errorOf(() => parseEnv({ ...valid, NODE_ENV: 'production' }));
+    expect(error.issues.some((issue) => issue.startsWith('CORS_ORIGINS'))).toBe(true);
+  });
+
+  it('refuses development/test SMS providers outside their environment', () => {
+    for (const NODE_ENV of ['production', 'test']) {
+      const error = errorOf(() => parseEnv({ ...valid, NODE_ENV, SMS_PROVIDER: 'dev' }));
+      expect(error.issues.some((issue) => issue.startsWith('SMS_PROVIDER'))).toBe(true);
+    }
+    for (const NODE_ENV of ['production', 'development']) {
+      const error = errorOf(() => parseEnv({ ...valid, NODE_ENV, SMS_PROVIDER: 'fake' }));
+      expect(error.issues.some((issue) => issue.startsWith('SMS_PROVIDER'))).toBe(true);
+    }
+  });
+
+  it('requires a long AUTH_SECRET', () => {
+    expect(() => parseEnv({ ...valid, AUTH_SECRET: 'short' })).toThrow(EnvValidationError);
   });
 
   it('never echoes secret values in error messages', () => {

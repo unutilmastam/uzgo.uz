@@ -18,7 +18,7 @@ export function next(options) {
           {
             noStrings: true,
             ignoreProps: true,
-            allowedStrings: ['·', '/', '—', '×', '+', '-', ':'],
+            allowedStrings: ['·', '/', '—', '×', '+', '-', ':', '+998'],
           },
         ],
       },

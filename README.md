@@ -5,7 +5,7 @@ sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
 Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 2 (design system + web shell) — see `docs/ROADMAP.md`.
+**Status:** Phase 3 (data + phone/OTP authentication) — see `docs/ROADMAP.md`.
 
 ## Stack
 
@@ -51,6 +51,7 @@ cp apps/web/.env.example apps/web/.env.local
 ```bash
 docker compose up -d postgres     # PostgreSQL on 127.0.0.1:5432
 pnpm db:deploy                    # apply migrations
+pnpm db:seed                      # regions and districts of Uzbekistan
 ```
 
 ### Database without Docker (native PostgreSQL)
@@ -61,6 +62,7 @@ sudo apt install postgresql
 sudo -u postgres psql -c "CREATE USER uzgo WITH PASSWORD 'uzgo_dev_password' CREATEDB;"
 sudo -u postgres psql -c "CREATE DATABASE uzgo OWNER uzgo;"
 pnpm db:deploy
+pnpm db:seed
 ```
 
 ### Run
@@ -71,6 +73,10 @@ pnpm dev            # web on http://localhost:3000, API on http://localhost:4000
 
 - Storefront: http://localhost:3000/uz (and /ru). Demo data is labelled "Demo".
 - Technical status page with live API/database status: http://localhost:3000/uz/status.
+- Login: http://localhost:3000/uz/login. In development the SMS code is printed
+  in the API console (`[DEV SMS] …`) — `DevSmsProvider` never runs in production.
+- First super admin (no default admin exists): log in once, then
+  `pnpm --filter @uzgo/api user:grant-role +998XXXXXXXXX SUPER_ADMIN`.
 - API health: `GET /api/v1/health/live`, `GET /api/v1/health/ready`.
 - In development the web forwards `/api/*` to the API (same-site, ADR 0007).
 - Swagger UI: http://localhost:4000/api/docs (off in production by default).

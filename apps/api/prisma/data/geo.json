@@ -1,0 +1,2006 @@
+{
+  "source": {
+    "dataset": "State Statistics Committee of the Republic of Uzbekistan, SDMX dataset 2.01.01.0036 'Tumanlar / Районы / Districts', updated 2025-03-26",
+    "url": "https://api.siat.stat.uz/media/uploads/sdmx/sdmx_data_307.pdf",
+    "via": "uzbgeo@2.2.0 (MIT, https://github.com/Mukhammadali/uzbgeo)",
+    "notes": "Uzbek apostrophes normalised to U+02BB (oʻ, gʻ) and U+02BC (ʼ). Districts = tumans + cities of regional significance."
+  },
+  "regions": [
+    {
+      "code": "UZ-AN",
+      "slug": "andijan",
+      "kind": "region",
+      "sort": 1,
+      "name": {
+        "uz": "Andijon viloyati",
+        "ru": "Андижанская область"
+      }
+    },
+    {
+      "code": "UZ-BU",
+      "slug": "bukhara",
+      "kind": "region",
+      "sort": 2,
+      "name": {
+        "uz": "Buxoro viloyati",
+        "ru": "Бухарская область"
+      }
+    },
+    {
+      "code": "UZ-FA",
+      "slug": "fergana",
+      "kind": "region",
+      "sort": 3,
+      "name": {
+        "uz": "Fargʻona viloyati",
+        "ru": "Ферганская область"
+      }
+    },
+    {
+      "code": "UZ-JI",
+      "slug": "jizzakh",
+      "kind": "region",
+      "sort": 4,
+      "name": {
+        "uz": "Jizzax viloyati",
+        "ru": "Джизакская область"
+      }
+    },
+    {
+      "code": "UZ-NG",
+      "slug": "namangan",
+      "kind": "region",
+      "sort": 5,
+      "name": {
+        "uz": "Namangan viloyati",
+        "ru": "Наманганская область"
+      }
+    },
+    {
+      "code": "UZ-NW",
+      "slug": "navoi",
+      "kind": "region",
+      "sort": 6,
+      "name": {
+        "uz": "Navoiy viloyati",
+        "ru": "Навоийская область"
+      }
+    },
+    {
+      "code": "UZ-QA",
+      "slug": "kashkadarya",
+      "kind": "region",
+      "sort": 7,
+      "name": {
+        "uz": "Qashqadaryo viloyati",
+        "ru": "Кашкадарьинская область"
+      }
+    },
+    {
+      "code": "UZ-QR",
+      "slug": "karakalpakstan",
+      "kind": "republic",
+      "sort": 8,
+      "name": {
+        "uz": "Qoraqalpogʻiston Respublikasi",
+        "ru": "Республика Каракалпакстан"
+      }
+    },
+    {
+      "code": "UZ-SA",
+      "slug": "samarkand",
+      "kind": "region",
+      "sort": 9,
+      "name": {
+        "uz": "Samarqand viloyati",
+        "ru": "Самаркандская область"
+      }
+    },
+    {
+      "code": "UZ-SI",
+      "slug": "syrdarya",
+      "kind": "region",
+      "sort": 10,
+      "name": {
+        "uz": "Sirdaryo viloyati",
+        "ru": "Сырдарьинская область"
+      }
+    },
+    {
+      "code": "UZ-SU",
+      "slug": "surkhandarya",
+      "kind": "region",
+      "sort": 11,
+      "name": {
+        "uz": "Surxondaryo viloyati",
+        "ru": "Сурхандарьинская область"
+      }
+    },
+    {
+      "code": "UZ-TK",
+      "slug": "tashkent_city",
+      "kind": "city",
+      "sort": 12,
+      "name": {
+        "uz": "Toshkent shahri",
+        "ru": "Город Ташкент"
+      }
+    },
+    {
+      "code": "UZ-TO",
+      "slug": "tashkent",
+      "kind": "region",
+      "sort": 13,
+      "name": {
+        "uz": "Toshkent viloyati",
+        "ru": "Ташкентская область"
+      }
+    },
+    {
+      "code": "UZ-XO",
+      "slug": "khorezm",
+      "kind": "region",
+      "sort": 14,
+      "name": {
+        "uz": "Xorazm viloyati",
+        "ru": "Хорезмская область"
+      }
+    }
+  ],
+  "districts": [
+    {
+      "slug": "altynkul",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Oltinkoʻl tumani",
+        "ru": "Алтынкульский район"
+      }
+    },
+    {
+      "slug": "andijan",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Andijon tumani",
+        "ru": "Андижанский район"
+      }
+    },
+    {
+      "slug": "balykchi",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Baliqchi tumani",
+        "ru": "Балыкчинский район"
+      }
+    },
+    {
+      "slug": "bustan",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Boʻston tumani",
+        "ru": "Бустонский район"
+      }
+    },
+    {
+      "slug": "bulakbashi",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Buloqboshi tumani",
+        "ru": "Булакбашинский район"
+      }
+    },
+    {
+      "slug": "jalaquduk",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Jalaquduq tumani",
+        "ru": "Жалакудукский район"
+      }
+    },
+    {
+      "slug": "izbaskan",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Izboskan tumani",
+        "ru": "Избасканский район"
+      }
+    },
+    {
+      "slug": "ulugnor",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Ulugʻnor tumani",
+        "ru": "Улугнорский район"
+      }
+    },
+    {
+      "slug": "kurgantepa",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Qoʻrgʻontepa tumani",
+        "ru": "Кургантепинский район"
+      }
+    },
+    {
+      "slug": "asaka",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Asaka tumani",
+        "ru": "Асакинский район"
+      }
+    },
+    {
+      "slug": "markhamat",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Marxamat tumani",
+        "ru": "Мархаматский район"
+      }
+    },
+    {
+      "slug": "shakhrikhan",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Shaxrixon tumani",
+        "ru": "Шахриханский район"
+      }
+    },
+    {
+      "slug": "pakhtaabad",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Paxtaobod tumani",
+        "ru": "Пахтаабадский район"
+      }
+    },
+    {
+      "slug": "khojaabad",
+      "regionCode": "UZ-AN",
+      "kind": "district",
+      "name": {
+        "uz": "Xoʻjaobod tumani",
+        "ru": "Ходжаабадский район"
+      }
+    },
+    {
+      "slug": "alat",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Olot tumani",
+        "ru": "Алатский район"
+      }
+    },
+    {
+      "slug": "bukhara",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Buxoro tumani",
+        "ru": "Бухарский район"
+      }
+    },
+    {
+      "slug": "vobkent",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Vobkent tumani",
+        "ru": "Вабкентский район"
+      }
+    },
+    {
+      "slug": "gijduvan",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Gʻijduvon tumani",
+        "ru": "Гиждуванский район"
+      }
+    },
+    {
+      "slug": "kagan",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Kogon tumani",
+        "ru": "Каганский район"
+      }
+    },
+    {
+      "slug": "karakul",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Qorakoʻl tumani",
+        "ru": "Каракульский район"
+      }
+    },
+    {
+      "slug": "qorovulbozor",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Qorovulbozor tumani",
+        "ru": "Караулбазарский район"
+      }
+    },
+    {
+      "slug": "peshkun",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Peshku tumani",
+        "ru": "Пешкунский район"
+      }
+    },
+    {
+      "slug": "romitan",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Romitan tumani",
+        "ru": "Ромитанский район"
+      }
+    },
+    {
+      "slug": "jondor",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Jondor tumani",
+        "ru": "Жондорский район"
+      }
+    },
+    {
+      "slug": "shafirkan",
+      "regionCode": "UZ-BU",
+      "kind": "district",
+      "name": {
+        "uz": "Shofirkon tumani",
+        "ru": "Шафирканский район"
+      }
+    },
+    {
+      "slug": "arnasay",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Arnasoy tumani",
+        "ru": "Арнасайский район"
+      }
+    },
+    {
+      "slug": "bakhmal",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Baxmal tumani",
+        "ru": "Бахмальский район"
+      }
+    },
+    {
+      "slug": "gallaaral",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Gʻallaorol tumani",
+        "ru": "Галляаральский район"
+      }
+    },
+    {
+      "slug": "sharof_rashidov",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Sharof Rashidov tumani",
+        "ru": "Шароф-Рашидовский район"
+      }
+    },
+    {
+      "slug": "dustlik",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Doʻstlik tumani",
+        "ru": "Дустликский район"
+      }
+    },
+    {
+      "slug": "zomin",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Zomin tumani",
+        "ru": "Зааминский район"
+      }
+    },
+    {
+      "slug": "zarbdar",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Zarbdor tumani",
+        "ru": "Зарбдарский район"
+      }
+    },
+    {
+      "slug": "mirzachul",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Mirzachoʻl tumani",
+        "ru": "Мирзачульский район"
+      }
+    },
+    {
+      "slug": "zafarabad",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Zafarobod tumani",
+        "ru": "Зафарабадский район"
+      }
+    },
+    {
+      "slug": "pakhtakor",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Paxtakor tumani",
+        "ru": "Пахтакорский район"
+      }
+    },
+    {
+      "slug": "farish",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Forish tumani",
+        "ru": "Фаришский район"
+      }
+    },
+    {
+      "slug": "yangiabad",
+      "regionCode": "UZ-JI",
+      "kind": "district",
+      "name": {
+        "uz": "Yangiobod tumani",
+        "ru": "Янгиабадский район"
+      }
+    },
+    {
+      "slug": "kukdala",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Koʻkdala tumani",
+        "ru": "Кукдалинский район"
+      }
+    },
+    {
+      "slug": "guzar",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Gʻuzor tumani",
+        "ru": "Гузарский район"
+      }
+    },
+    {
+      "slug": "dehkanabad",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Dehqonobod tumani",
+        "ru": "Дехканабадский район"
+      }
+    },
+    {
+      "slug": "kamashi",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Qamashi tumani",
+        "ru": "Камашинский район"
+      }
+    },
+    {
+      "slug": "karshi",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Qarshi tumani",
+        "ru": "Каршинский район"
+      }
+    },
+    {
+      "slug": "kasan",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Koson tumani",
+        "ru": "Касанский район"
+      }
+    },
+    {
+      "slug": "kitab",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Kitob tumani",
+        "ru": "Китабский район"
+      }
+    },
+    {
+      "slug": "mirishkor",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Mirishkor tumani",
+        "ru": "Миришкорский район"
+      }
+    },
+    {
+      "slug": "mubarek",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Muborak tumani",
+        "ru": "Мубарекский район"
+      }
+    },
+    {
+      "slug": "nishon",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Nishon tumani",
+        "ru": "Нишанский район"
+      }
+    },
+    {
+      "slug": "kasbi",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Kasbi tumani",
+        "ru": "Касбинский район"
+      }
+    },
+    {
+      "slug": "chirakchi",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Chiroqchi tumani",
+        "ru": "Чиракчинский район"
+      }
+    },
+    {
+      "slug": "shakhrisabz",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Shahrisabz tumani",
+        "ru": "Шахрисабзский район"
+      }
+    },
+    {
+      "slug": "yakkabag",
+      "regionCode": "UZ-QA",
+      "kind": "district",
+      "name": {
+        "uz": "Yakkabogʻ tumani",
+        "ru": "Яккабагский район"
+      }
+    },
+    {
+      "slug": "amudarya",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Amudaryo tumani",
+        "ru": "Амударьинский район"
+      }
+    },
+    {
+      "slug": "beruniy",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Beruniy tumani",
+        "ru": "Берунийский район"
+      }
+    },
+    {
+      "slug": "bozatau",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Boʻzatov tumani",
+        "ru": "Бозатауский район"
+      }
+    },
+    {
+      "slug": "karauzak",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Qoraoʻzak tumani",
+        "ru": "Караузякский район"
+      }
+    },
+    {
+      "slug": "kegeyli",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Kegeyli tumani",
+        "ru": "Кегейлийский район"
+      }
+    },
+    {
+      "slug": "kungrad",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Qoʻngʻirot tumani",
+        "ru": "Кунградский район"
+      }
+    },
+    {
+      "slug": "kanlykul",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Qanlikoʻl tumani",
+        "ru": "Канлыкульский район"
+      }
+    },
+    {
+      "slug": "muynak",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Moʻynoq tumani",
+        "ru": "Муйнакский район"
+      }
+    },
+    {
+      "slug": "nukus",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Nukus tumani",
+        "ru": "Нукусский район"
+      }
+    },
+    {
+      "slug": "takhiatash",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Taxiatosh tumani",
+        "ru": "Тахиаташский район"
+      }
+    },
+    {
+      "slug": "takhtakupyr",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Taxtakoʻpir tumani",
+        "ru": "Тахтакупырский район"
+      }
+    },
+    {
+      "slug": "turtkul",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Toʻrtkoʻl tumani",
+        "ru": "Турткульский район"
+      }
+    },
+    {
+      "slug": "khojeyli",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Xoʻjayli tumani",
+        "ru": "Ходжейлийский район"
+      }
+    },
+    {
+      "slug": "chimbay",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Chimboy tumani",
+        "ru": "Чимбайский район"
+      }
+    },
+    {
+      "slug": "shumanai",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Shumanay tumani",
+        "ru": "Шуманайский район"
+      }
+    },
+    {
+      "slug": "ellikkala",
+      "regionCode": "UZ-QR",
+      "kind": "district",
+      "name": {
+        "uz": "Ellikkala tumani",
+        "ru": "Элликкалинский район"
+      }
+    },
+    {
+      "slug": "akdarya",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Oqdaryo tumani",
+        "ru": "Акдарьинский район"
+      }
+    },
+    {
+      "slug": "bulungur",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Bulungʻur tumani",
+        "ru": "Булунгурский район"
+      }
+    },
+    {
+      "slug": "jomboy",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Jomboy tumani",
+        "ru": "Джамбайский район"
+      }
+    },
+    {
+      "slug": "ishtykhan",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Ishtixon tumani",
+        "ru": "Иштыханский район"
+      }
+    },
+    {
+      "slug": "kattakurgan",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Kattaqoʻrgʻon tumani",
+        "ru": "Каттакурганский район"
+      }
+    },
+    {
+      "slug": "koshrabad",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Qoʻshrabot tumani",
+        "ru": "Кошрабадский район"
+      }
+    },
+    {
+      "slug": "narpai",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Narpay tumani",
+        "ru": "Нарпайский район"
+      }
+    },
+    {
+      "slug": "payaryk",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Payariq tumani",
+        "ru": "Пайарыкский район"
+      }
+    },
+    {
+      "slug": "pastdargom",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Pastdargʻom tumani",
+        "ru": "Пастдаргомский район"
+      }
+    },
+    {
+      "slug": "pakhtachi",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Paxtachi tumani",
+        "ru": "Пахтачийский район"
+      }
+    },
+    {
+      "slug": "samarkand",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Samarqand tumani",
+        "ru": "Самаркандский район"
+      }
+    },
+    {
+      "slug": "nurabad",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Nurobod tumani",
+        "ru": "Нурабадский район"
+      }
+    },
+    {
+      "slug": "urgut",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Urgut tumani",
+        "ru": "Ургутский район"
+      }
+    },
+    {
+      "slug": "tailak",
+      "regionCode": "UZ-SA",
+      "kind": "district",
+      "name": {
+        "uz": "Tayloq tumani",
+        "ru": "Тайлякский район"
+      }
+    },
+    {
+      "slug": "akaltyn",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Oqoltin tumani",
+        "ru": "Акалтынский район"
+      }
+    },
+    {
+      "slug": "bayaut",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Boyovut tumani",
+        "ru": "Баяутский район"
+      }
+    },
+    {
+      "slug": "saykhunabad",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Sayxunobod tumani",
+        "ru": "Сайхунабадский район"
+      }
+    },
+    {
+      "slug": "gulistan",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Guliston tumani",
+        "ru": "Гулистанский район"
+      }
+    },
+    {
+      "slug": "sardoba",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Sardoba tumani",
+        "ru": "Сардобский район"
+      }
+    },
+    {
+      "slug": "mirzaabad",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Mirzaobod tumani",
+        "ru": "Мирзаабадский район"
+      }
+    },
+    {
+      "slug": "syrdarya",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Sirdaryo tumani",
+        "ru": "Сырдарьинский район"
+      }
+    },
+    {
+      "slug": "khovos",
+      "regionCode": "UZ-SI",
+      "kind": "district",
+      "name": {
+        "uz": "Xovos tumani",
+        "ru": "Хавасский район"
+      }
+    },
+    {
+      "slug": "altynsay",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Oltinsoy tumani",
+        "ru": "Алтынсайский район"
+      }
+    },
+    {
+      "slug": "angor",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Angor tumani",
+        "ru": "Ангорский район"
+      }
+    },
+    {
+      "slug": "bandykhan",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Bandixon tumani",
+        "ru": "Бандихонский район"
+      }
+    },
+    {
+      "slug": "baysun",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Boysun tumani",
+        "ru": "Байсунский район"
+      }
+    },
+    {
+      "slug": "muzrabad",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Muzrabot tumani",
+        "ru": "Музрабадский район"
+      }
+    },
+    {
+      "slug": "denau",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Denov tumani",
+        "ru": "Денауский район"
+      }
+    },
+    {
+      "slug": "jarkurgan",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Jarqoʻrgʻon tumani",
+        "ru": "Джаркурганский район"
+      }
+    },
+    {
+      "slug": "kumkurgan",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Qumqoʻrgʻon tumani",
+        "ru": "Кумкурганский район"
+      }
+    },
+    {
+      "slug": "kizirik",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Qiziriq tumani",
+        "ru": "Кизирикский район"
+      }
+    },
+    {
+      "slug": "sariosia",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Sariosiyo tumani",
+        "ru": "Сариасийский район"
+      }
+    },
+    {
+      "slug": "termiz",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Termiz tumani",
+        "ru": "Термезский район"
+      }
+    },
+    {
+      "slug": "uzun",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Uzun tumani",
+        "ru": "Узунский район"
+      }
+    },
+    {
+      "slug": "sherabad",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Sherobod tumani",
+        "ru": "Шерабадский район"
+      }
+    },
+    {
+      "slug": "shurchi",
+      "regionCode": "UZ-SU",
+      "kind": "district",
+      "name": {
+        "uz": "Shoʻrchi tumani",
+        "ru": "Шурчинский район"
+      }
+    },
+    {
+      "slug": "uchtepa",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Uchtepa tumani",
+        "ru": "Учтепинский район"
+      }
+    },
+    {
+      "slug": "bektemir",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Bektemir tumani",
+        "ru": "Бектемирский район"
+      }
+    },
+    {
+      "slug": "yunusabad",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Yunusobod tumani",
+        "ru": "Юнусабадский район"
+      }
+    },
+    {
+      "slug": "mirzo_ulugbek",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Mirzo Ulugʻbek tumani",
+        "ru": "Мирзо-Улугбекский район"
+      }
+    },
+    {
+      "slug": "mirabad",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Mirobod tumani",
+        "ru": "Мирабадский район"
+      }
+    },
+    {
+      "slug": "shaykhantakhur",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Shayxontoxur tumani",
+        "ru": "Шайхантахурский район"
+      }
+    },
+    {
+      "slug": "almazar",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Olmazor tumani",
+        "ru": "Алмазарский район"
+      }
+    },
+    {
+      "slug": "sergeli",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Sirgʻali tumani",
+        "ru": "Сергелийский район"
+      }
+    },
+    {
+      "slug": "yakkasaray",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Yakkasaroy tumani",
+        "ru": "Яккасарайский район"
+      }
+    },
+    {
+      "slug": "yashnabad",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Yashnobod tumani",
+        "ru": "Яшнабадский район"
+      }
+    },
+    {
+      "slug": "yangikhayot",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Yangihayot tumani",
+        "ru": "Янгихаётский район"
+      }
+    },
+    {
+      "slug": "chilanzar",
+      "regionCode": "UZ-TK",
+      "kind": "district",
+      "name": {
+        "uz": "Chilonzor tumani",
+        "ru": "Чиланзарский район"
+      }
+    },
+    {
+      "slug": "akkurgan",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Oqqoʻrgʻon tumani",
+        "ru": "Аккурганский район"
+      }
+    },
+    {
+      "slug": "akhangaran",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Ohangaron tumani",
+        "ru": "Ахангаранский район"
+      }
+    },
+    {
+      "slug": "bekabad",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Bekobod tumani",
+        "ru": "Бекабадский район"
+      }
+    },
+    {
+      "slug": "bostanlyk",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Boʻstonliq tumani",
+        "ru": "Бостанлыкский район"
+      }
+    },
+    {
+      "slug": "buka",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Boʻka tumani",
+        "ru": "Букинский район"
+      }
+    },
+    {
+      "slug": "kuyichirchik",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Quyichirchiq tumani",
+        "ru": "Куйичирчикский район"
+      }
+    },
+    {
+      "slug": "zangiata",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Zangiota tumani",
+        "ru": "Зангиатинский район"
+      }
+    },
+    {
+      "slug": "yukorichirchik",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Yuqorichirchiq tumani",
+        "ru": "Юкоричирчикский район"
+      }
+    },
+    {
+      "slug": "kibray",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Qibray tumani",
+        "ru": "Кибрайский район"
+      }
+    },
+    {
+      "slug": "parkent",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Parkent tumani",
+        "ru": "Паркентский район"
+      }
+    },
+    {
+      "slug": "piskent",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Piskent tumani",
+        "ru": "Пскентский район"
+      }
+    },
+    {
+      "slug": "urtachirchik",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Oʻrtachirchiq tumani",
+        "ru": "Уртачирчикский район"
+      }
+    },
+    {
+      "slug": "chinaz",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Chinoz tumani",
+        "ru": "Чиназский район"
+      }
+    },
+    {
+      "slug": "yangiyul",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Yangiyoʻl tumani",
+        "ru": "Янгиюльский район"
+      }
+    },
+    {
+      "slug": "tashkent",
+      "regionCode": "UZ-TO",
+      "kind": "district",
+      "name": {
+        "uz": "Toshkent tumani",
+        "ru": "Ташкентский район"
+      }
+    },
+    {
+      "slug": "altyaryk",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Oltiariq tumani",
+        "ru": "Алтыарыкский район"
+      }
+    },
+    {
+      "slug": "kushtepa",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Qoʻshtepa tumani",
+        "ru": "Куштепинский район"
+      }
+    },
+    {
+      "slug": "baghdad",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Bogʻdod tumani",
+        "ru": "Багдадский район"
+      }
+    },
+    {
+      "slug": "buvayda",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Buvayda tumani",
+        "ru": "Бувайдинский район"
+      }
+    },
+    {
+      "slug": "besharik",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Beshariq tumani",
+        "ru": "Бешарыкский район"
+      }
+    },
+    {
+      "slug": "kuva",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Quva tumani",
+        "ru": "Кувинский район"
+      }
+    },
+    {
+      "slug": "uchkuprik",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Uchkoʻprik tumani",
+        "ru": "Учкуприкский район"
+      }
+    },
+    {
+      "slug": "rishtan",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Rishton tumani",
+        "ru": "Риштанский район"
+      }
+    },
+    {
+      "slug": "sokh",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Soʻx tumani",
+        "ru": "Сохский район"
+      }
+    },
+    {
+      "slug": "tashlak",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Toshloq tumani",
+        "ru": "Ташлакский район"
+      }
+    },
+    {
+      "slug": "uzbekistan",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Oʻzbekiston tumani",
+        "ru": "Узбекистанский район"
+      }
+    },
+    {
+      "slug": "fergana",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Fargʻona tumani",
+        "ru": "Ферганский район"
+      }
+    },
+    {
+      "slug": "dangara",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Dangʻara tumani",
+        "ru": "Дангаринский район"
+      }
+    },
+    {
+      "slug": "furkat",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Furqat tumani",
+        "ru": "Фуркатский район"
+      }
+    },
+    {
+      "slug": "yazyavan",
+      "regionCode": "UZ-FA",
+      "kind": "district",
+      "name": {
+        "uz": "Yozyovon tumani",
+        "ru": "Язъяванский район"
+      }
+    },
+    {
+      "slug": "mingbulak",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Mingbuloq tumani",
+        "ru": "Мингбулакский район"
+      }
+    },
+    {
+      "slug": "kasansay",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Kosonsoy tumani",
+        "ru": "Касансайский район"
+      }
+    },
+    {
+      "slug": "namangan",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Namangan tumani",
+        "ru": "Наманганский район"
+      }
+    },
+    {
+      "slug": "naryn",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Norin tumani",
+        "ru": "Нарынский район"
+      }
+    },
+    {
+      "slug": "pop",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Pop tumani",
+        "ru": "Папский район"
+      }
+    },
+    {
+      "slug": "turakurgan",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Toʻraqoʻrgʻon tumani",
+        "ru": "Туракурганский район"
+      }
+    },
+    {
+      "slug": "uychi",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Uychi tumani",
+        "ru": "Уйчинский район"
+      }
+    },
+    {
+      "slug": "uchkurgan",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Uchqoʻrgʻon tumani",
+        "ru": "Учкурганский район"
+      }
+    },
+    {
+      "slug": "chartak",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Chortoq tumani",
+        "ru": "Чартакский район"
+      }
+    },
+    {
+      "slug": "chust",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Chust tumani",
+        "ru": "Чустский район"
+      }
+    },
+    {
+      "slug": "yangikurgan",
+      "regionCode": "UZ-NG",
+      "kind": "district",
+      "name": {
+        "uz": "Yangiqoʻrgʻon tumani",
+        "ru": "Янгикурганский район"
+      }
+    },
+    {
+      "slug": "kanimekh",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Konimex tumani",
+        "ru": "Канимехский район"
+      }
+    },
+    {
+      "slug": "kyzyltepa",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Qiziltepa tumani",
+        "ru": "Кызылтепинский район"
+      }
+    },
+    {
+      "slug": "navbahor",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Navbahor tumani",
+        "ru": "Навбахорский район"
+      }
+    },
+    {
+      "slug": "karmana",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Karmana tumani",
+        "ru": "Карманинский район"
+      }
+    },
+    {
+      "slug": "nurota",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Nurota tumani",
+        "ru": "Нуратинский район"
+      }
+    },
+    {
+      "slug": "tomdy",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Tomdi tumani",
+        "ru": "Тамдынский район"
+      }
+    },
+    {
+      "slug": "uchkuduk",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Uchquduq tumani",
+        "ru": "Учкудукский район"
+      }
+    },
+    {
+      "slug": "khatyrchi",
+      "regionCode": "UZ-NW",
+      "kind": "district",
+      "name": {
+        "uz": "Xatirchi tumani",
+        "ru": "Хатырчинский район"
+      }
+    },
+    {
+      "slug": "bagat",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Bogʻot tumani",
+        "ru": "Багатский район"
+      }
+    },
+    {
+      "slug": "gurlan",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Gurlan tumani",
+        "ru": "Гурленский район"
+      }
+    },
+    {
+      "slug": "kushkupyr",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Qoʻshkoʻpir tumani",
+        "ru": "Кошкупырский район"
+      }
+    },
+    {
+      "slug": "urgench",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Urganch tumani",
+        "ru": "Ургенчский район"
+      }
+    },
+    {
+      "slug": "khazarasp",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Xazorasp tumani",
+        "ru": "Хазараспский район"
+      }
+    },
+    {
+      "slug": "tuprakkala",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Tuproqqalʼa tumani",
+        "ru": "Тупроккалинский район"
+      }
+    },
+    {
+      "slug": "khanka",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Xonqa tumani",
+        "ru": "Ханкинский район"
+      }
+    },
+    {
+      "slug": "khiva",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Xiva tumani",
+        "ru": "Хивинский район"
+      }
+    },
+    {
+      "slug": "shavat",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Shovot tumani",
+        "ru": "Шаватский район"
+      }
+    },
+    {
+      "slug": "yangiaryk",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Yangiariq tumani",
+        "ru": "Янгиарыкский район"
+      }
+    },
+    {
+      "slug": "yangibazar",
+      "regionCode": "UZ-XO",
+      "kind": "district",
+      "name": {
+        "uz": "Yangibozor tumani",
+        "ru": "Янгибазарский район"
+      }
+    },
+    {
+      "slug": "andijan_city",
+      "regionCode": "UZ-AN",
+      "kind": "city",
+      "name": {
+        "uz": "Andijon shahri",
+        "ru": "Город Андижан"
+      }
+    },
+    {
+      "slug": "khanabad_city",
+      "regionCode": "UZ-AN",
+      "kind": "city",
+      "name": {
+        "uz": "Xonobod shahri",
+        "ru": "Город Ханабад"
+      }
+    },
+    {
+      "slug": "bukhara_city",
+      "regionCode": "UZ-BU",
+      "kind": "city",
+      "name": {
+        "uz": "Buxoro shahri",
+        "ru": "Город Бухара"
+      }
+    },
+    {
+      "slug": "kagan_city",
+      "regionCode": "UZ-BU",
+      "kind": "city",
+      "name": {
+        "uz": "Kogon shahri",
+        "ru": "Город Каган"
+      }
+    },
+    {
+      "slug": "fergana_city",
+      "regionCode": "UZ-FA",
+      "kind": "city",
+      "name": {
+        "uz": "Fargʻona shahri",
+        "ru": "Город Фергана"
+      }
+    },
+    {
+      "slug": "kokand_city",
+      "regionCode": "UZ-FA",
+      "kind": "city",
+      "name": {
+        "uz": "Qoʻqon shahri",
+        "ru": "Город Коканд"
+      }
+    },
+    {
+      "slug": "kuvasay_city",
+      "regionCode": "UZ-FA",
+      "kind": "city",
+      "name": {
+        "uz": "Quvasoy shahri",
+        "ru": "Город Кувасай"
+      }
+    },
+    {
+      "slug": "margilan_city",
+      "regionCode": "UZ-FA",
+      "kind": "city",
+      "name": {
+        "uz": "Margʻilon shahri",
+        "ru": "Город Маргилан"
+      }
+    },
+    {
+      "slug": "jizzakh_city",
+      "regionCode": "UZ-JI",
+      "kind": "city",
+      "name": {
+        "uz": "Jizzax shahri",
+        "ru": "Город Джизак"
+      }
+    },
+    {
+      "slug": "namangan_city",
+      "regionCode": "UZ-NG",
+      "kind": "city",
+      "name": {
+        "uz": "Namangan shahri",
+        "ru": "Город Наманган"
+      }
+    },
+    {
+      "slug": "navoi_city",
+      "regionCode": "UZ-NW",
+      "kind": "city",
+      "name": {
+        "uz": "Navoiy shahri",
+        "ru": "Город Навои"
+      }
+    },
+    {
+      "slug": "zarafshan_city",
+      "regionCode": "UZ-NW",
+      "kind": "city",
+      "name": {
+        "uz": "Zarafshon shahri",
+        "ru": "Город Зарафшан"
+      }
+    },
+    {
+      "slug": "gazgan_city",
+      "regionCode": "UZ-NW",
+      "kind": "city",
+      "name": {
+        "uz": "Gʻozgʻon shahri",
+        "ru": "Город Газган"
+      }
+    },
+    {
+      "slug": "karshi_city",
+      "regionCode": "UZ-QA",
+      "kind": "city",
+      "name": {
+        "uz": "Qarshi shahri",
+        "ru": "Город Карши"
+      }
+    },
+    {
+      "slug": "shakhrisabz_city",
+      "regionCode": "UZ-QA",
+      "kind": "city",
+      "name": {
+        "uz": "Shahrisabz shahri",
+        "ru": "Город Шахрисабз"
+      }
+    },
+    {
+      "slug": "nukus_city",
+      "regionCode": "UZ-QR",
+      "kind": "city",
+      "name": {
+        "uz": "Nukus shahri",
+        "ru": "Город Нукус"
+      }
+    },
+    {
+      "slug": "samarkand_city",
+      "regionCode": "UZ-SA",
+      "kind": "city",
+      "name": {
+        "uz": "Samarqand shahri",
+        "ru": "Город Самарканд"
+      }
+    },
+    {
+      "slug": "kattakurgan_city",
+      "regionCode": "UZ-SA",
+      "kind": "city",
+      "name": {
+        "uz": "Kattaqoʻrgʻon shahri",
+        "ru": "Город Каттакурган"
+      }
+    },
+    {
+      "slug": "gulistan_city",
+      "regionCode": "UZ-SI",
+      "kind": "city",
+      "name": {
+        "uz": "Guliston shahri",
+        "ru": "Город Гулистан"
+      }
+    },
+    {
+      "slug": "shirin_city",
+      "regionCode": "UZ-SI",
+      "kind": "city",
+      "name": {
+        "uz": "Shirin shahri",
+        "ru": "Город Ширин"
+      }
+    },
+    {
+      "slug": "yangier_city",
+      "regionCode": "UZ-SI",
+      "kind": "city",
+      "name": {
+        "uz": "Yangiyer shahri",
+        "ru": "Город Янгиер"
+      }
+    },
+    {
+      "slug": "termiz_city",
+      "regionCode": "UZ-SU",
+      "kind": "city",
+      "name": {
+        "uz": "Termiz shahri",
+        "ru": "Город Термез"
+      }
+    },
+    {
+      "slug": "nurafshan_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Nurafshon shahri",
+        "ru": "Город Нурафшан"
+      }
+    },
+    {
+      "slug": "almalyk_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Olmaliq shahri",
+        "ru": "Город Алмалык"
+      }
+    },
+    {
+      "slug": "angren_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Angren shahri",
+        "ru": "Город Ангрен"
+      }
+    },
+    {
+      "slug": "bekabad_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Bekobod shahri",
+        "ru": "Город Бекабад"
+      }
+    },
+    {
+      "slug": "chirchik_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Chirchiq shahri",
+        "ru": "Город Чирчик"
+      }
+    },
+    {
+      "slug": "akhangaran_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Ohangaron shahri",
+        "ru": "Город Ахангаран"
+      }
+    },
+    {
+      "slug": "yangiyul_city",
+      "regionCode": "UZ-TO",
+      "kind": "city",
+      "name": {
+        "uz": "Yangiyoʻl shahri",
+        "ru": "Город Янгиюль"
+      }
+    },
+    {
+      "slug": "urgench_city",
+      "regionCode": "UZ-XO",
+      "kind": "city",
+      "name": {
+        "uz": "Urganch shahri",
+        "ru": "Город Ургенч"
+      }
+    },
+    {
+      "slug": "khiva_city",
+      "regionCode": "UZ-XO",
+      "kind": "city",
+      "name": {
+        "uz": "Xiva shahri",
+        "ru": "Город Хива"
+      }
+    }
+  ]
+}

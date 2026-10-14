@@ -7,7 +7,7 @@ export default [
     rules: { '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }] },
   },
   {
-    files: ['prisma/seed.ts'],
+    files: ['prisma/seed.ts', 'scripts/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
 ];

@@ -59,6 +59,29 @@ SameSite=Lax; Path=/`. Only the hash is stored in the DB.
 - Mobile (Phase 8): same sessions, `Authorization: Bearer <token>`.
 - State-changing requests with a cookie must pass the Origin/Referer check.
 
+## Endpoints (Phase 3)
+
+| Method | Path                               | Access             | Notes                                                                      |
+| ------ | ---------------------------------- | ------------------ | -------------------------------------------------------------------------- |
+| POST   | `/auth/otp/request`                | public             | `{ phone, locale? }` → `{ expiresInSeconds, resendInSeconds }`             |
+| POST   | `/auth/otp/verify`                 | public             | `{ phone, code }` → `{ user }` + session cookie                            |
+| GET    | `/auth/me`                         | session            | `{ user }`                                                                 |
+| POST   | `/auth/logout`                     | session            | 204, clears cookie                                                         |
+| POST   | `/auth/logout-all`                 | session            | 204, revokes every session                                                 |
+| PATCH  | `/users/me`                        | session            | `{ firstName?, lastName?, districtId?, locale? }`; unknown fields rejected |
+| GET    | `/geo/regions`                     | public             | cached 1 h                                                                 |
+| GET    | `/geo/regions/:regionId/districts` | public             | cached 1 h                                                                 |
+| POST   | `/admin/users/:userId/roles`       | ADMIN, SUPER_ADMIN | `{ role }`, 204                                                            |
+| DELETE | `/admin/users/:userId/roles/:role` | ADMIN, SUPER_ADMIN | 204                                                                        |
+
+Auth error codes: `INVALID_PHONE`, `INVALID_CODE`, `OTP_RESEND_TOO_SOON`
+(`details.retryAfterSeconds`), `OTP_LIMIT_REACHED`, `RATE_LIMITED`,
+`ACCOUNT_BLOCKED`, `SMS_UNAVAILABLE`, `UNAUTHENTICATED`, `FORBIDDEN`,
+`ORIGIN_NOT_ALLOWED`, `ORIGIN_REQUIRED`.
+
+`GET /__test__/last-otp` exists only for browser e2e tests: it answers 404
+unless `NODE_ENV=test` and `SMS_PROVIDER=fake` (impossible in production).
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →
