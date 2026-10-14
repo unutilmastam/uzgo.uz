@@ -14,6 +14,7 @@ import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { SellerModule } from './seller/seller.module.js';
 import { SmsModule } from './sms/sms.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { StoresModule } from './stores/stores.module.js';
@@ -36,6 +37,7 @@ import { UsersModule } from './users/users.module.js';
     CartModule,
     OrdersModule,
     StoresModule,
+    SellerModule,
     AuthModule,
     UsersModule,
     TestSupportModule,
