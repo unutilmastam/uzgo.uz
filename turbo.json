@@ -25,7 +25,12 @@
     "e2e": {
       "dependsOn": ["build"],
       "cache": false,
-      "passThroughEnv": ["CI", "PLAYWRIGHT_BROWSERS_PATH", "PLAYWRIGHT_CHROMIUM_EXECUTABLE"]
+      "passThroughEnv": [
+        "CI",
+        "DATABASE_URL",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "PLAYWRIGHT_CHROMIUM_EXECUTABLE"
+      ]
     }
   }
 }

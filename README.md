@@ -89,7 +89,7 @@ pnpm lint
 pnpm typecheck
 pnpm test           # API integration tests use DATABASE_URL from apps/api/.env (real PostgreSQL)
 pnpm build
-pnpm e2e           # Playwright smoke + axe (after pnpm build; first run:
+pnpm e2e           # Playwright + axe; needs `pnpm build` and DATABASE_URL exported (first run:
                     # pnpm --filter @uzgo/web exec playwright install chromium)
 pnpm audit
 ```

@@ -4,6 +4,8 @@ const PORT = 3100;
 const API_PORT = 4000;
 // Cloud sessions provide a preinstalled Chromium; CI installs its own.
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error('Set DATABASE_URL (migrated + seeded) to run e2e tests');
 
 export default defineConfig({
   testDir: './e2e',
@@ -31,8 +33,7 @@ export default defineConfig({
       env: {
         NODE_ENV: 'test',
         PORT: String(API_PORT),
-        DATABASE_URL:
-          process.env.DATABASE_URL ?? 'postgresql://uzgo:uzgo_dev_password@localhost:5432/uzgo',
+        DATABASE_URL: databaseUrl,
         CORS_ORIGINS: `http://localhost:${String(PORT)}`,
         AUTH_SECRET: 'e2e-only-secret-'.padEnd(48, 'x'),
         SMS_PROVIDER: 'fake',
