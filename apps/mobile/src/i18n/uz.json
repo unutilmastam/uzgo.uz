@@ -24,7 +24,7 @@
   "noResults": "Hech narsa topilmadi",
   "noResultsHint": "Soʻrovni oʻzgartirib koʻring.",
   "sort": "Saralash",
-  "sort_popular": "Ommabop",
+  "sort_relevance": "Mosligi boʻyicha",
   "sort_newest": "Yangi",
   "sort_price_asc": "Arzonroq",
   "sort_price_desc": "Qimmatroq",

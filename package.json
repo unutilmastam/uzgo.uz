@@ -19,7 +19,7 @@
     "db:deploy": "pnpm --filter @uzgo/api db:deploy",
     "db:seed": "pnpm --filter @uzgo/api db:seed",
     "db:studio": "pnpm --filter @uzgo/api db:studio",
-    "e2e": "turbo run e2e",
+    "e2e": "turbo run e2e --concurrency=1",
     "db:seed:demo": "pnpm --filter @uzgo/api db:seed:demo"
   },
   "devDependencies": {

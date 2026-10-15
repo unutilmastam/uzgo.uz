@@ -11,3 +11,4 @@ apps/api/prisma/migrations/**/*.sql
 next-env.d.ts
 .expo
 expo-env.d.ts
+dist-web
