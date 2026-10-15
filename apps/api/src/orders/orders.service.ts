@@ -17,6 +17,8 @@ import {
 } from '../payments/payment-methods.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
+import { planDelivery } from '../delivery/delivery.js';
+import { notifySellers, notifyShipmentStatus } from '../notifications/templates.js';
 import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -36,6 +38,7 @@ const orderInclude = {
     include: {
       store: { select: { id: true, slug: true, name: true, isDemo: true } },
       items: { orderBy: { createdAt: 'asc' } },
+      events: { orderBy: { createdAt: 'asc' }, select: { toStatus: true, createdAt: true } },
     },
   },
 } satisfies Prisma.OrderInclude;
@@ -67,6 +70,11 @@ export function allowedFor(
   return SELLER_ORDER_TRANSITIONS[status].filter((t) => t.actors.includes(actor)).map((t) => t.to);
 }
 
+function pickupView(snapshot: unknown): OrderView['pickupPoint'] {
+  const point = (snapshot as { pickupPoint?: OrderView['pickupPoint'] } | null)?.pickupPoint;
+  return point ?? null;
+}
+
 function paymentView(order: {
   paymentMethod: string;
   status: string;
@@ -85,12 +93,31 @@ function paymentView(order: {
   return { status: 'EXPIRED', dueAt: due, paidAt: null };
 }
 
+type ShipmentExtras = {
+  carrier: string | null;
+  trackingCode: string | null;
+  events: { toStatus: string; createdAt: Date }[];
+};
+
+/** Tracking code and status history shown to the customer and the seller. */
+function shipmentExtras(so: ShipmentExtras) {
+  return {
+    tracking: so.carrier && so.trackingCode ? { carrier: so.carrier, code: so.trackingCode } : null,
+    timeline: so.events.map((e) => ({
+      status: e.toStatus as SellerOrderStatus,
+      at: e.createdAt.toISOString(),
+    })),
+  };
+}
+
 export function toOrderView(order: OrderRow, actor: OrderActor): OrderView {
   return {
     number: order.number,
     status: order.status,
     paymentMethod: order.paymentMethod,
     payment: paymentView(order),
+    deliveryType: order.deliveryType,
+    pickupPoint: pickupView(order.addressSnapshot),
     createdAt: order.createdAt.toISOString(),
     itemsTotalTiyin: order.itemsTotalTiyin.toString(),
     deliveryTotalTiyin: order.deliveryTotalTiyin.toString(),
@@ -121,6 +148,7 @@ export function toOrderView(order: OrderRow, actor: OrderActor): OrderView {
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
       allowedTransitions: allowedFor(so.status, actor),
+      ...shipmentExtras(so),
     })),
   };
 }
@@ -223,11 +251,28 @@ export class OrdersService {
         if (!phone)
           throw new AppException(HttpStatus.BAD_REQUEST, 'INVALID_PHONE', 'Invalid phone number');
 
-        // Totals are computed here from current prices only.
+        // Totals are computed here from current prices and delivery tariffs only.
         const byStore = Map.groupBy(lines, (l) => l.variant.product.store.id);
+        const delivery = await planDelivery(tx, {
+          districtId: district.id,
+          type: input.deliveryType,
+          pickupPointId: input.pickupPointId,
+        });
+        const storeTotals = new Map(
+          [...byStore.entries()].map(([storeId, storeLines]) => {
+            const items = storeLines.reduce(
+              (sum, l) => sum + l.variant.priceTiyin * BigInt(l.quantity),
+              0n,
+            );
+            return [storeId, { items, delivery: delivery.feeFor(items) }];
+          }),
+        );
         let itemsTotal = 0n;
-        for (const l of lines) itemsTotal += l.variant.priceTiyin * BigInt(l.quantity);
-        const deliveryTotal = 0n; // delivery pricing arrives in Phase 6
+        let deliveryTotal = 0n;
+        for (const t of storeTotals.values()) {
+          itemsTotal += t.items;
+          deliveryTotal += t.delivery;
+        }
         const total = itemsTotal + deliveryTotal;
         if (total.toString() !== input.expectedTotalTiyin) {
           throw new AppException(
@@ -293,18 +338,27 @@ export class OrdersService {
             recipientName: input.recipientName,
             recipientPhone: phone,
             districtId: district.id,
-            addressLine: input.addressLine,
+            deliveryType: input.deliveryType,
+            pickupPointId: delivery.pickupPoint?.id ?? null,
+            addressLine: delivery.pickupPoint?.address ?? input.addressLine ?? '',
             addressSnapshot: {
               district: district.name as Names,
               region: district.region.name as Names,
+              ...(delivery.pickupPoint
+                ? {
+                    pickupPoint: {
+                      name: delivery.pickupPoint.name as Names,
+                      address: delivery.pickupPoint.address,
+                      hours: delivery.pickupPoint.hours,
+                    },
+                  }
+                : {}),
             },
             comment: input.comment ?? null,
             sellerOrders: {
               create: [...byStore.values()].map((storeLines, index) => {
-                const subtotal = storeLines.reduce(
-                  (sum, l) => sum + l.variant.priceTiyin * BigInt(l.quantity),
-                  0n,
-                );
+                const storeId = storeLines[0]?.variant.product.store.id ?? '';
+                const totals = storeTotals.get(storeId) ?? { items: 0n, delivery: 0n };
                 const commission = storeLines.reduce(
                   (sum, l) =>
                     sum +
@@ -318,10 +372,10 @@ export class OrdersService {
                   number: `${number}-${String(index + 1)}`,
                   commissionTiyin: commission,
                   status: online ? 'PENDING_PAYMENT' : 'NEW',
-                  storeId: storeLines[0]?.variant.product.store.id ?? '',
-                  itemsTotalTiyin: subtotal,
-                  deliveryTiyin: 0n,
-                  totalTiyin: subtotal,
+                  storeId,
+                  itemsTotalTiyin: totals.items,
+                  deliveryTiyin: totals.delivery,
+                  totalTiyin: totals.items + totals.delivery,
                   items: {
                     create: storeLines.map((l) => ({
                       variantId: l.variant.id,
@@ -364,6 +418,12 @@ export class OrdersService {
           ],
         });
         await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+        // Cash orders go to the sellers now; online orders once they are paid.
+        if (!online)
+          await notifySellers(
+            tx,
+            order.sellerOrders.map((so) => so.id),
+          );
 
         const view = toOrderView(order, 'CUSTOMER');
         await tx.idempotencyKey.update({
@@ -527,6 +587,7 @@ export class OrdersService {
       include: {
         store: { select: { id: true, slug: true, name: true, isDemo: true } },
         items: { orderBy: { createdAt: 'asc' } },
+        events: { orderBy: { createdAt: 'asc' }, select: { toStatus: true, createdAt: true } },
         order: {
           select: {
             number: true,
@@ -556,6 +617,7 @@ export class OrdersService {
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
       allowedTransitions: allowedFor(so.status, 'SELLER'),
+      ...shipmentExtras(so),
       orderNumber: so.order.number,
       createdAt: so.createdAt.toISOString(),
       recipientName: so.order.recipientName,
@@ -607,6 +669,7 @@ export async function transitionInTx(
   await onShipmentTransition(tx, sellerOrderId, to, {
     providerRefunded: by.providerRefunded ?? false,
   });
+  await notifyShipmentStatus(tx, sellerOrderId, to);
   if (RESTOCK_STATUSES.has(to)) {
     const items = await tx.orderItem.findMany({
       where: { sellerOrderId },

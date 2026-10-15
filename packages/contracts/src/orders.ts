@@ -47,17 +47,72 @@ export const sellerOrderStatusSchema = z.enum(SELLER_ORDER_STATUSES);
 export type SellerOrderStatus = z.infer<typeof sellerOrderStatusSchema>;
 
 /** POST /api/v1/checkout (requires an Idempotency-Key header). Prices never come from the client. */
-export const checkoutSchema = z.strictObject({
-  recipientName: z.string().trim().min(2).max(100),
-  recipientPhone: phoneInputSchema,
+export const DELIVERY_TYPES = ['COURIER', 'PICKUP'] as const;
+export const deliveryTypeSchema = z.enum(DELIVERY_TYPES);
+export type DeliveryType = z.infer<typeof deliveryTypeSchema>;
+
+export const checkoutSchema = z
+  .strictObject({
+    recipientName: z.string().trim().min(2).max(100),
+    recipientPhone: phoneInputSchema,
+    districtId: z.uuid(),
+    deliveryType: deliveryTypeSchema.default('COURIER'),
+    /** Required for courier delivery. */
+    addressLine: z.string().trim().min(5).max(200).optional(),
+    /** Required for pickup; must be in `districtId`. */
+    pickupPointId: z.uuid().optional(),
+    comment: z.string().trim().max(500).optional(),
+    paymentMethod: paymentMethodSchema,
+    /** The total the customer saw (items + delivery); a different server total returns PRICE_CHANGED. */
+    expectedTotalTiyin: tiyinSchema,
+  })
+  .refine((v) => v.deliveryType !== 'COURIER' || v.addressLine !== undefined, {
+    message: 'Address required',
+    path: ['addressLine'],
+  })
+  .refine((v) => v.deliveryType !== 'PICKUP' || v.pickupPointId !== undefined, {
+    message: 'Pickup point required',
+    path: ['pickupPointId'],
+  });
+export type CheckoutInput = z.output<typeof checkoutSchema>;
+export type CheckoutRequest = z.input<typeof checkoutSchema>;
+
+/** GET /api/v1/delivery/quote?districtId=&type=&pickupPointId= — for the caller's cart. */
+export const deliveryQuoteQuerySchema = z.strictObject({
   districtId: z.uuid(),
-  addressLine: z.string().trim().min(5).max(200),
-  comment: z.string().trim().max(500).optional(),
-  paymentMethod: paymentMethodSchema,
-  /** The total the customer saw; a different server total returns PRICE_CHANGED. */
-  expectedTotalTiyin: tiyinSchema,
+  type: deliveryTypeSchema.default('COURIER'),
+  pickupPointId: z.uuid().optional(),
 });
-export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export const deliveryQuoteSchema = z.object({
+  available: z.boolean(),
+  /** null: no tariff for this district yet — the seller agrees the price. */
+  etaDays: z.object({ min: z.number().int(), max: z.number().int() }).nullable(),
+  shipments: z.array(
+    z.object({ storeId: z.uuid(), itemsTotalTiyin: tiyinSchema, deliveryTiyin: tiyinSchema }),
+  ),
+  itemsTotalTiyin: tiyinSchema,
+  deliveryTotalTiyin: tiyinSchema,
+  totalTiyin: tiyinSchema,
+});
+export type DeliveryQuote = z.infer<typeof deliveryQuoteSchema>;
+
+export const pickupPointSchema = z.object({
+  id: z.uuid(),
+  districtId: z.uuid(),
+  name: localizedNameSchema,
+  address: z.string(),
+  hours: z.string().nullable(),
+  phone: z.string().nullable(),
+});
+export type PickupPoint = z.infer<typeof pickupPointSchema>;
+/** GET /api/v1/delivery/pickup-points?districtId= */
+export const pickupPointsResponseSchema = z.object({ items: z.array(pickupPointSchema) });
+
+/** PATCH /api/v1/seller/seller-orders/:id/tracking */
+export const trackingSchema = z.strictObject({
+  carrier: z.string().trim().min(2).max(60),
+  trackingCode: z.string().trim().min(3).max(60),
+});
 
 export const idempotencyKeySchema = z.uuid();
 
@@ -82,6 +137,9 @@ export const sellerOrderViewSchema = z.object({
   totalTiyin: tiyinSchema,
   /** Statuses the current viewer may move this shipment to. */
   allowedTransitions: z.array(sellerOrderStatusSchema),
+  tracking: z.object({ carrier: z.string(), code: z.string() }).nullable(),
+  /** Status history, oldest first. */
+  timeline: z.array(z.object({ status: sellerOrderStatusSchema, at: z.string() })),
 });
 export type SellerOrderView = z.infer<typeof sellerOrderViewSchema>;
 
@@ -99,6 +157,10 @@ export const orderViewSchema = z.object({
   itemsTotalTiyin: tiyinSchema,
   deliveryTotalTiyin: tiyinSchema,
   totalTiyin: tiyinSchema,
+  deliveryType: deliveryTypeSchema,
+  pickupPoint: z
+    .object({ name: localizedNameSchema, address: z.string(), hours: z.string().nullable() })
+    .nullable(),
   address: z.object({
     recipientName: z.string(),
     recipientPhone: z.string(),

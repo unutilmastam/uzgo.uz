@@ -102,6 +102,11 @@ export const envSchema = z
       .optional(),
     CLICK_SECRET_KEY: z.string().min(8).max(200).optional(),
     CLICK_PAY_URL: z.url({ protocol: /^https$/ }).default('https://my.click.uz/services/pay'),
+    /** Telegram bot token for seller notifications (without it messages are only logged). */
+    TELEGRAM_BOT_TOKEN: z
+      .string()
+      .regex(/^\d{5,15}:[\w-]{30,60}$/, 'must look like a Telegram bot token')
+      .optional(),
     /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),

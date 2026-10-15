@@ -20,7 +20,10 @@ export class FakeSmsProvider implements SmsProvider {
   }
 
   lastCodeFor(phone: string): string | undefined {
-    const message = this.sent.findLast((sms) => sms.phone === phone);
+    // Only OTP messages (order notifications also contain 6-digit numbers).
+    const message = this.sent.findLast(
+      (sms) => sms.phone === phone && /tasdiqlash kodi|Код подтверждения/.test(sms.text),
+    );
     return /\b(\d{6})\b/.exec(message?.text ?? '')?.[1];
   }
 }

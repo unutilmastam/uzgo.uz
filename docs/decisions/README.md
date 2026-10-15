@@ -23,3 +23,4 @@ Decision, Consequences. Superseded ADRs stay, marked "Superseded by NNNN".
 | 0016 | Seller onboarding, back office and staff TOTP   |
 | 0017 | Online payment providers (Payme + Click)        |
 | 0018 | Ledger, commission, refunds and payouts         |
+| 0019 | Delivery, tracking and notifications            |

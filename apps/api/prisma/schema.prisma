@@ -41,19 +41,21 @@ model Region {
 }
 
 model District {
-  id        String        @id @default(uuid(7)) @db.Uuid
-  regionId  String        @db.Uuid
-  region    Region        @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  slug      String        @unique
-  kind      DistrictKind
-  name      Json
-  sort      Int
-  active    Boolean       @default(true)
-  createdAt DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
-  profiles  UserProfile[]
-  stores    Store[]
-  orders    Order[]
+  id           String        @id @default(uuid(7)) @db.Uuid
+  regionId     String        @db.Uuid
+  region       Region        @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  slug         String        @unique
+  kind         DistrictKind
+  name         Json
+  sort         Int
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(3)
+  profiles     UserProfile[]
+  stores       Store[]
+  orders       Order[]
+  deliveryZone DeliveryZone?
+  pickupPoints PickupPoint[]
 
   @@index([regionId, sort])
 }
@@ -300,6 +302,8 @@ model Store {
   payoutMfo       String?
   payoutAccount   String?
   payoutRecipient String?
+  /// Telegram chat that receives new-order notifications (set by the owner).
+  telegramChatId  String?
   createdAt       DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
   deletedAt       DateTime?        @db.Timestamptz(3)
@@ -569,6 +573,9 @@ model Order {
   districtId         String           @db.Uuid
   district           District         @relation(fields: [districtId], references: [id], onDelete: Restrict)
   addressLine        String
+  deliveryType       DeliveryType     @default(COURIER)
+  pickupPointId      String?          @db.Uuid
+  pickupPoint        PickupPoint?     @relation(fields: [pickupPointId], references: [id], onDelete: Restrict)
   /// Region/district names at order time.
   addressSnapshot    Json
   comment            String?
@@ -599,6 +606,9 @@ model SellerOrder {
   totalTiyin      BigInt
   /// Marketplace commission for this shipment (snapshot at checkout).
   commissionTiyin BigInt            @default(0)
+  /// Set by the seller when handing over to a courier service.
+  carrier         String?
+  trackingCode    String?
   createdAt       DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
   items           OrderItem[]
@@ -762,4 +772,76 @@ model Payout {
   updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
 
   @@index([storeId, status])
+}
+
+// ─── Delivery and notifications (Phase 6e, ADR 0019) ───────────────────────
+
+enum DeliveryType {
+  COURIER
+  PICKUP
+}
+
+/// Courier delivery price per district (per shipment). No zone = price agreed
+/// with the seller (fee 0); an inactive zone = no courier delivery there.
+model DeliveryZone {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  districtId    String   @unique @db.Uuid
+  district      District @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  feeTiyin      BigInt
+  /// Free delivery for shipments from this amount (items total), if set.
+  freeFromTiyin BigInt?
+  etaDaysMin    Int
+  etaDaysMax    Int
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model PickupPoint {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  districtId String   @db.Uuid
+  district   District @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  name       Json
+  address    String
+  hours      String?
+  phone      String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+  orders     Order[]
+
+  @@index([districtId, active])
+}
+
+enum NotificationChannel {
+  SMS
+  TELEGRAM
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+/// Outbox: written in the same transaction as the event, sent by a background
+/// job with retries, so a provider outage never loses or blocks an order.
+model Notification {
+  id            String              @id @default(uuid(7)) @db.Uuid
+  channel       NotificationChannel
+  /// E.164 phone (SMS) or Telegram chat id.
+  recipient     String
+  text          String
+  /// e.g. order.paid, shipment.status, seller.new_order
+  template      String
+  orderId       String?             @db.Uuid
+  status        NotificationStatus  @default(PENDING)
+  attempts      Int                 @default(0)
+  nextAttemptAt DateTime            @default(now()) @db.Timestamptz(3)
+  lastError     String?
+  sentAt        DateTime?           @db.Timestamptz(3)
+  createdAt     DateTime            @default(now()) @db.Timestamptz(3)
+
+  @@index([status, nextAttemptAt])
+  @@index([orderId])
 }

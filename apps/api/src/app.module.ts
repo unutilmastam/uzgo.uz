@@ -13,8 +13,10 @@ import { LedgerModule } from './ledger/ledger.module.js';
 import { LoggerModule } from './common/logger.module.js';
 import { ConfigModule, ENV } from './config/config.module.js';
 import type { Env } from './config/env.js';
+import { DeliveryModule } from './delivery/delivery.module.js';
 import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -49,6 +51,8 @@ import { UsersModule } from './users/users.module.js';
     OrdersModule,
     PaymentsModule,
     LedgerModule,
+    DeliveryModule,
+    NotificationsModule,
     StoresModule,
     SellerModule,
     AdminModule,

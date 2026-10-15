@@ -6,6 +6,7 @@ import type { Env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { PaymentMethod } from '../generated/prisma/enums.js';
 import { capturePostings, postJournal, refundPostings } from '../ledger/ledger.js';
+import { notifyOrderPaid } from '../notifications/templates.js';
 import { transitionInTx } from '../orders/orders.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ONLINE_METHODS } from './payment-methods.js';
@@ -103,6 +104,7 @@ export class PaymentsService {
       kind: 'payment_captured',
       orderId: order.id,
     });
+    await notifyOrderPaid(tx, order.id);
     const shipments = await tx.sellerOrder.findMany({
       where: { orderId: order.id, status: 'PENDING_PAYMENT' },
       orderBy: { number: 'asc' },
