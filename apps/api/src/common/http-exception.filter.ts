@@ -8,6 +8,7 @@ import {
 import type { ApiError } from '@uzgo/contracts';
 import type { Request, Response } from 'express';
 import { PinoLogger } from 'nestjs-pino';
+import { AlertsService } from '../alerts/alerts.service.js';
 
 const CODE_BY_STATUS: Partial<Record<number, string>> = {
   [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',
@@ -52,7 +53,10 @@ function isHttpLikeError(error: unknown): error is { status: number; expose?: bo
  */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: PinoLogger) {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly alerts: AlertsService,
+  ) {
     this.logger.setContext(HttpExceptionFilter.name);
   }
 
@@ -84,6 +88,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (status >= 500) {
       this.logger.error({ err: exception, requestId }, 'Unhandled error');
+      // Route pattern only (no ids, query strings or bodies) keeps alerts free of personal data.
+      const route = (req as { route?: { path?: unknown } }).route?.path;
+      const where = `${req.method} ${typeof route === 'string' ? req.baseUrl + route : '(no route)'}`;
+      const kind = exception instanceof Error ? exception.name : 'UnknownError';
+      this.alerts.report(`${where} ${kind}`, `5xx ${where}: ${kind} (request ${requestId})`);
     }
 
     const body: ApiError = {

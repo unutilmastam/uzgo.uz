@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DevLocalDiskStorage } from './dev-local-disk.storage.js';
+import { LocalDiskStorage } from './local-disk.storage.js';
 import { isValidStorageKey } from './storage.adapter.js';
 
 describe('storage keys', () => {
@@ -23,13 +23,13 @@ describe('storage keys', () => {
   });
 });
 
-describe('DevLocalDiskStorage', () => {
+describe('LocalDiskStorage', () => {
   let dir: string;
-  let storage: DevLocalDiskStorage;
+  let storage: LocalDiskStorage;
 
   beforeAll(async () => {
     dir = await mkdtemp(join(tmpdir(), 'uzgo-storage-'));
-    storage = new DevLocalDiskStorage(dir, '/api/v1/media');
+    storage = new LocalDiskStorage(dir, '/api/v1/media');
   });
 
   afterAll(async () => {

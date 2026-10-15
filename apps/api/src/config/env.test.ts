@@ -71,16 +71,28 @@ describe('parseEnv', () => {
     }
   });
 
-  it('refuses local disk storage in production', () => {
-    const error = errorOf(() =>
-      parseEnv({
-        ...valid,
-        NODE_ENV: 'production',
-        CORS_ORIGINS: 'https://uzgo.uz',
-        SMS_PROVIDER: 'dev',
-      }),
+  it('requires an absolute upload volume path and real SMS in production', () => {
+    const production = {
+      ...valid,
+      NODE_ENV: 'production',
+      CORS_ORIGINS: 'https://uzgo.uz',
+      SMS_PROVIDER: 'eskiz',
+      ESKIZ_EMAIL: 'ops@example.uz',
+      ESKIZ_PASSWORD: 'placeholder',
+    };
+    const error = errorOf(() => parseEnv(production));
+    expect(error.issues.some((issue) => issue.startsWith('STORAGE_LOCAL_DIR'))).toBe(true);
+    const env = parseEnv({ ...production, STORAGE_LOCAL_DIR: '/data/uploads' });
+    expect(env.STORAGE_LOCAL_DIR).toBe('/data/uploads');
+    expect(env.ESKIZ_FROM).toBe('4546');
+    const devSms = errorOf(() =>
+      parseEnv({ ...production, SMS_PROVIDER: 'dev', STORAGE_LOCAL_DIR: '/data/uploads' }),
     );
-    expect(error.issues.some((issue) => issue.startsWith('STORAGE_DRIVER'))).toBe(true);
+    expect(devSms.issues.some((issue) => issue.startsWith('SMS_PROVIDER'))).toBe(true);
+    const noCreds = errorOf(() =>
+      parseEnv({ ...production, ESKIZ_PASSWORD: undefined, STORAGE_LOCAL_DIR: '/data/uploads' }),
+    );
+    expect(noCreds.issues.some((issue) => issue.startsWith('ESKIZ_PASSWORD'))).toBe(true);
   });
 
   it('requires a 32-byte TOTP key and keeps staff 2FA on in production', () => {

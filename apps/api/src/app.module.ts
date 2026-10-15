@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AlertsModule } from './alerts/alerts.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthGuard } from './auth/auth.guard.js';
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module.js';
   imports: [
     ConfigModule,
     LoggerModule,
+    AlertsModule,
     PrismaModule,
     // In-memory per-IP rate limit (SPEC §17); Redis only via ADR for multiple instances.
     ThrottlerModule.forRootAsync({

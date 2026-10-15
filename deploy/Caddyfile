@@ -1,0 +1,47 @@
+# UZGO reverse proxy + automatic HTTPS (ADR 0020). The domain comes from the
+# environment, so a new domain needs only .env + DNS changes.
+{
+	email {$ACME_EMAIL}
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+		-X-Powered-By
+	}
+	# Request bodies are limited by the API itself (BODY_LIMIT, upload limits);
+	# this is an outer guard against oversized uploads.
+	request_body {
+		max_size 25MB
+	}
+	log {
+		output file /data/logs/access.log {
+			roll_size 50MiB
+			roll_keep 14
+			roll_keep_for 336h
+		}
+		format json
+	}
+	# Same-site API (ADR 0007): /api goes straight to the API container.
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+{$UZGO_DOMAIN} {
+	{$CADDY_TLS}
+	import common
+}
+
+www.{$UZGO_DOMAIN} {
+	{$CADDY_TLS}
+	redir https://{$UZGO_DOMAIN}{uri} permanent
+}

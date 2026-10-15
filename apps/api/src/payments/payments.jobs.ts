@@ -5,6 +5,7 @@ import {
   type OnApplicationBootstrap,
   type OnModuleDestroy,
 } from '@nestjs/common';
+import { AlertsService } from '../alerts/alerts.service.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import { PaymentsService } from './payments.service.js';
@@ -25,6 +26,7 @@ export class PaymentsJobs implements OnApplicationBootstrap, OnModuleDestroy {
   constructor(
     private readonly payments: PaymentsService,
     @Inject(ENV) private readonly env: Env,
+    private readonly alerts: AlertsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -45,6 +47,10 @@ export class PaymentsJobs implements OnApplicationBootstrap, OnModuleDestroy {
       if (expired > 0) this.logger.log({ expired }, 'Expired unpaid online orders');
     } catch (err) {
       this.logger.error({ err }, 'Payment housekeeping failed');
+      this.alerts.report(
+        'job:payments',
+        `Payment housekeeping failed: ${err instanceof Error ? err.name : 'UnknownError'}`,
+      );
     } finally {
       this.running = false;
     }

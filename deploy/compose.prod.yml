@@ -1,0 +1,129 @@
+# UZGO production stack (ADR 0020). Lives in /opt/uzgo on the server next to
+# `.env` (from env.example) and `api.env` (from api.env.example).
+#   docker compose -f compose.prod.yml --env-file .env up -d
+# Images are set by deploy/scripts/deploy.sh (UZGO_TAG = commit SHA).
+name: uzgo
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 20m
+    max-file: '5'
+
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  logging: *logging
+
+services:
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ['no-new-privileges:true']
+    logging: *logging
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      UZGO_DOMAIN: ${UZGO_DOMAIN:?set UZGO_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+      CADDY_TLS: ${CADDY_TLS:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_healthy }
+
+  web:
+    <<: *hardening
+    image: ${UZGO_REGISTRY:-ghcr.io/owner/uzgo}-web:${UZGO_TAG:?set UZGO_TAG}
+    environment:
+      API_INTERNAL_URL: http://api:4000
+      PUBLIC_SITE_URL: https://${UZGO_DOMAIN}
+      PUBLIC_INDEXING: ${PUBLIC_INDEXING:-false}
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache:uid=1000,gid=1000
+    depends_on:
+      api: { condition: service_healthy }
+
+  api:
+    <<: *hardening
+    image: ${UZGO_REGISTRY:-ghcr.io/owner/uzgo}-api:${UZGO_TAG:?set UZGO_TAG}
+    env_file: [api.env]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://uzgo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/uzgo?schema=public
+      CORS_ORIGINS: https://${UZGO_DOMAIN}
+      WEB_PUBLIC_URL: https://${UZGO_DOMAIN}
+      # Exactly one proxy (Caddy) in front: req.ip is the real client address.
+      TRUST_PROXY: '1'
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_DIR: /data/uploads
+    tmpfs: [/tmp]
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # One-shot: `prisma migrate deploy`. Run by deploy.sh before api/web start.
+  migrate:
+    image: ${UZGO_REGISTRY:-ghcr.io/owner/uzgo}-migrate:${UZGO_TAG:?set UZGO_TAG}
+    profiles: [tools]
+    restart: 'no'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    logging: *logging
+    env_file: [api.env]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://uzgo:${POSTGRES_PASSWORD}@postgres:5432/uzgo?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18-alpine}
+    restart: unless-stopped
+    logging: *logging
+    shm_size: 256mb
+    environment:
+      POSTGRES_USER: uzgo
+      POSTGRES_DB: uzgo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    # Starting point for 8 GB RAM (ADR 0020); revisit with real load.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - effective_cache_size=3GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - max_connections=100
+      - -c
+      - log_min_duration_statement=1000
+    volumes:
+      - pgdata:/var/lib/postgresql
+    # Not published: reachable only from the containers on this network.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U uzgo -d uzgo']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

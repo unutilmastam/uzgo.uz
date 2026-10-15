@@ -41,8 +41,13 @@ export const envSchema = z
     TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
     /** Secret for HMAC of OTP codes and IP addresses. Rotate = invalidates pending codes. */
     AUTH_SECRET: z.string().min(32, 'must be at least 32 characters'),
-    /** dev: logs codes (development only). fake: in-memory (tests only). Real providers later. */
-    SMS_PROVIDER: z.enum(['dev', 'fake']),
+    /** dev: logs codes (development only). fake: in-memory (tests only). eskiz: real gateway. */
+    SMS_PROVIDER: z.enum(['dev', 'fake', 'eskiz']),
+    ESKIZ_EMAIL: z.email().optional(),
+    ESKIZ_PASSWORD: z.string().min(1).max(200).optional(),
+    /** Sender name/number approved by Eskiz ("4546" is the shared default). */
+    ESKIZ_FROM: z.string().min(1).max(20).default('4546'),
+    ESKIZ_BASE_URL: z.url({ protocol: /^https$/ }).default('https://notify.eskiz.uz/api'),
     /** Max OTP requests per client IP per hour (abuse / SMS pumping protection). */
     OTP_IP_HOURLY_LIMIT: z.coerce.number().int().min(1).max(10_000).default(20),
     /** 32-byte key (base64) that encrypts staff TOTP secrets at rest. */
@@ -107,7 +112,12 @@ export const envSchema = z
       .string()
       .regex(/^\d{5,15}:[\w-]{30,60}$/, 'must look like a Telegram bot token')
       .optional(),
-    /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
+    /** Ops Telegram chat for operator alerts (5xx errors, failing jobs). Needs TELEGRAM_BOT_TOKEN. */
+    ALERT_TELEGRAM_CHAT_ID: z
+      .string()
+      .regex(/^-?\d{1,20}$/, 'must be a numeric Telegram chat id')
+      .optional(),
+    /** local = LocalDiskStorage on a persistent volume (single server, ADR 0020). */
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),
     /** Base URL under which stored images are public. */
@@ -135,6 +145,17 @@ export const envSchema = z
         message: 'rate limiting can be disabled only when NODE_ENV=test',
       });
     }
+    if (env.SMS_PROVIDER === 'eskiz') {
+      for (const key of ['ESKIZ_EMAIL', 'ESKIZ_PASSWORD'] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'required when SMS_PROVIDER=eskiz',
+          });
+        }
+      }
+    }
     if (env.DEV_PAYMENTS_ENABLED && env.NODE_ENV === 'production') {
       ctx.addIssue({
         code: 'custom',
@@ -150,13 +171,15 @@ export const envSchema = z
         message: 'the staff second factor cannot be disabled in production',
       });
     }
-    // Only the local-disk adapter exists so far; production needs object storage
-    // (S3-compatible adapter, added with the hosting decision before Phase 7).
-    ctx.addIssue({
-      code: 'custom',
-      path: ['STORAGE_DRIVER'],
-      message: `${env.STORAGE_DRIVER} disk storage is for development only; configure object storage`,
-    });
+    // Production keeps uploads on a mounted volume with an absolute path
+    // (never relative to the working directory of the process).
+    if (!env.STORAGE_LOCAL_DIR.startsWith('/')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STORAGE_LOCAL_DIR'],
+        message: 'must be an absolute path to a persistent volume in production',
+      });
+    }
     for (const origin of env.CORS_ORIGINS) {
       if (!origin.startsWith('https://')) {
         ctx.addIssue({

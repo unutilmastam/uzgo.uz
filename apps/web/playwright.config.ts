@@ -46,11 +46,18 @@ export default defineConfig({
       },
     },
     {
-      command: `pnpm exec next start --port ${String(PORT)}`,
+      // The standalone server is what the production image runs (ADR 0020).
+      // Its data cache is cleared so no response cached from an earlier
+      // database survives (production keeps it on tmpfs for the same reason).
+      command: [
+        'rm -rf .next/standalone/apps/web/.next/static .next/standalone/apps/web/.next/cache',
+        'cp -r .next/static .next/standalone/apps/web/.next/static',
+        'node .next/standalone/apps/web/server.js',
+      ].join(' && '),
       url: `http://localhost:${String(PORT)}/uz`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
-      env: { API_INTERNAL_URL: `http://localhost:${String(API_PORT)}` },
+      env: { API_INTERNAL_URL: `http://localhost:${String(API_PORT)}`, PORT: String(PORT) },
     },
   ],
 });

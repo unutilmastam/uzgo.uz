@@ -95,6 +95,33 @@ jobs:
       - name: Dependency audit
         run: pnpm audit --audit-level=moderate
 
+  stack:
+    name: Production images + stack smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint operations scripts
+        run: shellcheck -x -P SCRIPTDIR deploy/scripts/*.sh
+
+      - name: Install age (backup encryption)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Build images (api, migrate, web)
+        env:
+          DOCKER_BUILDKIT: '1'
+        run: |
+          docker build -f apps/api/Dockerfile --target api -t uzgo-local-api:ci .
+          docker build -f apps/api/Dockerfile --target migrate -t uzgo-local-migrate:ci .
+          docker build -f apps/web/Dockerfile -t uzgo-local-web:ci .
+          docker image ls 'uzgo-local-*'
+
+      - name: Stack smoke test (deploy, HTTPS, backup, restore, rollback, monitor)
+        run: deploy/scripts/ci-smoke.sh ci
+
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'

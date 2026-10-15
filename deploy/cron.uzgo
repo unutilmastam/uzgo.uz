@@ -1,0 +1,9 @@
+# /etc/cron.d/uzgo — UZGO operations schedule (UTC). Installed by docs/RUNBOOK.md.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# Health, disk, backup age and certificate checks.
+* * * * * root /opt/uzgo/scripts/monitor.sh >>/var/log/uzgo/monitor.log 2>&1
+# Nightly encrypted backup at 02:30 Tashkent (21:30 UTC).
+30 21 * * * root /opt/uzgo/scripts/backup.sh daily >>/var/log/uzgo/backup.log 2>&1
+# Weekly restore test (Sunday 05:00 Tashkent).
+0 0 * * 0 root /opt/uzgo/scripts/restore-test.sh latest >>/var/log/uzgo/backup.log 2>&1

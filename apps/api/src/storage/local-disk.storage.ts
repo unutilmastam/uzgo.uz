@@ -2,9 +2,14 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
 import { contentTypeForKey, isValidStorageKey, type StorageAdapter } from './storage.adapter.js';
 
-/** DEVELOPMENT / TESTS: stores objects on the local disk. Not for production. */
-export class DevLocalDiskStorage implements StorageAdapter {
-  readonly name = 'dev-local-disk';
+/**
+ * Stores objects on a local disk directory. Used in development and, on the
+ * single-server production setup (ADR 0020), on a persistent volume that is
+ * included in the backups. An S3-compatible adapter replaces it when the
+ * platform grows to several servers.
+ */
+export class LocalDiskStorage implements StorageAdapter {
+  readonly name = 'local-disk';
   private readonly root: string;
 
   constructor(

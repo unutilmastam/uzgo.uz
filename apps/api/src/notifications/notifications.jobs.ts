@@ -5,6 +5,7 @@ import {
   type OnApplicationBootstrap,
   type OnModuleDestroy,
 } from '@nestjs/common';
+import { AlertsService } from '../alerts/alerts.service.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import { NotificationsService } from './notifications.service.js';
@@ -21,6 +22,7 @@ export class NotificationsJobs implements OnApplicationBootstrap, OnModuleDestro
   constructor(
     private readonly notifications: NotificationsService,
     @Inject(ENV) private readonly env: Env,
+    private readonly alerts: AlertsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -40,6 +42,10 @@ export class NotificationsJobs implements OnApplicationBootstrap, OnModuleDestro
       await this.notifications.dispatchDue();
     } catch (err) {
       this.logger.error({ err }, 'Notification dispatch failed');
+      this.alerts.report(
+        'job:notifications',
+        `Notification dispatch failed: ${err instanceof Error ? err.name : 'UnknownError'}`,
+      );
     } finally {
       this.running = false;
     }

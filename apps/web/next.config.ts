@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -20,6 +21,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Self-contained server for the production Docker image (ADR 0020). The
+  // build runs from apps/web, so the monorepo root is two levels up.
+  output: 'standalone',
+  outputFileTracingRoot: path.join(process.cwd(), '../..'),
   reactStrictMode: true,
   // The shared UI package ships TypeScript source.
   transpilePackages: ['@uzgo/ui'],

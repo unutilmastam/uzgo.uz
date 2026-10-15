@@ -1,0 +1,8 @@
+# /etc/logrotate.d/uzgo — host-side logs of the operations scripts.
+/var/log/uzgo/*.log {
+	weekly
+	rotate 8
+	compress
+	missingok
+	notifempty
+}
