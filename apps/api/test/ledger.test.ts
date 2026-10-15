@@ -240,6 +240,8 @@ describe('ledger, commission, refunds and payouts', () => {
       customer.cookie,
       {
         to: 'RETURN_REQUESTED',
+        returnReason: 'DEFECTIVE',
+        returnComment: 'Ekran ishlamayapti',
       },
     ).expect(200);
     await move(owner.cookie, shipmentId, 'RETURNED').expect(204);

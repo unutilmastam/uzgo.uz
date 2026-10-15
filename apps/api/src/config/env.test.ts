@@ -102,6 +102,17 @@ describe('parseEnv', () => {
       }),
     );
     expect(noToken.issues.some((issue) => issue.startsWith('INTERNAL_API_TOKEN'))).toBe(true);
+    // Returns must be decided before the seller's money leaves the hold.
+    const window = errorOf(() =>
+      parseEnv({
+        ...production,
+        STORAGE_LOCAL_DIR: '/data/uploads',
+        PAYOUT_HOLD_DAYS: '7',
+        RETURN_WINDOW_DAYS: '10',
+      }),
+    );
+    expect(window.issues.some((issue) => issue.startsWith('RETURN_WINDOW_DAYS'))).toBe(true);
+    expect(env.RETURN_WINDOW_DAYS).toBe(10);
   });
 
   it('requires a 32-byte TOTP key and keeps staff 2FA on in production', () => {

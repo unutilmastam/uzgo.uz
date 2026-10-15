@@ -504,7 +504,10 @@
     "itemLineOptions": "{title} · {options} × {quantity}",
     "recipientValue": "{name}, {phone}",
     "addressValue": "{district}, {line}",
-    "viewInStore": "Смотреть на сайте"
+    "viewInStore": "Смотреть на сайте",
+    "returnRejectNote": "Причина отказа (увидит покупатель)",
+    "cancel": "Отмена",
+    "error_DECISION_NOTE_REQUIRED": "Укажите причину отказа."
   },
   "admin": {
     "title": "Панель управления",
@@ -655,6 +658,7 @@
     "phone": "Телефон",
     "error_PAYOUT_EXCEEDS_BALANCE": "Сумма больше доступного остатка.",
     "error_PAYOUT_DETAILS_MISSING": "У магазина нет реквизитов.",
+    "error_DECISION_NOTE_REQUIRED": "Укажите причину отказа.",
     "tabReviews": "Отзывы",
     "reviews_ALL": "Все",
     "reviews_LOW": "1–2 звезды",
@@ -664,6 +668,25 @@
     "reviewHide": "Скрыть",
     "reviewHideReason": "Причина скрытия (видна только сотрудникам)",
     "reviewPublish": "Опубликовать снова"
+  },
+  "returns": {
+    "reasonLabel": "Причина возврата:",
+    "decisionLabel": "Ответ продавца:",
+    "deadline": "Запросить возврат можно до {date}.",
+    "choose": "Выберите причину",
+    "reason_DEFECTIVE": "Брак / не работает",
+    "reason_WRONG_ITEM": "Привезли не тот товар",
+    "reason_NOT_AS_DESCRIBED": "Не соответствует описанию",
+    "reason_DAMAGED_IN_DELIVERY": "Повреждён при доставке",
+    "reason_CHANGED_MIND": "Передумал(а)",
+    "reason_OTHER": "Другая причина",
+    "commentLabel": "Опишите проблему",
+    "commentHint": "Не меньше 5 символов. Продавец увидит это.",
+    "submit": "Запросить возврат",
+    "cancel": "Отмена",
+    "error_RETURN_WINDOW_CLOSED": "Срок возврата истёк. Обратитесь в поддержку.",
+    "error_RETURN_REASON_REQUIRED": "Укажите причину и комментарий.",
+    "error_VALIDATION_FAILED": "Проверьте причину и комментарий (5–500 символов)."
   },
   "reviews": {
     "title": "Отзывы",

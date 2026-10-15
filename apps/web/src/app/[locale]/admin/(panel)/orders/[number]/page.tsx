@@ -2,6 +2,7 @@ import { Price } from '@uzgo/ui/components/price';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { AdminAction } from '@/components/admin/admin-action';
+import { ReturnInfo } from '@/components/orders/return-info';
 import { OrderStatusBadge } from '@/components/orders/status-badge';
 import type { Locale } from '@/i18n/routing';
 import { getAdminOrder } from '@/lib/admin-api';
@@ -65,6 +66,9 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ num
                 </li>
               ))}
             </ul>
+            <div className="mb-3">
+              <ReturnInfo shipment={shipment} />
+            </div>
             <div className="flex flex-wrap items-start gap-2">
               {shipment.allowedTransitions.map((to) => (
                 <AdminAction
@@ -72,6 +76,10 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ num
                   path={`/admin/orders/${order.number}/seller-orders/${shipment.id}/transition`}
                   body={{ to }}
                   label={t.has(`seller.action_${to}`) ? t(`seller.action_${to}`) : to}
+                  withReason={to === 'RETURN_REJECTED'}
+                  {...(to === 'RETURN_REJECTED'
+                    ? { fieldLabel: t('seller.returnRejectNote') }
+                    : {})}
                 />
               ))}
             </div>

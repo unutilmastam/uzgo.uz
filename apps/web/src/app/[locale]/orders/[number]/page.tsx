@@ -7,6 +7,7 @@ import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
 import { OrderStatusBadge } from '@/components/orders/status-badge';
 import { PaymentActions } from '@/components/orders/payment-actions';
+import { ReturnInfo } from '@/components/orders/return-info';
 import { ShipmentActions } from '@/components/orders/shipment-actions';
 import { Link, redirect } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -133,6 +134,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
                 ) : null}
               </div>
             ) : null}
+            <div className="border-t border-border px-4 py-3 empty:hidden">
+              <ReturnInfo shipment={so} showDeadline />
+            </div>
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
               <ShipmentActions
                 orderNumber={order.number}

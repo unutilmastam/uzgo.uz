@@ -86,8 +86,7 @@ export class OrdersController {
         auth.user.id,
         orderNumber(number),
         sellerOrderId,
-        body.to,
-        body.reason,
+        body,
       ),
     };
   }
@@ -109,6 +108,6 @@ export class OrdersController {
     @Param('sellerOrderId', new ParseUUIDPipe({ version: '7' })) sellerOrderId: string,
     @Body(new ZodValidationPipe(transitionSchema)) body: z.output<typeof transitionSchema>,
   ): Promise<void> {
-    await this.orders.transitionAsSeller(auth.user.id, sellerOrderId, body.to, body.reason);
+    await this.orders.transitionAsSeller(auth.user.id, sellerOrderId, body);
   }
 }

@@ -16,7 +16,12 @@ import {
   ONLINE_METHODS,
 } from '../payments/payment-methods.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
+import type {
+  OrderActor,
+  OrderStatus,
+  ReturnReason,
+  SellerOrderStatus,
+} from '../generated/prisma/enums.js';
 import { planDelivery } from '../delivery/delivery.js';
 import { notifySellers, notifyShipmentStatus } from '../notifications/templates.js';
 import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
@@ -33,6 +38,12 @@ const MAX_UNPAID_ORDERS = 3;
 
 type Names = { uz: string; ru: string };
 type Tx = Prisma.TransactionClient;
+export type TransitionInput = {
+  to: SellerOrderStatus;
+  reason?: string | undefined;
+  returnReason?: ReturnReason | undefined;
+  returnComment?: string | undefined;
+};
 
 const orderInclude = {
   district: { select: { name: true, region: { select: { name: true } } } },
@@ -97,23 +108,50 @@ function paymentView(order: {
 }
 
 type ShipmentExtras = {
+  status: SellerOrderStatus;
   carrier: string | null;
   trackingCode: string | null;
+  deliveredAt: Date | null;
+  returnReason: ReturnReason | null;
+  returnComment: string | null;
+  returnDecisionNote: string | null;
   events: { toStatus: string; createdAt: Date }[];
 };
 
-/** Tracking code and status history shown to the customer and the seller. */
-function shipmentExtras(so: ShipmentExtras) {
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Last moment for an in-app return request, counted from delivery. */
+export function returnDeadline(deliveredAt: Date | null, windowDays: number): Date | null {
+  return deliveredAt ? new Date(deliveredAt.getTime() + windowDays * DAY_MS) : null;
+}
+
+/**
+ * Tracking, status history and return details shown to the customer and the
+ * seller. A return can no longer be requested once the window has passed.
+ */
+function shipmentExtras(so: ShipmentExtras, actor: OrderActor, windowDays: number) {
+  const until = returnDeadline(so.deliveredAt, windowDays);
+  const windowOpen = until !== null && until.getTime() >= Date.now();
   return {
+    allowedTransitions: allowedFor(so.status, actor).filter(
+      (to) => to !== 'RETURN_REQUESTED' || windowOpen,
+    ),
     tracking: so.carrier && so.trackingCode ? { carrier: so.carrier, code: so.trackingCode } : null,
     timeline: so.events.map((e) => ({
       status: e.toStatus as SellerOrderStatus,
       at: e.createdAt.toISOString(),
     })),
+    deliveredAt: so.deliveredAt?.toISOString() ?? null,
+    returnUntil: until?.toISOString() ?? null,
+    returnRequest:
+      so.returnReason && so.returnComment !== null
+        ? { reason: so.returnReason, comment: so.returnComment }
+        : null,
+    returnDecisionNote: so.returnDecisionNote,
   };
 }
 
-export function toOrderView(order: OrderRow, actor: OrderActor): OrderView {
+export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: number): OrderView {
   return {
     number: order.number,
     status: order.status,
@@ -150,8 +188,7 @@ export function toOrderView(order: OrderRow, actor: OrderActor): OrderView {
       itemsTotalTiyin: so.itemsTotalTiyin.toString(),
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
-      allowedTransitions: allowedFor(so.status, actor),
-      ...shipmentExtras(so),
+      ...shipmentExtras(so, actor, windowDays),
     })),
   };
 }
@@ -441,7 +478,7 @@ export class OrdersService {
             order.sellerOrders.map((so) => so.id),
           );
 
-        const view = toOrderView(order, 'CUSTOMER');
+        const view = toOrderView(order, 'CUSTOMER', this.env.RETURN_WINDOW_DAYS);
         await tx.idempotencyKey.update({
           where: { id: keyRow.id },
           data: { response: view },
@@ -482,14 +519,14 @@ export class OrdersService {
       include: orderInclude,
     });
     if (!order) throw notFound();
-    return toOrderView(order, 'CUSTOMER');
+    return toOrderView(order, 'CUSTOMER', this.env.RETURN_WINDOW_DAYS);
   }
 
   /** Staff view of any order. Callers must enforce staff roles and the second factor. */
   async getForAdmin(number: string): Promise<OrderView> {
     const order = await this.prisma.order.findFirst({ where: { number }, include: orderInclude });
     if (!order) throw notFound();
-    return toOrderView(order, 'ADMIN');
+    return toOrderView(order, 'ADMIN', this.env.RETURN_WINDOW_DAYS);
   }
 
   async listForAdmin(
@@ -537,15 +574,14 @@ export class OrdersService {
     userId: string,
     number: string,
     sellerOrderId: string,
-    to: SellerOrderStatus,
-    reason: string | undefined,
+    input: TransitionInput,
   ): Promise<OrderView> {
     const shipment = await this.prisma.sellerOrder.findFirst({
       where: { id: sellerOrderId, order: { number } },
       select: { id: true },
     });
     if (!shipment) throw notFound();
-    await this.transition(shipment.id, to, { actor: 'ADMIN', userId, reason });
+    await this.transition(shipment.id, input, { actor: 'ADMIN', userId });
     return this.getForAdmin(number);
   }
 
@@ -553,15 +589,14 @@ export class OrdersService {
     userId: string,
     number: string,
     sellerOrderId: string,
-    to: SellerOrderStatus,
-    reason: string | undefined,
+    input: TransitionInput,
   ): Promise<OrderView> {
     const owned = await this.prisma.sellerOrder.findFirst({
       where: { id: sellerOrderId, order: { number, userId } },
       select: { id: true, orderId: true },
     });
     if (!owned) throw notFound();
-    await this.transition(owned.id, to, { actor: 'CUSTOMER', userId, reason });
+    await this.transition(owned.id, input, { actor: 'CUSTOMER', userId });
     return this.getForCustomer(userId, number);
   }
 
@@ -569,8 +604,7 @@ export class OrdersService {
   async transitionAsSeller(
     userId: string,
     sellerOrderId: string,
-    to: SellerOrderStatus,
-    reason: string | undefined,
+    input: TransitionInput,
   ): Promise<void> {
     const shipment = await this.prisma.sellerOrder.findFirst({
       where: {
@@ -580,7 +614,7 @@ export class OrdersService {
       select: { id: true },
     });
     if (!shipment) throw notFound();
-    await this.transition(shipment.id, to, { actor: 'SELLER', userId, reason });
+    await this.transition(shipment.id, input, { actor: 'SELLER', userId });
   }
 
   async listForSeller(userId: string, storeId: string | undefined) {
@@ -632,8 +666,7 @@ export class OrdersService {
       itemsTotalTiyin: so.itemsTotalTiyin.toString(),
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
-      allowedTransitions: allowedFor(so.status, 'SELLER'),
-      ...shipmentExtras(so),
+      ...shipmentExtras(so, 'SELLER', this.env.RETURN_WINDOW_DAYS),
       orderNumber: so.order.number,
       createdAt: so.createdAt.toISOString(),
       recipientName: so.order.recipientName,
@@ -646,11 +679,78 @@ export class OrdersService {
   /** Applies one transition atomically: row lock, table check, restock, events, order status. */
   private async transition(
     sellerOrderId: string,
-    to: SellerOrderStatus,
-    by: { actor: OrderActor; userId: string | null; reason: string | undefined },
+    input: TransitionInput,
+    by: { actor: OrderActor; userId: string },
   ): Promise<void> {
-    await this.prisma.$transaction((tx: Tx) => transitionInTx(tx, sellerOrderId, to, by));
+    await this.prisma.$transaction((tx: Tx) =>
+      transitionInTx(tx, sellerOrderId, input.to, {
+        ...by,
+        reason: input.reason,
+        ...(input.to === 'RETURN_REQUESTED'
+          ? {
+              returnRequest: {
+                reason: input.returnReason,
+                comment: input.returnComment,
+                windowDays: this.env.RETURN_WINDOW_DAYS,
+              },
+            }
+          : {}),
+      }),
+    );
   }
+}
+
+/**
+ * Extra columns written with a transition (ADR 0023): the delivery time that
+ * starts the return window, the customer's return request (inside the window
+ * only) and the decision note (required when a return is rejected).
+ */
+function returnFields(
+  deliveredAt: Date | null,
+  to: SellerOrderStatus,
+  by: {
+    reason: string | undefined;
+    returnRequest?: {
+      reason: ReturnReason | undefined;
+      comment: string | undefined;
+      windowDays: number;
+    };
+  },
+): Prisma.SellerOrderUpdateInput {
+  if (to === 'DELIVERED') return { deliveredAt: new Date() };
+  if (to === 'RETURN_REQUESTED') {
+    const request = by.returnRequest;
+    if (!request?.reason || !request.comment) {
+      throw new AppException(
+        HttpStatus.BAD_REQUEST,
+        'RETURN_REASON_REQUIRED',
+        'A return needs a reason and a comment',
+      );
+    }
+    const until = returnDeadline(deliveredAt, request.windowDays);
+    if (!until || until.getTime() < Date.now()) {
+      throw new AppException(
+        HttpStatus.CONFLICT,
+        'RETURN_WINDOW_CLOSED',
+        'The return window for this shipment has closed',
+        { returnUntil: until?.toISOString() ?? null },
+      );
+    }
+    return { returnReason: request.reason, returnComment: request.comment };
+  }
+  if (to === 'RETURN_REJECTED') {
+    const note = by.reason?.trim();
+    if (!note || note.length < 3) {
+      throw new AppException(
+        HttpStatus.BAD_REQUEST,
+        'DECISION_NOTE_REQUIRED',
+        'Explain to the customer why the return is rejected',
+      );
+    }
+    return { returnDecisionNote: note };
+  }
+  if (to === 'RETURNED') return { returnDecisionNote: by.reason?.trim() || null };
+  return {};
 }
 
 /**
@@ -668,10 +768,19 @@ export async function transitionInTx(
     reason: string | undefined;
     /** The provider already returned the whole payment: no per-shipment refund. */
     providerRefunded?: boolean;
+    /** Customer's return request (to RETURN_REQUESTED). */
+    returnRequest?: {
+      reason: ReturnReason | undefined;
+      comment: string | undefined;
+      windowDays: number;
+    };
   },
 ): Promise<void> {
-  const [locked] = await tx.$queryRaw<{ status: SellerOrderStatus; orderId: string }[]>`
-    SELECT "status", "orderId" FROM "SellerOrder" WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
+  const [locked] = await tx.$queryRaw<
+    { status: SellerOrderStatus; orderId: string; deliveredAt: Date | null }[]
+  >`
+    SELECT "status", "orderId", "deliveredAt" FROM "SellerOrder"
+    WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
   if (!locked) throw notFound();
   if (!canTransition(locked.status, to, by.actor)) {
     throw new AppException(
@@ -681,7 +790,10 @@ export async function transitionInTx(
       { from: locked.status, to },
     );
   }
-  await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: to } });
+  await tx.sellerOrder.update({
+    where: { id: sellerOrderId },
+    data: { status: to, ...returnFields(locked.deliveredAt, to, by) },
+  });
   await onShipmentTransition(tx, sellerOrderId, to, {
     providerRefunded: by.providerRefunded ?? false,
   });

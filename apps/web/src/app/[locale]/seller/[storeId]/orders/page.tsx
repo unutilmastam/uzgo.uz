@@ -3,6 +3,7 @@ import { Price } from '@uzgo/ui/components/price';
 import { Package } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
+import { ReturnInfo } from '@/components/orders/return-info';
 import { ShipmentButtons } from '@/components/seller/shipment-buttons';
 import { TrackingForm } from '@/components/seller/tracking-form';
 import type { Locale } from '@/i18n/routing';
@@ -103,6 +104,9 @@ export default async function SellerOrdersPage({
               <TrackingForm sellerOrderId={shipment.id} initial={shipment.tracking} />
             </div>
           ) : null}
+          <div className="mb-3 empty:hidden">
+            <ReturnInfo shipment={shipment} />
+          </div>
           <ShipmentButtons sellerOrderId={shipment.id} allowed={shipment.allowedTransitions} />
         </li>
       ))}

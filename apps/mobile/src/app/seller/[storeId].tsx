@@ -17,6 +17,7 @@ import {
   Screen,
   styles as ui,
 } from '@/components/ui';
+import { ReturnInfo } from '@/components/return-info';
 import { confirmAction, notify } from '@/lib/dialogs';
 import { formatDateTime, formatPhone, localized } from '@/lib/format';
 import { spacing } from '@/lib/theme';
@@ -45,25 +46,37 @@ function ShipmentCard({ shipment, onChanged }: { shipment: Shipment; onChanged: 
   const [carrier, setCarrier] = useState(shipment.tracking?.carrier ?? '');
   const [code, setCode] = useState(shipment.tracking?.code ?? '');
   const [note, setNote] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [decision, setDecision] = useState('');
 
-  function transition(to: SellerOrderStatus) {
+  function transition(to: SellerOrderStatus, reason?: string) {
+    if (to === 'RETURN_REJECTED' && reason === undefined) {
+      setRejecting(true);
+      return;
+    }
     const label = t(`sellerAction_${to}`);
     const go = () => {
       setPending(true);
       api
         .request(`/seller/seller-orders/${shipment.id}/transition`, {
           method: 'POST',
-          body: { to },
+          body: { to, ...(reason ? { reason } : {}) },
         })
-        .then(onChanged, (err: unknown) => {
-          notify(errorText(err));
-        })
+        .then(
+          () => {
+            setRejecting(false);
+            onChanged();
+          },
+          (err: unknown) => {
+            notify(errorText(err));
+          },
+        )
         .finally(() => {
           setPending(false);
         });
     };
     // Irreversible or negative steps are confirmed first.
-    if (NEGATIVE.has(to) || to === 'DELIVERED') {
+    if ((NEGATIVE.has(to) || to === 'DELIVERED') && reason === undefined) {
       void confirmAction(
         t('actionConfirm', { action: label }),
         label,
@@ -145,7 +158,35 @@ function ShipmentCard({ shipment, onChanged }: { shipment: Shipment; onChanged: 
           {note ? <AppText variant="small">{note}</AppText> : null}
         </View>
       ) : null}
-      {shipment.allowedTransitions.map((to) => (
+      <ReturnInfo shipment={shipment} />
+      {rejecting ? (
+        <View style={{ gap: spacing.sm }}>
+          <Field
+            label={t('returnRejectNote')}
+            value={decision}
+            onChangeText={setDecision}
+            maxLength={300}
+            multiline
+          />
+          <Button
+            title={t('sellerAction_RETURN_REJECTED')}
+            variant="destructive"
+            loading={pending}
+            disabled={decision.trim().length < 3}
+            onPress={() => {
+              transition('RETURN_REJECTED', decision.trim());
+            }}
+          />
+          <Button
+            title={t('cancel')}
+            variant="ghost"
+            onPress={() => {
+              setRejecting(false);
+            }}
+          />
+        </View>
+      ) : null}
+      {(rejecting ? [] : shipment.allowedTransitions).map((to) => (
         <Button
           key={to}
           title={t(`sellerAction_${to}`)}

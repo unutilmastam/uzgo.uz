@@ -66,6 +66,12 @@ export const envSchema = z
     COMMISSION_DEFAULT_BP: z.coerce.number().int().min(0).max(5000).default(0),
     /** Delivered earnings stay on hold this many days (return window) before payout. */
     PAYOUT_HOLD_DAYS: z.coerce.number().int().min(0).max(90).default(10),
+    /**
+     * Days after delivery in which the customer can request a return in the app
+     * (ADR 0023). In production it must not exceed PAYOUT_HOLD_DAYS: money
+     * already paid out cannot be refunded from the seller's balance.
+     */
+    RETURN_WINDOW_DAYS: z.coerce.number().int().min(1).max(90).default(10),
     /** Unpaid online orders are cancelled (stock released) after this many minutes. */
     PAYMENT_WINDOW_MINUTES: z.coerce
       .number()
@@ -130,6 +136,14 @@ export const envSchema = z
     MEDIA_PUBLIC_BASE_URL: z.string().min(1).default('/api/v1/media'),
   })
   .superRefine((env, ctx) => {
+    // Tests shorten the hold to 0 to exercise payouts; production keeps the rule.
+    if (env.NODE_ENV === 'production' && env.RETURN_WINDOW_DAYS > env.PAYOUT_HOLD_DAYS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RETURN_WINDOW_DAYS'],
+        message: 'must not exceed PAYOUT_HOLD_DAYS',
+      });
+    }
     if (env.SMS_PROVIDER === 'dev' && env.NODE_ENV !== 'development') {
       ctx.addIssue({
         code: 'custom',

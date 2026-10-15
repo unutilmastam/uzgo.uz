@@ -50,6 +50,17 @@ export type PaymentState = z.infer<typeof paymentStatusSchema>;
 export const sellerOrderStatusSchema = z.enum(SELLER_ORDER_STATUSES);
 export type SellerOrderStatus = z.infer<typeof sellerOrderStatusSchema>;
 
+export const RETURN_REASONS = [
+  'DEFECTIVE',
+  'WRONG_ITEM',
+  'NOT_AS_DESCRIBED',
+  'DAMAGED_IN_DELIVERY',
+  'CHANGED_MIND',
+  'OTHER',
+] as const;
+export const returnReasonSchema = z.enum(RETURN_REASONS);
+export type ReturnReason = z.infer<typeof returnReasonSchema>;
+
 /** POST /api/v1/checkout (requires an Idempotency-Key header). Prices never come from the client. */
 export const DELIVERY_TYPES = ['COURIER', 'PICKUP'] as const;
 export const deliveryTypeSchema = z.enum(DELIVERY_TYPES);
@@ -144,6 +155,12 @@ export const sellerOrderViewSchema = z.object({
   tracking: z.object({ carrier: z.string(), code: z.string() }).nullable(),
   /** Status history, oldest first. */
   timeline: z.array(z.object({ status: sellerOrderStatusSchema, at: z.string() })),
+  deliveredAt: z.string().nullable(),
+  /** Last moment the customer can request a return in the app (null before delivery). */
+  returnUntil: z.string().nullable(),
+  returnRequest: z.object({ reason: returnReasonSchema, comment: z.string() }).nullable(),
+  /** Seller/staff note on the return decision. */
+  returnDecisionNote: z.string().nullable(),
 });
 export type SellerOrderView = z.infer<typeof sellerOrderViewSchema>;
 
@@ -189,10 +206,16 @@ export const orderSummarySchema = z.object({
 });
 export const orderListResponseSchema = z.object({ items: z.array(orderSummarySchema) });
 
-/** POST …/transition */
+/**
+ * POST …/transition. A return request (to RETURN_REQUESTED) needs
+ * `returnReason` and `returnComment`; rejecting a return needs `reason`
+ * (the decision note shown to the customer).
+ */
 export const transitionSchema = z.strictObject({
   to: sellerOrderStatusSchema,
   reason: z.string().trim().max(300).optional(),
+  returnReason: returnReasonSchema.optional(),
+  returnComment: z.string().trim().min(5).max(500).optional(),
 });
 
 /** Seller view of a shipment (GET /api/v1/seller/orders). */

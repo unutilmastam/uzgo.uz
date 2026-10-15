@@ -71,8 +71,7 @@ export class AdminOrdersController {
         auth.user.id,
         checkNumber(number),
         sellerOrderId,
-        body.to,
-        body.reason,
+        body,
       ),
     };
   }

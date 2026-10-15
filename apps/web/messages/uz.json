@@ -504,7 +504,10 @@
     "itemLineOptions": "{title} · {options} × {quantity}",
     "recipientValue": "{name}, {phone}",
     "addressValue": "{district}, {line}",
-    "viewInStore": "Saytda koʻrish"
+    "viewInStore": "Saytda koʻrish",
+    "returnRejectNote": "Rad etish sababi (xaridorga koʻrinadi)",
+    "cancel": "Bekor qilish",
+    "error_DECISION_NOTE_REQUIRED": "Rad etish sababini yozing."
   },
   "admin": {
     "title": "Boshqaruv paneli",
@@ -655,6 +658,7 @@
     "phone": "Telefon",
     "error_PAYOUT_EXCEEDS_BALANCE": "Summa mavjud balansdan katta.",
     "error_PAYOUT_DETAILS_MISSING": "Doʻkonda bank rekvizitlari yoʻq.",
+    "error_DECISION_NOTE_REQUIRED": "Rad etish sababini yozing.",
     "tabReviews": "Sharhlar",
     "reviews_ALL": "Barchasi",
     "reviews_LOW": "1–2 yulduz",
@@ -664,6 +668,25 @@
     "reviewHide": "Yashirish",
     "reviewHideReason": "Yashirish sababi (faqat xodimlarga koʻrinadi)",
     "reviewPublish": "Qayta chop etish"
+  },
+  "returns": {
+    "reasonLabel": "Qaytarish sababi:",
+    "decisionLabel": "Sotuvchi javobi:",
+    "deadline": "Qaytarishni {date} gacha soʻrash mumkin.",
+    "choose": "Sababni tanlang",
+    "reason_DEFECTIVE": "Nuqsonli / ishlamaydi",
+    "reason_WRONG_ITEM": "Boshqa mahsulot keldi",
+    "reason_NOT_AS_DESCRIBED": "Tavsifga mos emas",
+    "reason_DAMAGED_IN_DELIVERY": "Yetkazishda shikastlangan",
+    "reason_CHANGED_MIND": "Fikrim oʻzgardi",
+    "reason_OTHER": "Boshqa sabab",
+    "commentLabel": "Muammoni tasvirlang",
+    "commentHint": "Kamida 5 belgi. Sotuvchi buni koʻradi.",
+    "submit": "Qaytarishni soʻrash",
+    "cancel": "Bekor qilish",
+    "error_RETURN_WINDOW_CLOSED": "Qaytarish muddati tugagan. Yordam xizmatiga murojaat qiling.",
+    "error_RETURN_REASON_REQUIRED": "Sabab va izohni kiriting.",
+    "error_VALIDATION_FAILED": "Sabab va izohni tekshiring (5–500 belgi)."
   },
   "reviews": {
     "title": "Sharhlar",

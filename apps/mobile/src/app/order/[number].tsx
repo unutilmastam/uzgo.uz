@@ -1,4 +1,9 @@
-import { orderResponseSchema, type SellerOrderView } from '@uzgo/contracts';
+import {
+  orderResponseSchema,
+  RETURN_REASONS,
+  type ReturnReason,
+  type SellerOrderView,
+} from '@uzgo/contracts';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { RefreshControl, View } from 'react-native';
@@ -7,13 +12,16 @@ import {
   Badge,
   Button,
   Card,
+  Choice,
   Divider,
   ErrorState,
+  Field,
   Loading,
   Price,
   Row,
   Screen,
 } from '@/components/ui';
+import { ReturnInfo } from '@/components/return-info';
 import { confirmAction, notify } from '@/lib/dialogs';
 import { formatDateTime, formatPhone, localized } from '@/lib/format';
 import { isOnlineMethod, payOrder } from '@/lib/payments';
@@ -35,16 +43,40 @@ function Shipment({
 }) {
   const { api, t, locale, errorText } = useApp();
   const [pending, setPending] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [reason, setReason] = useState<ReturnReason | null>(null);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const actions = CUSTOMER_ACTIONS.filter((a) => shipment.allowedTransitions.includes(a));
 
+  async function requestReturn() {
+    if (!reason || comment.trim().length < 5) {
+      setError(t('returnFillAll'));
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      await api.request(`/orders/${orderNumber}/seller-orders/${shipment.id}/transition`, {
+        method: 'POST',
+        body: { to: 'RETURN_REQUESTED', returnReason: reason, returnComment: comment.trim() },
+      });
+      setReturning(false);
+      onChanged();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function run(to: (typeof CUSTOMER_ACTIONS)[number]) {
+    if (to === 'RETURN_REQUESTED') {
+      setReturning(true);
+      return;
+    }
     const label = t(`customerAction_${to}`);
-    const ok = await confirmAction(
-      t('actionConfirm', { action: label }),
-      label,
-      t('cancel'),
-      to === 'CANCELLED_BY_CUSTOMER',
-    );
+    const ok = await confirmAction(t('actionConfirm', { action: label }), label, t('cancel'), true);
     if (!ok) return;
     setPending(true);
     try {
@@ -98,15 +130,59 @@ function Shipment({
           ))}
         </View>
       ) : null}
-      {actions.map((to) => (
-        <Button
-          key={to}
-          title={t(`customerAction_${to}`)}
-          variant="outline"
-          loading={pending}
-          onPress={() => void run(to)}
-        />
-      ))}
+      <ReturnInfo shipment={shipment} showDeadline />
+      {returning ? (
+        <View style={{ gap: spacing.sm }} testID="return-form">
+          <AppText variant="small" color="foreground" style={{ fontWeight: '600' }}>
+            {t('returnReasonLabel')}
+          </AppText>
+          {RETURN_REASONS.map((r) => (
+            <Choice
+              key={r}
+              label={t(`returnReason_${r}`)}
+              selected={reason === r}
+              onPress={() => {
+                setReason(r);
+              }}
+            />
+          ))}
+          <Field
+            label={t('returnComment')}
+            value={comment}
+            onChangeText={setComment}
+            maxLength={500}
+            multiline
+            hint={t('returnCommentHint')}
+          />
+          {error ? (
+            <AppText variant="small" color="destructive" accessibilityLiveRegion="polite">
+              {error}
+            </AppText>
+          ) : null}
+          <Button
+            title={t('customerAction_RETURN_REQUESTED')}
+            loading={pending}
+            onPress={() => void requestReturn()}
+          />
+          <Button
+            title={t('cancel')}
+            variant="ghost"
+            onPress={() => {
+              setReturning(false);
+            }}
+          />
+        </View>
+      ) : (
+        actions.map((to) => (
+          <Button
+            key={to}
+            title={t(`customerAction_${to}`)}
+            variant="outline"
+            loading={pending}
+            onPress={() => void run(to)}
+          />
+        ))
+      )}
     </Card>
   );
 }
