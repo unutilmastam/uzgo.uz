@@ -74,32 +74,38 @@ enum Role {
   MODERATOR
   ADMIN
   SUPER_ADMIN
+  /// UZGO Food courier (Phase 9b, ADR 0024); granted by staff with a CourierProfile.
+  COURIER
 }
 
 model User {
-  id              String           @id @default(uuid(7)) @db.Uuid
+  id                 String              @id @default(uuid(7)) @db.Uuid
   /// E.164, e.g. +998901234567
-  phone           String           @unique
-  status          UserStatus       @default(ACTIVE)
-  locale          String           @default("uz")
-  lastLoginAt     DateTime?        @db.Timestamptz(3)
-  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
-  deletedAt       DateTime?        @db.Timestamptz(3)
-  profile         UserProfile?
-  roles           UserRole[]       @relation("UserRoles")
-  rolesGranted    UserRole[]       @relation("RoleGrantedBy")
-  sessions        Session[]
-  pushDevices     PushDevice[]
-  reviews         ProductReview[]
-  favorites       Favorite[]
-  auditEvents     AuditEvent[]
-  storeMembers    StoreMember[]
-  cart            Cart?
-  orders          Order[]
-  orderEvents     OrderEvent[]
-  idempotencyKeys IdempotencyKey[]
-  staffTotps      StaffTotp[]
+  phone              String              @unique
+  status             UserStatus          @default(ACTIVE)
+  locale             String              @default("uz")
+  lastLoginAt        DateTime?           @db.Timestamptz(3)
+  createdAt          DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime            @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?           @db.Timestamptz(3)
+  profile            UserProfile?
+  roles              UserRole[]          @relation("UserRoles")
+  rolesGranted       UserRole[]          @relation("RoleGrantedBy")
+  sessions           Session[]
+  pushDevices        PushDevice[]
+  reviews            ProductReview[]
+  favorites          Favorite[]
+  auditEvents        AuditEvent[]
+  storeMembers       StoreMember[]
+  cart               Cart?
+  orders             Order[]
+  orderEvents        OrderEvent[]
+  idempotencyKeys    IdempotencyKey[]
+  staffTotps         StaffTotp[]
+  courierProfile     CourierProfile?
+  courierOrders      SellerOrder[]       @relation("CourierOrders")
+  courierLedger      LedgerEntry[]       @relation("CourierLedger")
+  courierSettlements CourierSettlement[] @relation("SettlementCourier")
 }
 
 model UserProfile {
@@ -302,16 +308,23 @@ enum LegalType {
   LEGAL_ENTITY // MChJ etc.
 }
 
+enum StoreKind {
+  SHOP
+  /// UZGO Food restaurant (Phase 9b): added by staff, never in the marketplace.
+  RESTAURANT
+}
+
 model Store {
-  id              String           @id @default(uuid(7)) @db.Uuid
-  slug            String           @unique
+  id              String             @id @default(uuid(7)) @db.Uuid
+  kind            StoreKind          @default(SHOP)
+  slug            String             @unique
   name            Json
   description     Json?
-  status          StoreStatus      @default(PENDING)
+  status          StoreStatus        @default(PENDING)
   /// Demo stores (seeded fixtures) are labelled "Demo" everywhere in the UI.
-  isDemo          Boolean          @default(false)
-  districtId      String?          @db.Uuid
-  district        District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  isDemo          Boolean            @default(false)
+  districtId      String?            @db.Uuid
+  district        District?          @relation(fields: [districtId], references: [id], onDelete: SetNull)
   logoKey         String?
   /// Seller details from the application (fields only; verified manually by staff).
   legalType       LegalType?
@@ -319,8 +332,8 @@ model Store {
   /// STIR / INN (9 digits) of the entity or entrepreneur.
   taxId           String?
   contactPhone    String?
-  reviewedAt      DateTime?        @db.Timestamptz(3)
-  reviewedById    String?          @db.Uuid
+  reviewedAt      DateTime?          @db.Timestamptz(3)
+  reviewedById    String?            @db.Uuid
   reviewNote      String?
   /// Commission override for this store (basis points); null = category rules.
   commissionBp    Int?
@@ -331,17 +344,21 @@ model Store {
   payoutRecipient String?
   /// Telegram chat that receives new-order notifications (set by the owner).
   telegramChatId  String?
-  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
-  deletedAt       DateTime?        @db.Timestamptz(3)
+  createdAt       DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?          @db.Timestamptz(3)
   members         StoreMember[]
   products        Product[]
   variants        ProductVariant[]
   sellerOrders    SellerOrder[]
   ledgerEntries   LedgerEntry[]
   payouts         Payout[]
+  restaurant      RestaurantProfile?
+  menuCategories  FoodMenuCategory[]
+  menuItems       FoodMenuItem[]
 
   @@index([status])
+  @@index([kind, status])
   @@index([districtId])
 }
 
@@ -583,41 +600,59 @@ enum OrderActor {
   SELLER
   ADMIN
   SYSTEM
+  COURIER
+}
+
+enum OrderKind {
+  MARKET
+  FOOD
+}
+
+enum FoodDeliveryMode {
+  /// The restaurant delivers with its own courier and fee.
+  SELF
+  /// A UZGO courier delivers; the fee goes to the courier.
+  UZGO
 }
 
 /// Customer-facing order; one SellerOrder (shipment) per store (ADR 0006).
 model Order {
-  id                 String           @id @default(uuid(7)) @db.Uuid
+  id                 String            @id @default(uuid(7)) @db.Uuid
   /// Human-readable, e.g. UZ-2026-000123
-  number             String           @unique
-  userId             String           @db.Uuid
-  user               User             @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status             OrderStatus      @default(CREATED)
+  number             String            @unique
+  userId             String            @db.Uuid
+  user               User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  kind               OrderKind         @default(MARKET)
+  status             OrderStatus       @default(CREATED)
   paymentMethod      PaymentMethod
   /// Online orders: unpaid after this moment are cancelled and their stock released.
-  paymentDueAt       DateTime?        @db.Timestamptz(3)
-  paidAt             DateTime?        @db.Timestamptz(3)
+  paymentDueAt       DateTime?         @db.Timestamptz(3)
+  paidAt             DateTime?         @db.Timestamptz(3)
   itemsTotalTiyin    BigInt
   deliveryTotalTiyin BigInt
   /// Promo discount funded by UZGO (items only), Phase 9a.
-  discountTiyin      BigInt           @default(0)
+  discountTiyin      BigInt            @default(0)
   /// What the customer pays: items + delivery − discount.
   totalTiyin         BigInt
-  promoCodeId        String?          @db.Uuid
-  promoCode          PromoCode?       @relation(fields: [promoCodeId], references: [id], onDelete: Restrict)
+  promoCodeId        String?           @db.Uuid
+  promoCode          PromoCode?        @relation(fields: [promoCodeId], references: [id], onDelete: Restrict)
   recipientName      String
   recipientPhone     String
-  districtId         String           @db.Uuid
-  district           District         @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  districtId         String            @db.Uuid
+  district           District          @relation(fields: [districtId], references: [id], onDelete: Restrict)
   addressLine        String
-  deliveryType       DeliveryType     @default(COURIER)
-  pickupPointId      String?          @db.Uuid
-  pickupPoint        PickupPoint?     @relation(fields: [pickupPointId], references: [id], onDelete: Restrict)
+  deliveryType       DeliveryType      @default(COURIER)
+  pickupPointId      String?           @db.Uuid
+  pickupPoint        PickupPoint?      @relation(fields: [pickupPointId], references: [id], onDelete: Restrict)
   /// Region/district names at order time.
   addressSnapshot    Json
   comment            String?
-  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
+  /// Food orders: delivery point (WGS 84) and delivery mode snapshot.
+  deliveryLat        Float?
+  deliveryLng        Float?
+  foodDeliveryMode   FoodDeliveryMode?
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(3)
   sellerOrders       SellerOrder[]
   events             OrderEvent[]
   payments           PaymentAttempt[]
@@ -625,6 +660,7 @@ model Order {
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
+  @@index([kind, status, createdAt])
   @@index([districtId])
   @@index([paymentDueAt])
   @@index([promoCodeId, userId])
@@ -657,6 +693,14 @@ model SellerOrder {
   returnComment      String?
   /// Seller/staff note on the return decision (required when rejecting).
   returnDecisionNote String?
+  /// Food, UZGO delivery: the courier who took the order and their fee.
+  courierId          String?           @db.Uuid
+  courier            User?             @relation("CourierOrders", fields: [courierId], references: [id], onDelete: Restrict)
+  courierFeeTiyin    BigInt            @default(0)
+  courierAssignedAt  DateTime?         @db.Timestamptz(3)
+  /// Food: when the restaurant accepted (cooking) and when the food was ready.
+  acceptedAt         DateTime?         @db.Timestamptz(3)
+  readyAt            DateTime?         @db.Timestamptz(3)
   createdAt          DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime          @updatedAt @db.Timestamptz(3)
   items              OrderItem[]
@@ -665,16 +709,22 @@ model SellerOrder {
 
   @@index([orderId])
   @@index([storeId, status, createdAt])
+  @@index([courierId, status])
 }
 
 /// Snapshot of what was bought: later product edits never change orders.
 model OrderItem {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  sellerOrderId  String         @db.Uuid
-  sellerOrder    SellerOrder    @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
-  variantId      String         @db.Uuid
-  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  productId      String         @db.Uuid
+  id             String          @id @default(uuid(7)) @db.Uuid
+  sellerOrderId  String          @db.Uuid
+  sellerOrder    SellerOrder     @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  /// Marketplace line (exactly one of variantId / menuItemId is set).
+  variantId      String?         @db.Uuid
+  variant        ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  productId      String?         @db.Uuid
+  /// Food line (Phase 9b).
+  menuItemId     String?         @db.Uuid
+  menuItem       FoodMenuItem?   @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  /// Marketplace: product slug; food: "" (no product page).
   productSlug    String
   title          Json
   /// Variant option labels at order time, e.g. [{uz:"128 GB",ru:"128 ГБ"}]
@@ -684,16 +734,17 @@ model OrderItem {
   quantity       Int
   lineTotalTiyin BigInt
   /// Share of the promo discount on this line (fiscal receipt, refunds).
-  discountTiyin  BigInt         @default(0)
+  discountTiyin  BigInt          @default(0)
   mxikCode       String?
   packageCode    String?
   vatRateBp      Int?
   /// Commission rate applied to this line (snapshot).
-  commissionBp   Int            @default(0)
-  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  commissionBp   Int             @default(0)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
 
   @@index([sellerOrderId])
   @@index([variantId])
+  @@index([menuItemId])
 }
 
 /// Append-only history of every status change (who, when, from, to).
@@ -777,6 +828,8 @@ enum LedgerAccount {
   PLATFORM_REVENUE
   /// UZGO-funded promo discounts (expense).
   PLATFORM_PROMOTIONS
+  /// What UZGO owes each courier (per courierId; negative = the courier holds UZGO's cash).
+  COURIER_PAYABLE
 }
 
 /// Double-entry ledger: every journal (journalId) sums to zero. Positive
@@ -787,6 +840,8 @@ model LedgerEntry {
   account       LedgerAccount
   storeId       String?       @db.Uuid
   store         Store?        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  courierId     String?       @db.Uuid
+  courier       User?         @relation("CourierLedger", fields: [courierId], references: [id], onDelete: Restrict)
   amountTiyin   BigInt
   /// payment_captured, shipment_delivered, cod_commission, return_reversal, refund, payout
   kind          String
@@ -798,6 +853,7 @@ model LedgerEntry {
 
   @@index([journalId])
   @@index([account, storeId, createdAt])
+  @@index([account, courierId, createdAt])
   @@index([sellerOrderId])
 }
 
@@ -980,4 +1036,109 @@ model PromoCode {
   orders           Order[]
 
   @@index([active, code])
+}
+
+// ─── UZGO Food (Phase 9b, ADR 0024) ─────────────────────────────────────────
+
+model RestaurantProfile {
+  storeId              String           @id @db.Uuid
+  store                Store            @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  address              String
+  lat                  Float
+  lng                  Float
+  phone                String?
+  deliveryMode         FoodDeliveryMode
+  /// Delivery area: straight-line distance from the restaurant, metres.
+  deliveryRadiusM      Int              @default(5000)
+  /// SELF mode: the restaurant's delivery fee.
+  selfDeliveryFeeTiyin BigInt           @default(0)
+  minOrderTiyin        BigInt           @default(0)
+  /// Typical cooking time shown to customers.
+  prepMinutes          Int              @default(25)
+  /// Weekly hours in Tashkent time: [{ day: 0–6 (Mon=0), open: "09:00", close: "23:00" }].
+  openingHours         Json
+  /// The team can pause new orders (busy kitchen) without staff.
+  acceptingOrders      Boolean          @default(true)
+  coverKey             String?
+  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime         @updatedAt @db.Timestamptz(3)
+}
+
+model FoodMenuCategory {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  storeId   String         @db.Uuid
+  store     Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  name      Json
+  sort      Int            @default(0)
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+  items     FoodMenuItem[]
+
+  @@index([storeId, sort])
+}
+
+model FoodMenuItem {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  storeId     String           @db.Uuid
+  store       Store            @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  categoryId  String           @db.Uuid
+  category    FoodMenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name        Json
+  description Json?
+  priceTiyin  BigInt
+  imageKey    String?
+  /// Off for today (sold out) — set by the restaurant team.
+  available   Boolean          @default(true)
+  /// Removed from the menu by staff (kept for past orders).
+  archived    Boolean          @default(false)
+  sort        Int              @default(0)
+  mxikCode    String?
+  packageCode String?
+  vatRateBp   Int?
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
+  orderItems  OrderItem[]
+
+  @@index([storeId, archived, sort])
+}
+
+enum CourierStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CourierVehicle {
+  FOOT
+  BICYCLE
+  SCOOTER
+  CAR
+}
+
+model CourierProfile {
+  userId     String         @id @db.Uuid
+  user       User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status     CourierStatus  @default(ACTIVE)
+  vehicle    CourierVehicle @default(SCOOTER)
+  /// Ready to take offers.
+  online     Boolean        @default(false)
+  /// Last known position (no history is kept).
+  lastLat    Float?
+  lastLng    Float?
+  lastSeenAt DateTime?      @db.Timestamptz(3)
+  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([status, online])
+}
+
+/// Cash handed in by a courier (negative) or paid out to them (positive).
+model CourierSettlement {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  courierId   String   @db.Uuid
+  courier     User     @relation("SettlementCourier", fields: [courierId], references: [id], onDelete: Restrict)
+  amountTiyin BigInt
+  note        String?
+  createdById String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([courierId, createdAt])
 }

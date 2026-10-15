@@ -188,8 +188,10 @@ export class StoresService {
   }
 
   async adminList(status: StoreStatus | undefined, page: number): Promise<AdminStoreList> {
+    // Restaurants are managed on their own admin page (ADR 0024).
     const where = {
       deletedAt: null,
+      kind: 'SHOP',
       ...(status ? { status } : {}),
     } satisfies Prisma.StoreWhereInput;
     const [total, rows] = await this.prisma.$transaction([
@@ -208,7 +210,7 @@ export class StoresService {
 
   async adminGet(id: string): Promise<AdminStore> {
     const row = await this.prisma.store.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, deletedAt: null, kind: 'SHOP' },
       select: adminSelect,
     });
     if (!row) throw notFound();
@@ -228,7 +230,7 @@ export class StoresService {
   ): Promise<AdminStore> {
     await this.prisma.$transaction(async (tx) => {
       const store = await tx.store.findFirst({
-        where: { id, deletedAt: null },
+        where: { id, deletedAt: null, kind: 'SHOP' },
         select: { status: true },
       });
       if (!store) throw notFound();

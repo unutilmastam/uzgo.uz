@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { phoneInputSchema } from './auth.js';
 import { localizedNameSchema } from './geo.js';
+import { foodOrderInfoSchema } from './food-order.js';
 import { promoCodeInputSchema, promoErrorSchema } from './growth.js';
 import { storeRefSchema, tiyinSchema } from './products.js';
 
@@ -181,6 +182,7 @@ export type SellerOrderView = z.infer<typeof sellerOrderViewSchema>;
 
 export const orderViewSchema = z.object({
   number: z.string(),
+  kind: z.enum(['MARKET', 'FOOD']),
   status: orderStatusSchema,
   paymentMethod: paymentMethodSchema,
   /** Online orders only; cash on delivery is NOT_REQUIRED. */
@@ -209,6 +211,8 @@ export const orderViewSchema = z.object({
     comment: z.string().nullable(),
   }),
   sellerOrders: z.array(sellerOrderViewSchema),
+  /** UZGO Food details (null for marketplace orders). */
+  food: foodOrderInfoSchema.nullable(),
 });
 export type OrderView = z.infer<typeof orderViewSchema>;
 
@@ -216,6 +220,7 @@ export const orderResponseSchema = z.object({ order: orderViewSchema });
 
 export const orderSummarySchema = z.object({
   number: z.string(),
+  kind: z.enum(['MARKET', 'FOOD']),
   status: orderStatusSchema,
   createdAt: z.string(),
   totalTiyin: tiyinSchema,

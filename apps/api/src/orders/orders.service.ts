@@ -18,6 +18,7 @@ import {
 import type { Prisma } from '../generated/prisma/client.js';
 import type {
   OrderActor,
+  OrderKind,
   OrderStatus,
   ReturnReason,
   SellerOrderStatus,
@@ -26,13 +27,14 @@ import { planDelivery } from '../delivery/delivery.js';
 import { notifySellers, notifyShipmentStatus } from '../notifications/templates.js';
 import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { foodOrderInfo, foodShipmentInclude } from '../food/food-view.js';
 import { allocate } from '../promo/promo.js';
 import { PromoService } from '../promo/promo.service.js';
 import {
   canTransition,
   deriveOrderStatus,
   RESTOCK_STATUSES,
-  SELLER_ORDER_TRANSITIONS,
+  transitionsFor,
 } from './state-machine.js';
 
 /** Open online orders awaiting payment per customer (each holds stock). */
@@ -53,7 +55,7 @@ const orderInclude = {
   sellerOrders: {
     orderBy: { number: 'asc' },
     include: {
-      store: { select: { id: true, slug: true, name: true, isDemo: true } },
+      ...foodShipmentInclude,
       items: { orderBy: { createdAt: 'asc' } },
       events: { orderBy: { createdAt: 'asc' }, select: { toStatus: true, createdAt: true } },
     },
@@ -83,8 +85,10 @@ function tashkentYear(date: Date): string {
 export function allowedFor(
   status: SellerOrderStatus,
   actor: OrderActor,
+  kind: OrderKind = 'MARKET',
 ): ContractSellerOrderStatus[] {
-  return SELLER_ORDER_TRANSITIONS[status].filter((t) => t.actors.includes(actor)).map((t) => t.to);
+  const options = transitionsFor(kind)[status];
+  return options.filter((t) => t.actors.includes(actor)).map((t) => t.to);
 }
 
 function pickupView(snapshot: unknown): OrderView['pickupPoint'] {
@@ -132,11 +136,16 @@ export function returnDeadline(deliveredAt: Date | null, windowDays: number): Da
  * Tracking, status history and return details shown to the customer and the
  * seller. A return can no longer be requested once the window has passed.
  */
-function shipmentExtras(so: ShipmentExtras, actor: OrderActor, windowDays: number) {
+function shipmentExtras(
+  so: ShipmentExtras,
+  actor: OrderActor,
+  windowDays: number,
+  kind: OrderKind = 'MARKET',
+) {
   const until = returnDeadline(so.deliveredAt, windowDays);
   const windowOpen = until !== null && until.getTime() >= Date.now();
   return {
-    allowedTransitions: allowedFor(so.status, actor).filter(
+    allowedTransitions: allowedFor(so.status, actor, kind).filter(
       (to) => to !== 'RETURN_REQUESTED' || windowOpen,
     ),
     tracking: so.carrier && so.trackingCode ? { carrier: so.carrier, code: so.trackingCode } : null,
@@ -155,8 +164,10 @@ function shipmentExtras(so: ShipmentExtras, actor: OrderActor, windowDays: numbe
 }
 
 export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: number): OrderView {
+  const first = order.sellerOrders[0];
   return {
     number: order.number,
+    kind: order.kind,
     status: order.status,
     paymentMethod: order.paymentMethod,
     payment: paymentView(order),
@@ -180,7 +191,12 @@ export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: numb
       id: so.id,
       number: so.number,
       status: so.status,
-      store: { ...so.store, name: so.store.name as Names },
+      store: {
+        id: so.store.id,
+        slug: so.store.slug,
+        name: so.store.name as Names,
+        isDemo: so.store.isDemo,
+      },
       items: so.items.map((item) => ({
         productSlug: item.productSlug,
         title: item.title as Names,
@@ -194,8 +210,9 @@ export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: numb
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
       discountTiyin: so.discountTiyin.toString(),
-      ...shipmentExtras(so, actor, windowDays),
+      ...shipmentExtras(so, actor, windowDays, order.kind),
     })),
+    food: order.kind === 'FOOD' && first ? foodOrderInfo(order, first) : null,
   };
 }
 
@@ -520,6 +537,7 @@ export class OrdersService {
       take: 50,
       select: {
         number: true,
+        kind: true,
         status: true,
         createdAt: true,
         totalTiyin: true,
@@ -528,6 +546,7 @@ export class OrdersService {
     });
     return orders.map((o) => ({
       number: o.number,
+      kind: o.kind,
       status: o.status,
       createdAt: o.createdAt.toISOString(),
       totalTiyin: o.totalTiyin.toString(),
@@ -655,6 +674,8 @@ export class OrdersService {
       where: {
         storeId: { in: storeId ? [storeId] : storeIds },
         status: { not: 'PENDING_PAYMENT' },
+        // Food orders have their own restaurant screen (ADR 0024).
+        order: { kind: 'MARKET' },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -723,6 +744,27 @@ export class OrdersService {
       }),
     );
   }
+}
+
+/**
+ * Food delivery rules (ADR 0024): with SELF delivery the restaurant hands
+ * over and delivers; with UZGO delivery only the assigned courier (or staff)
+ * does, and the food leaves the kitchen only with a courier.
+ */
+function foodActorAllowed(
+  locked: { courierId: string | null; foodDeliveryMode: 'SELF' | 'UZGO' | null },
+  to: SellerOrderStatus,
+  by: { actor: OrderActor; userId: string | null },
+): boolean {
+  const delivery = to === 'HANDED_TO_DELIVERY' || to === 'DELIVERED' || to === 'DELIVERY_FAILED';
+  if (by.actor === 'COURIER') {
+    return locked.foodDeliveryMode === 'UZGO' && locked.courierId === by.userId && delivery;
+  }
+  if (locked.foodDeliveryMode === 'UZGO' && delivery) {
+    if (by.actor === 'SELLER') return false;
+    if (to === 'HANDED_TO_DELIVERY') return locked.courierId !== null;
+  }
+  return true;
 }
 
 /**
@@ -802,12 +844,24 @@ export async function transitionInTx(
   },
 ): Promise<void> {
   const [locked] = await tx.$queryRaw<
-    { status: SellerOrderStatus; orderId: string; deliveredAt: Date | null }[]
+    {
+      status: SellerOrderStatus;
+      orderId: string;
+      deliveredAt: Date | null;
+      courierId: string | null;
+      kind: OrderKind;
+      foodDeliveryMode: 'SELF' | 'UZGO' | null;
+    }[]
   >`
-    SELECT "status", "orderId", "deliveredAt" FROM "SellerOrder"
-    WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
+    SELECT so."status", so."orderId", so."deliveredAt", so."courierId",
+           o."kind", o."foodDeliveryMode"
+    FROM "SellerOrder" so JOIN "Order" o ON o."id" = so."orderId"
+    WHERE so."id" = ${sellerOrderId}::uuid FOR UPDATE OF so`;
   if (!locked) throw notFound();
-  if (!canTransition(locked.status, to, by.actor)) {
+  if (
+    !canTransition(locked.status, to, by.actor, locked.kind) ||
+    (locked.kind === 'FOOD' && !foodActorAllowed(locked, to, by))
+  ) {
     throw new AppException(
       HttpStatus.CONFLICT,
       'INVALID_STATE_TRANSITION',
@@ -817,15 +871,21 @@ export async function transitionInTx(
   }
   await tx.sellerOrder.update({
     where: { id: sellerOrderId },
-    data: { status: to, ...returnFields(locked.deliveredAt, to, by) },
+    data: {
+      status: to,
+      ...returnFields(locked.deliveredAt, to, by),
+      ...(to === 'ACCEPTED' ? { acceptedAt: new Date() } : {}),
+      ...(to === 'PACKED' ? { readyAt: new Date() } : {}),
+    },
   });
   await onShipmentTransition(tx, sellerOrderId, to, {
     providerRefunded: by.providerRefunded ?? false,
   });
   await notifyShipmentStatus(tx, sellerOrderId, to);
   if (RESTOCK_STATUSES.has(to)) {
+    // Food dishes have no stock: only marketplace lines go back to the shelf.
     const items = await tx.orderItem.findMany({
-      where: { sellerOrderId },
+      where: { sellerOrderId, variantId: { not: null } },
       orderBy: { variantId: 'asc' },
       select: { variantId: true, quantity: true },
     });

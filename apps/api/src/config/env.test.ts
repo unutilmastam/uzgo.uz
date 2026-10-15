@@ -80,7 +80,12 @@ describe('parseEnv', () => {
       ESKIZ_EMAIL: 'ops@example.uz',
       ESKIZ_PASSWORD: 'placeholder',
       INTERNAL_API_TOKEN: 'i'.repeat(40),
+      GEOCODER_CONTACT: 'ops@example.uz',
     };
+    const noContact = errorOf(() =>
+      parseEnv({ ...production, GEOCODER_CONTACT: undefined, STORAGE_LOCAL_DIR: '/data/uploads' }),
+    );
+    expect(noContact.issues.some((issue) => issue.startsWith('GEOCODER_CONTACT'))).toBe(true);
     const error = errorOf(() => parseEnv(production));
     expect(error.issues.some((issue) => issue.startsWith('STORAGE_LOCAL_DIR'))).toBe(true);
     const env = parseEnv({ ...production, STORAGE_LOCAL_DIR: '/data/uploads' });

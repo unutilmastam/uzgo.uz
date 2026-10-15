@@ -7,6 +7,8 @@ export const ROLES = [
   'MODERATOR',
   'ADMIN',
   'SUPER_ADMIN',
+  /** UZGO Food courier (Phase 9b); granted with a courier profile, not via the roles page. */
+  'COURIER',
 ] as const;
 export const roleSchema = z.enum(ROLES);
 export type Role = z.infer<typeof roleSchema>;
@@ -83,7 +85,7 @@ export const updateProfileSchema = z
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 
 /** POST /api/v1/admin/users/:userId/roles */
-export const grantRoleSchema = z.strictObject({ role: roleSchema });
+export const grantRoleSchema = z.strictObject({ role: roleSchema.exclude(['COURIER']) });
 
 /** POST /api/v1/auth/totp/enable and /auth/totp/verify */
 export const totpCodeSchema = z.strictObject({ code: otpCodeSchema });

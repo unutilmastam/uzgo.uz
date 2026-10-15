@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppException } from '../common/http-exception.filter.js';
-import type { StoreRole, StoreStatus } from '../generated/prisma/enums.js';
+import type { StoreKind, StoreRole, StoreStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export type StoreAccess = { storeId: string; role: StoreRole; status: StoreStatus };
@@ -16,10 +16,15 @@ export class StoreAccessService {
   async require(
     userId: string,
     storeId: string,
-    options: { owner?: boolean; write?: boolean } = {},
+    options: { owner?: boolean; write?: boolean; kind?: StoreKind } = {},
   ): Promise<StoreAccess> {
     const member = await this.prisma.storeMember.findFirst({
-      where: { userId, storeId, store: { deletedAt: null } },
+      where: {
+        userId,
+        storeId,
+        // Marketplace routes pass SHOP, food routes RESTAURANT; team and money routes serve both.
+        store: { deletedAt: null, ...(options.kind ? { kind: options.kind } : {}) },
+      },
       select: { role: true, store: { select: { status: true } } },
     });
     if (!member) throw new AppException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Store not found');

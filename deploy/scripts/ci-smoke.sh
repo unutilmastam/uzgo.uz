@@ -37,6 +37,7 @@ STAFF_TOTP_REQUIRED=true
 SMS_PROVIDER=eskiz
 ESKIZ_EMAIL=smoke@example.uz
 ESKIZ_PASSWORD=not-a-real-password
+GEOCODER_CONTACT=smoke@example.uz
 ENV
 
 compose() { docker compose -p "$COMPOSE_PROJECT_NAME" -f "$home/compose.prod.yml" --env-file "$home/.env" "$@"; }

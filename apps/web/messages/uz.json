@@ -714,7 +714,9 @@
     "reviewNote": "Sabab: {note}",
     "reviewHide": "Yashirish",
     "reviewHideReason": "Yashirish sababi (faqat xodimlarga koʻrinadi)",
-    "reviewPublish": "Qayta chop etish"
+    "reviewPublish": "Qayta chop etish",
+    "role_COURIER": "Kuryer",
+    "acc_COURIER_PAYABLE": "Kuryerlarga qarz (manfiy — kuryerdagi naqd)"
   },
   "returns": {
     "reasonLabel": "Qaytarish sababi:",

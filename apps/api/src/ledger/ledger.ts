@@ -9,6 +9,8 @@ export type Posting = {
   /** Positive = debit, negative = credit (tiyin). */
   amountTiyin: bigint;
   storeId?: string | null;
+  /** COURIER_PAYABLE lines name the courier. */
+  courierId?: string | null;
 };
 
 export type JournalRefs = {
@@ -35,6 +37,7 @@ export async function postJournal(tx: Tx, postings: Posting[], refs: JournalRefs
       journalId,
       account: p.account,
       storeId: p.storeId ?? null,
+      courierId: p.courierId ?? null,
       amountTiyin: p.amountTiyin,
       kind: refs.kind,
       orderId: refs.orderId ?? null,
@@ -128,7 +131,9 @@ export async function onShipmentTransition(
       totalTiyin: true,
       discountTiyin: true,
       commissionTiyin: true,
-      order: { select: { paymentMethod: true, paidAt: true } },
+      courierId: true,
+      courierFeeTiyin: true,
+      order: { select: { paymentMethod: true, paidAt: true, kind: true, foodDeliveryMode: true } },
     },
   });
   const paidOnline =
@@ -139,8 +144,48 @@ export async function onShipmentTransition(
   const paid = total - discount;
   const commission = shipment.commissionTiyin;
   const refs = { orderId: shipment.orderId, sellerOrderId: shipment.id };
+  // Food with a UZGO courier (ADR 0024): the fee is not in the restaurant's
+  // total; the customer paid it on top and the courier earns it.
+  const uzgoCourier = shipment.order.kind === 'FOOD' && shipment.order.foodDeliveryMode === 'UZGO';
+  const fee = uzgoCourier ? shipment.courierFeeTiyin : 0n;
 
-  if (to === 'DELIVERED') {
+  if (to === 'DELIVERED' && uzgoCourier) {
+    const courierId = shipment.courierId;
+    if (!courierId) throw new Error('Food delivery without a courier');
+    if (paidOnline) {
+      await postJournal(
+        tx,
+        [
+          { account: 'CUSTOMER_PREPAYMENTS', amountTiyin: paid + fee },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: discount },
+          {
+            account: 'SELLER_PAYABLE',
+            amountTiyin: -(total - commission),
+            storeId: shipment.storeId,
+          },
+          { account: 'PLATFORM_REVENUE', amountTiyin: -commission },
+          { account: 'COURIER_PAYABLE', amountTiyin: -fee, courierId },
+        ],
+        { kind: 'food_delivered', ...refs },
+      );
+    } else if (cod) {
+      // The courier collected paid + fee in cash and keeps the fee: they owe UZGO `paid`.
+      await postJournal(
+        tx,
+        [
+          { account: 'COURIER_PAYABLE', amountTiyin: paid, courierId },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: discount },
+          {
+            account: 'SELLER_PAYABLE',
+            amountTiyin: -(total - commission),
+            storeId: shipment.storeId,
+          },
+          { account: 'PLATFORM_REVENUE', amountTiyin: -commission },
+        ],
+        { kind: 'food_cash_delivered', ...refs },
+      );
+    }
+  } else if (to === 'DELIVERED') {
     if (paidOnline) {
       await postJournal(
         tx,
@@ -214,7 +259,7 @@ export async function onShipmentTransition(
         orderId: shipment.orderId,
         sellerOrderId: shipment.id,
         paymentAttemptId: payment.id,
-        amountTiyin: paid,
+        amountTiyin: paid + fee,
         reason,
       },
     });

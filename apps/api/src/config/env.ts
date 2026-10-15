@@ -72,6 +72,17 @@ export const envSchema = z
      * already paid out cannot be refunded from the seller's balance.
      */
     RETURN_WINDOW_DAYS: z.coerce.number().int().min(1).max(90).default(10),
+    /** UZGO Food (ADR 0024): courier tariff = base + per km of road distance (tiyin). */
+    FOOD_COURIER_BASE_TIYIN: z.coerce.number().int().min(0).max(100_000_000).default(800_000),
+    FOOD_COURIER_PER_KM_TIYIN: z.coerce.number().int().min(0).max(10_000_000).default(200_000),
+    /** Online couriers see offers from restaurants within this distance. */
+    FOOD_OFFER_RADIUS_KM: z.coerce.number().int().min(1).max(50).default(5),
+    /** A restaurant that does not accept an order in time: the order is cancelled. */
+    FOOD_ACCEPT_TIMEOUT_MINUTES: z.coerce.number().int().min(2).max(60).default(10),
+    /** OpenStreetMap Nominatim (address search). Own instance: set its URL. */
+    NOMINATIM_URL: z.url({ protocol: /^https?$/ }).default('https://nominatim.openstreetmap.org'),
+    /** Contact e-mail sent in the User-Agent (Nominatim usage policy); required in production. */
+    GEOCODER_CONTACT: z.email().optional(),
     /** Unpaid online orders are cancelled (stock released) after this many minutes. */
     PAYMENT_WINDOW_MINUTES: z.coerce
       .number()
@@ -136,6 +147,13 @@ export const envSchema = z
     MEDIA_PUBLIC_BASE_URL: z.string().min(1).default('/api/v1/media'),
   })
   .superRefine((env, ctx) => {
+    if (env.NODE_ENV === 'production' && !env.GEOCODER_CONTACT) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GEOCODER_CONTACT'],
+        message: 'required in production (OpenStreetMap usage policy)',
+      });
+    }
     // Tests shorten the hold to 0 to exercise payouts; production keeps the rule.
     if (env.NODE_ENV === 'production' && env.RETURN_WINDOW_DAYS > env.PAYOUT_HOLD_DAYS) {
       ctx.addIssue({

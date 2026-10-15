@@ -137,7 +137,7 @@ export class ProductsService {
 
   async store(slug: string): Promise<StoreDetail> {
     const store = await this.prisma.store.findFirst({
-      where: { slug, status: 'ACTIVE', deletedAt: null },
+      where: { slug, kind: 'SHOP', status: 'ACTIVE', deletedAt: null },
       select: {
         id: true,
         slug: true,

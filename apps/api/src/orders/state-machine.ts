@@ -1,4 +1,9 @@
-import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
+import type {
+  OrderActor,
+  OrderKind,
+  OrderStatus,
+  SellerOrderStatus,
+} from '../generated/prisma/enums.js';
 
 type Transition = { to: SellerOrderStatus; actors: readonly OrderActor[] };
 
@@ -49,12 +54,57 @@ export const SELLER_ORDER_TRANSITIONS: Readonly<Record<SellerOrderStatus, readon
     RETURN_REJECTED: [],
   };
 
+/**
+ * Food orders (Phase 9b, ADR 0024): NEW = placed, ACCEPTED = cooking,
+ * PACKED = ready, HANDED_TO_DELIVERY = on the way. No returns. Who may hand
+ * over and deliver also depends on the delivery mode (checked in the
+ * transition: the restaurant for SELF, the assigned courier for UZGO).
+ */
+export const FOOD_ORDER_TRANSITIONS: Readonly<Record<SellerOrderStatus, readonly Transition[]>> = {
+  PENDING_PAYMENT: [
+    { to: 'NEW', actors: ['SYSTEM'] },
+    { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
+  ],
+  NEW: [
+    { to: 'ACCEPTED', actors: STAFF },
+    { to: 'CANCELLED_BY_SELLER', actors: [...STAFF, 'SYSTEM'] },
+    { to: 'CANCELLED_BY_CUSTOMER', actors: ['CUSTOMER', 'SYSTEM'] },
+  ],
+  ACCEPTED: [
+    { to: 'PACKED', actors: STAFF },
+    { to: 'CANCELLED_BY_SELLER', actors: STAFF },
+    { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
+  ],
+  PACKED: [
+    { to: 'HANDED_TO_DELIVERY', actors: [...STAFF, 'COURIER'] },
+    { to: 'CANCELLED_BY_SELLER', actors: ['ADMIN'] },
+  ],
+  HANDED_TO_DELIVERY: [
+    { to: 'DELIVERED', actors: [...STAFF, 'COURIER', 'SYSTEM'] },
+    { to: 'DELIVERY_FAILED', actors: [...STAFF, 'COURIER', 'SYSTEM'] },
+  ],
+  DELIVERED: [],
+  RETURN_REQUESTED: [],
+  DELIVERY_FAILED: [],
+  CANCELLED_BY_SELLER: [],
+  CANCELLED_BY_CUSTOMER: [],
+  RETURNED: [],
+  RETURN_REJECTED: [],
+};
+
+export function transitionsFor(
+  kind: OrderKind,
+): Readonly<Record<SellerOrderStatus, readonly Transition[]>> {
+  return kind === 'FOOD' ? FOOD_ORDER_TRANSITIONS : SELLER_ORDER_TRANSITIONS;
+}
+
 export function canTransition(
   from: SellerOrderStatus,
   to: SellerOrderStatus,
   actor: OrderActor,
+  kind: OrderKind = 'MARKET',
 ): boolean {
-  return SELLER_ORDER_TRANSITIONS[from].some((t) => t.to === to && t.actors.includes(actor));
+  return transitionsFor(kind)[from].some((t) => t.to === to && t.actors.includes(actor));
 }
 
 /** Transitions that put the goods back into stock. */

@@ -714,7 +714,9 @@
     "reviewNote": "Причина: {note}",
     "reviewHide": "Скрыть",
     "reviewHideReason": "Причина скрытия (видна только сотрудникам)",
-    "reviewPublish": "Опубликовать снова"
+    "reviewPublish": "Опубликовать снова",
+    "role_COURIER": "Курьер",
+    "acc_COURIER_PAYABLE": "Долг курьерам (минус — наличные у курьеров)"
   },
   "returns": {
     "reasonLabel": "Причина возврата:",

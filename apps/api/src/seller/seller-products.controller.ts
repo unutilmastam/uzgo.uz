@@ -60,7 +60,7 @@ export class SellerProductsController {
   ) {}
 
   private async actor(auth: AuthContext, storeId: string, write = true): Promise<Actor> {
-    const access = await this.access.require(auth.user.id, storeId, { write });
+    const access = await this.access.require(auth.user.id, storeId, { write, kind: 'SHOP' });
     return { userId: auth.user.id, storeId, status: access.status };
   }
 
