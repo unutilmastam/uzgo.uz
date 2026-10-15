@@ -19,6 +19,8 @@ export function configureApp(app: NestExpressApplication): Env {
   app.useLogger(app.get(Logger));
   app.set('trust proxy', env.TRUST_PROXY);
   app.useBodyParser('json', { limit: env.BODY_LIMIT });
+  // Click SHOP API callbacks are form-encoded (flat fields only).
+  app.useBodyParser('urlencoded', { limit: env.BODY_LIMIT, extended: false });
   app.setGlobalPrefix(API_PREFIX);
 
   // The API only returns JSON: lock the content security policy down completely.

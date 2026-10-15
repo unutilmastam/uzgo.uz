@@ -505,6 +505,8 @@ enum PaymentStatus {
 /// An order may see several attempts (e.g. a timed-out one, then a successful one).
 model PaymentAttempt {
   id            String        @id @default(uuid(7)) @db.Uuid
+  /// Numeric reference for providers that need integers (Click merchant_prepare_id).
+  seq           BigInt        @unique @default(autoincrement())
   orderId       String        @db.Uuid
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
   method        PaymentMethod
