@@ -71,6 +71,17 @@ export const envSchema = z
     /** Payme Merchant API (ADR 0017). The method is offered only when both are set. */
     PAYME_MERCHANT_ID: z.string().min(1).max(64).optional(),
     PAYME_KEY: z.string().min(8).max(200).optional(),
+    /** Optional allow-list of Payme's callback IPs (comma separated); needs TRUST_PROXY behind a proxy. */
+    PAYME_ALLOWED_IPS: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((ip) => ip.trim())
+          .filter((ip) => ip.length > 0),
+      )
+      .pipe(z.array(z.union([z.ipv4(), z.ipv6()]))),
     PAYME_CHECKOUT_URL: z.url({ protocol: /^https$/ }).default('https://checkout.paycom.uz'),
     /** Click SHOP API (ADR 0017). The method is offered only when all four are set. */
     CLICK_SERVICE_ID: z

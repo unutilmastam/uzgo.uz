@@ -125,6 +125,82 @@ export class PaymentsService {
     );
   }
 
+  /** Shipments that are already on their way or done cannot be undone by a whole refund. */
+  private static readonly FINAL_FOR_REFUND = new Set([
+    'HANDED_TO_DELIVERY',
+    'DELIVERED',
+    'DELIVERY_FAILED',
+    'RETURN_REQUESTED',
+    'RETURNED',
+    'RETURN_REJECTED',
+  ]);
+
+  /** Whether the provider may still return the whole captured payment. */
+  async canRefundWhole(tx: Tx, orderId: string): Promise<boolean> {
+    const shipments = await tx.sellerOrder.findMany({
+      where: { orderId },
+      select: { status: true },
+    });
+    return !shipments.some((s) => PaymentsService.FINAL_FOR_REFUND.has(s.status));
+  }
+
+  /**
+   * The provider returned the whole captured payment (e.g. Payme cancels a
+   * performed transaction): attempt → REFUNDED, open shipments cancelled with
+   * stock returned. Idempotent.
+   */
+  async refundWhole(
+    tx: Tx,
+    attemptId: string,
+    reason: number | null,
+    providerState: number | null,
+  ) {
+    const attempt = await tx.paymentAttempt.findUniqueOrThrow({ where: { id: attemptId } });
+    if (attempt.status === 'REFUNDED') return;
+    if (attempt.status !== 'PAID') {
+      throw new AppException(
+        HttpStatus.CONFLICT,
+        'PAYMENT_NOT_CAPTURED',
+        'Payment is not captured',
+      );
+    }
+    await this.lockOrder(tx, attempt.orderId);
+    if (!(await this.canRefundWhole(tx, attempt.orderId))) {
+      throw new AppException(HttpStatus.CONFLICT, 'ORDER_IN_DELIVERY', 'Order is already shipped');
+    }
+    const updated = await tx.paymentAttempt.updateMany({
+      where: { id: attemptId, status: 'PAID' },
+      data: { status: 'REFUNDED', cancelledAt: new Date(), cancelReason: reason, providerState },
+    });
+    if (updated.count === 0) return;
+    const open = await tx.sellerOrder.findMany({
+      where: { orderId: attempt.orderId, status: { in: ['NEW', 'ACCEPTED', 'PACKED'] } },
+      orderBy: { number: 'asc' },
+      select: { id: true },
+    });
+    for (const shipment of open) {
+      await transitionInTx(tx, shipment.id, 'CANCELLED_BY_CUSTOMER', {
+        actor: 'SYSTEM',
+        userId: null,
+        reason: `refunded:${attempt.method}`,
+      });
+    }
+    await this.audit.record(
+      {
+        action: 'payment.refunded',
+        entityType: 'Order',
+        entityId: attempt.orderId,
+        metadata: {
+          method: attempt.method,
+          attemptId,
+          amountTiyin: attempt.amountTiyin.toString(),
+          reason,
+        },
+      },
+      tx,
+    );
+  }
+
   /** Marks a pending attempt cancelled (the order stays payable by another attempt). */
   async cancelAttempt(
     tx: Tx,

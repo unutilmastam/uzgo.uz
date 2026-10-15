@@ -77,6 +77,8 @@ function paymentView(order: {
   if (order.paymentMethod === 'CASH_ON_DELIVERY') {
     return { status: 'NOT_REQUIRED', dueAt: null, paidAt: null };
   }
+  if (order.paidAt && order.status === 'CANCELLED')
+    return { status: 'REFUNDED', dueAt: due, paidAt };
   if (order.paidAt) return { status: 'PAID', dueAt: due, paidAt };
   if (order.status === 'AWAITING_PAYMENT') return { status: 'UNPAID', dueAt: due, paidAt: null };
   return { status: 'EXPIRED', dueAt: due, paidAt: null };

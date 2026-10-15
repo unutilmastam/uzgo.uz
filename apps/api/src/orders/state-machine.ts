@@ -17,16 +17,22 @@ export const SELLER_ORDER_TRANSITIONS: Readonly<Record<SellerOrderStatus, readon
       { to: 'NEW', actors: ['SYSTEM'] },
       { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
     ],
+    // SYSTEM cancellations below: the payment provider returned the whole
+    // payment (e.g. Payme CancelTransaction on a performed transaction).
     NEW: [
       { to: 'ACCEPTED', actors: STAFF },
       { to: 'CANCELLED_BY_SELLER', actors: STAFF },
-      { to: 'CANCELLED_BY_CUSTOMER', actors: ['CUSTOMER'] },
+      { to: 'CANCELLED_BY_CUSTOMER', actors: ['CUSTOMER', 'SYSTEM'] },
     ],
     ACCEPTED: [
       { to: 'PACKED', actors: STAFF },
       { to: 'CANCELLED_BY_SELLER', actors: STAFF },
+      { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
     ],
-    PACKED: [{ to: 'HANDED_TO_DELIVERY', actors: STAFF }],
+    PACKED: [
+      { to: 'HANDED_TO_DELIVERY', actors: STAFF },
+      { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
+    ],
     HANDED_TO_DELIVERY: [
       { to: 'DELIVERED', actors: [...STAFF, 'SYSTEM'] },
       { to: 'DELIVERY_FAILED', actors: [...STAFF, 'SYSTEM'] },
