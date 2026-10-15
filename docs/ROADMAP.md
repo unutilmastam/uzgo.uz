@@ -14,7 +14,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
-| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | IN PROGRESS |
+| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
 | 8     | Mobile apps                                                                    | NOT STARTED |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
@@ -62,6 +62,7 @@ ledger balance. The real Payme/Click adapters are implemented against the
 documented protocols but switched on only with merchant credentials; before
 going live they must pass the providers' sandbox tests, and the owner actions
 in ADR 0017 (merchant contracts, lawyer's opinion, fiscalization) are needed.
+CI run #33 (commit 733bba9) passed incl. e2e.
 
 ## Open decisions
 
