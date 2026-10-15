@@ -2,6 +2,7 @@ import {
   type CurrentUser,
   currentUserResponseSchema,
   orderListResponseSchema,
+  paymentMethodsResponseSchema,
   type OrderView,
   orderResponseSchema,
   type Region,
@@ -49,4 +50,11 @@ export async function getMyOrder(number: string): Promise<OrderView | null> {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API /orders/:number failed with ${String(res.status)}`);
   return orderResponseSchema.parse(await res.json()).order;
+}
+
+/** Payment methods checkout may offer (falls back to cash on delivery if the API fails). */
+export async function getPaymentMethods() {
+  const res = await apiFetch('/payments/methods');
+  if (!res.ok) return { items: ['CASH_ON_DELIVERY' as const], windowMinutes: 30 };
+  return paymentMethodsResponseSchema.parse(await res.json());
 }

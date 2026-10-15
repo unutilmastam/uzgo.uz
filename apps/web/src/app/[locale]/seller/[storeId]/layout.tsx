@@ -23,7 +23,12 @@ export default async function SellerStoreLayout({
   const tabs = [
     { href: base, label: t('tabProducts'), exact: true, also: [`${base}/products`] },
     { href: `${base}/orders`, label: t('tabOrders') },
-    ...(store.myRole === 'OWNER' ? [{ href: `${base}/team`, label: t('tabTeam') }] : []),
+    ...(store.myRole === 'OWNER'
+      ? [
+          { href: `${base}/finance`, label: t('tabFinance') },
+          { href: `${base}/team`, label: t('tabTeam') },
+        ]
+      : []),
   ];
 
   return (

@@ -55,6 +55,17 @@ all variables): `DATABASE_URL`, `AUTH_SECRET` (≥ 32 random bytes),
 `TOTP_ENCRYPTION_KEY` (exactly 32 random bytes, base64 — losing it means every
 staff member must re-enrol TOTP; rotating it needs a re-encryption script),
 real SMS provider credentials. `STAFF_TOTP_REQUIRED` must stay `true`.
+Payments: `PAYME_MERCHANT_ID`, `PAYME_KEY` (and the TEST KEY only on staging),
+`CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_MERCHANT_USER_ID`,
+`CLICK_SECRET_KEY`; `WEB_PUBLIC_URL`; optional `PAYME_ALLOWED_IPS`,
+`TELEGRAM_BOT_TOKEN`. `DEV_PAYMENTS_ENABLED` must be unset (refused anyway).
+
+Callback URLs to register with the providers (HTTPS, public):
+`https://<domain>/api/v1/payments/payme` (Payme cashbox "endpoint"),
+`https://<domain>/api/v1/payments/click/prepare` and `.../click/complete`
+(Click service). Background jobs (payment expiry, notification sender) run
+inside the API process; with several instances they stay correct (conditional
+updates, `SKIP LOCKED`).
 
 ## Open decision
 

@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { CheckoutForm } from '@/components/checkout/checkout-form';
 import { PageShell } from '@/components/page-shell';
 import { redirect } from '@/i18n/navigation';
-import { getCurrentUser, getRegions } from '@/lib/api-server';
+import { getCurrentUser, getPaymentMethods, getRegions } from '@/lib/api-server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('checkout');
@@ -19,10 +19,15 @@ export default async function CheckoutPage() {
   ]);
   if (!user) redirect({ href: { pathname: '/login', query: { next: '/checkout' } }, locale });
   if (!user) return null;
-  const regions = await getRegions();
+  const [regions, payment] = await Promise.all([getRegions(), getPaymentMethods()]);
   return (
     <PageShell title={t('title')}>
-      <CheckoutForm user={user} regions={regions} />
+      <CheckoutForm
+        user={user}
+        regions={regions}
+        methods={payment.items}
+        paymentWindowMinutes={payment.windowMinutes}
+      />
     </PageShell>
   );
 }

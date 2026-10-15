@@ -41,6 +41,8 @@ export default defineConfig({
         OTP_IP_HOURLY_LIMIT: '10000',
         // Every e2e login comes from 127.0.0.1; allowed only with NODE_ENV=test.
         RATE_LIMIT_DISABLED: 'true',
+        // Simulated online payment for e2e (refused in production by env validation).
+        DEV_PAYMENTS_ENABLED: 'true',
       },
     },
     {

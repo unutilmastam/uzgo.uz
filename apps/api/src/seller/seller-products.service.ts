@@ -98,6 +98,7 @@ export class SellerProductsService {
         compareAtPriceTiyin: v.compareAtPriceTiyin?.toString() ?? null,
         stock: v.stock,
         mxikCode: v.mxikCode,
+        packageCode: v.packageCode,
         vatRateBp: v.vatRateBp,
         active: v.active,
         options: v.options.map((o) => ({
@@ -381,6 +382,7 @@ export class SellerProductsService {
             compareAtPriceTiyin: data.compareAtPriceTiyin ? BigInt(data.compareAtPriceTiyin) : null,
             stock: data.stock,
             mxikCode: data.mxikCode ?? null,
+            packageCode: data.packageCode ?? null,
             vatRateBp: data.vatRateBp ?? null,
             sort: product.variants.length,
             options: {
@@ -452,6 +454,7 @@ export class SellerProductsService {
               : {}),
             ...(input.stock !== undefined ? { stock: input.stock } : {}),
             ...(input.mxikCode !== undefined ? { mxikCode: input.mxikCode } : {}),
+            ...(input.packageCode !== undefined ? { packageCode: input.packageCode } : {}),
             ...(input.vatRateBp !== undefined ? { vatRateBp: input.vatRateBp } : {}),
             ...(input.active !== undefined ? { active: input.active } : {}),
           },

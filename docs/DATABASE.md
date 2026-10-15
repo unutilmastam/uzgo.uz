@@ -84,9 +84,19 @@ erDiagram
   `reviewedAt`. `Session.totpVerifiedAt` and `StaffTotp` (encrypted secret,
   `lastUsedStep` for replay protection, failure counter and lock) support the
   staff second factor.
-- **Deferred:** `StockReservation` (needed for unpaid online orders) arrives with
-  online payments in Phase 6. Cash-on-delivery orders decrement stock at
-  checkout and restock on cancellation, failed delivery or return (ADR 0015).
+- **Phase 6:** `PaymentAttempt` (provider transactions; unique per provider
+  tx id, one captured per order, never deleted), `Order.paymentDueAt/paidAt`,
+  `AWAITING_PAYMENT` / `PENDING_PAYMENT`; commission fields on `Category`,
+  `Store`, `OrderItem`, `SellerOrder`; `Refund`, `LedgerEntry` (balanced
+  journals enforced by a deferred constraint trigger, append-only), `Payout`;
+  store payout details (format `CHECK`s) and Telegram chat id;
+  `DeliveryZone`, `PickupPoint`, `Order.deliveryType/pickupPointId`,
+  `SellerOrder.carrier/trackingCode`, `Notification` (outbox).
+- **Stock reservation:** online orders hold stock by decrementing it at
+  checkout and restoring it when the unpaid order expires or is cancelled; a
+  separate `StockReservation` table turned out unnecessary (ADR 0017).
+- Cash-on-delivery orders decrement stock at checkout and restock on
+  cancellation, failed delivery or return (ADR 0015).
 
 ## Geography reference data
 
@@ -213,6 +223,13 @@ come in Phase 6.
 any → `ARCHIVED → DRAFT` (restore). Editing an `APPROVED` product's
 title/description/category/attributes/images or adding a variant sends it back
 to `PENDING_REVIEW` (price/stock/availability edits do not).
+
+### Online payment
+
+`PENDING_PAYMENT → NEW` (system, payment captured) or `→ CANCELLED_BY_CUSTOMER`
+(system: unpaid order expired or cancelled as a whole). Sellers never see
+unpaid shipments. A provider full refund cancels open shipments
+(`NEW/ACCEPTED/PACKED → CANCELLED_BY_CUSTOMER`, system).
 
 ### Store
 

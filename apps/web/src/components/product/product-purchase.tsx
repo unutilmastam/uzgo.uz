@@ -6,6 +6,7 @@ import { toast } from '@uzgo/ui/components/toast';
 import { ShoppingCart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useHydrated } from '@/lib/use-hydrated';
 import { QuantityStepper } from '@/components/cart/quantity-stepper';
 import { useRouter } from '@/i18n/navigation';
 import { ApiClientError, apiClient } from '@/lib/api-client';
@@ -19,6 +20,7 @@ function AddToCart({ variant }: { variant: Variant }) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [pending, setPending] = useState(false);
+  const hydrated = useHydrated();
   const max = Math.max(1, Math.min(variant.available, 10));
   const qty = Math.min(quantity, max);
 
@@ -55,13 +57,13 @@ function AddToCart({ variant }: { variant: Variant }) {
         max={max}
         onChange={setQuantity}
         label={t('product.quantity')}
-        disabled={pending}
+        disabled={pending || !hydrated}
       />
       <Button
         size="lg"
         variant="accent"
         className="flex-1"
-        disabled={pending}
+        disabled={pending || !hydrated}
         onClick={() => void add()}
       >
         <ShoppingCart aria-hidden="true" />

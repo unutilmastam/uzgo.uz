@@ -33,7 +33,11 @@ export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export const ONLINE_PAYMENT_METHODS = ['PAYME', 'CLICK', 'DEV_ONLINE'] as const;
 
 /** GET /api/v1/payments/methods — what checkout can offer right now. */
-export const paymentMethodsResponseSchema = z.object({ items: z.array(paymentMethodSchema) });
+export const paymentMethodsResponseSchema = z.object({
+  items: z.array(paymentMethodSchema),
+  /** Minutes an unpaid online order is kept. */
+  windowMinutes: z.number().int().positive(),
+});
 
 export const paymentStatusSchema = z.enum([
   'NOT_REQUIRED',

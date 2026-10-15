@@ -15,16 +15,101 @@ import type { Locale } from '@/i18n/routing';
 import { apiClient } from '@/lib/api-client';
 import { useCategoryAttributes } from './product-form';
 
-type PriceFields = { price: string; oldPrice: string; stock: string };
+type PriceFields = {
+  price: string;
+  oldPrice: string;
+  stock: string;
+  mxik: string;
+  pkg: string;
+  vat: string;
+};
 
-/** Converts the soʻm inputs to API fields, or returns null when they are invalid. */
+const emptyFields: PriceFields = {
+  price: '',
+  oldPrice: '',
+  stock: '0',
+  mxik: '',
+  pkg: '',
+  vat: '',
+};
+
+/** Converts the soʻm and fiscal inputs to API fields, or returns null when they are invalid. */
 function toApi(fields: PriceFields) {
   const priceTiyin = parseSomInput(fields.price);
   const oldPrice = fields.oldPrice.trim() ? parseSomInput(fields.oldPrice) : null;
   const stock = Number(fields.stock);
   if (!priceTiyin || priceTiyin === '0' || (fields.oldPrice.trim() && !oldPrice)) return null;
   if (!Number.isInteger(stock) || stock < 0) return null;
-  return { priceTiyin, compareAtPriceTiyin: oldPrice, stock };
+  const mxik = fields.mxik.trim();
+  const pkg = fields.pkg.trim();
+  const vat = fields.vat.trim();
+  if ((mxik && !/^\d{17}$/.test(mxik)) || (pkg && !/^\d{1,20}$/.test(pkg))) return null;
+  if (vat && !/^\d{1,2}$/.test(vat)) return null;
+  return {
+    priceTiyin,
+    compareAtPriceTiyin: oldPrice,
+    stock,
+    mxikCode: mxik || null,
+    packageCode: pkg || null,
+    vatRateBp: vat ? Number(vat) * 100 : null,
+  };
+}
+
+/** IKPU, package code and VAT: needed for fiscal receipts of online payments. */
+function FiscalFields({
+  id,
+  fields,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  fields: PriceFields;
+  disabled?: boolean;
+  onChange: (next: PriceFields) => void;
+}) {
+  const t = useTranslations('seller');
+  return (
+    <fieldset className="grid gap-3 sm:col-span-full sm:grid-cols-[1fr_1fr_6rem]">
+      <legend className="mb-1 text-sm font-medium">{t('fiscalTitle')}</legend>
+      <Field id={`${id}-mxik`} label={t('mxikCode')}>
+        <Input
+          id={`${id}-mxik`}
+          inputMode="numeric"
+          maxLength={17}
+          disabled={disabled}
+          value={fields.mxik}
+          onChange={(e) => {
+            onChange({ ...fields, mxik: e.target.value.replace(/\D/g, '') });
+          }}
+        />
+      </Field>
+      <Field id={`${id}-pkg`} label={t('packageCode')}>
+        <Input
+          id={`${id}-pkg`}
+          inputMode="numeric"
+          maxLength={20}
+          disabled={disabled}
+          value={fields.pkg}
+          onChange={(e) => {
+            onChange({ ...fields, pkg: e.target.value.replace(/\D/g, '') });
+          }}
+        />
+      </Field>
+      <Field id={`${id}-vat`} label={t('vatPercent')}>
+        <Input
+          id={`${id}-vat`}
+          inputMode="numeric"
+          maxLength={2}
+          disabled={disabled}
+          value={fields.vat}
+          onChange={(e) => {
+            onChange({ ...fields, vat: e.target.value.replace(/\D/g, '') });
+          }}
+        />
+      </Field>
+      <p className="text-xs text-muted-foreground sm:col-span-3">{t('fiscalHint')}</p>
+    </fieldset>
+  );
 }
 
 function VariantRow({
@@ -47,6 +132,9 @@ function VariantRow({
     price: somInputValue(variant.priceTiyin),
     oldPrice: variant.compareAtPriceTiyin ? somInputValue(variant.compareAtPriceTiyin) : '',
     stock: String(variant.stock),
+    mxik: variant.mxikCode ?? '',
+    pkg: variant.packageCode ?? '',
+    vat: variant.vatRateBp === null ? '' : String(variant.vatRateBp / 100),
   });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +218,7 @@ function VariantRow({
             }}
           />
         </Field>
+        <FiscalFields id={id} fields={fields} disabled={readOnly} onChange={setFields} />
         {readOnly ? null : (
           <div className="flex gap-2">
             <Button type="submit" disabled={pending}>
@@ -161,7 +250,7 @@ function AddVariantForm({ storeId, product }: { storeId: string; product: Seller
   const id = useId();
   const attributes = useCategoryAttributes(product.categoryId);
   const [sku, setSku] = useState('');
-  const [fields, setFields] = useState<PriceFields>({ price: '', oldPrice: '', stock: '0' });
+  const [fields, setFields] = useState<PriceFields>(emptyFields);
   const [options, setOptions] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,7 +273,7 @@ function AddVariantForm({ storeId, product }: { storeId: string; product: Seller
         },
       });
       setSku('');
-      setFields({ price: '', oldPrice: '', stock: '0' });
+      setFields(emptyFields);
       setOptions({});
       toast.success(t('saved'));
       router.refresh();
@@ -270,6 +359,7 @@ function AddVariantForm({ storeId, product }: { storeId: string; product: Seller
           </NativeSelect>
         </Field>
       ))}
+      <FiscalFields id={id} fields={fields} onChange={setFields} />
       <div className="flex flex-col gap-2 sm:col-span-3">
         <FormError id={`${id}-error`} message={error} />
         <Button type="submit" disabled={pending || !sku.trim()} className="w-fit">

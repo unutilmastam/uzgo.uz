@@ -18,12 +18,17 @@ export function AdminAction({
   label,
   body,
   withReason = false,
+  field = 'reason',
+  fieldLabel,
   variant = 'outline',
 }: {
   path: string;
   label: string;
   body?: Record<string, unknown>;
+  /** Ask for a text first (sent as `field`, default "reason"). */
   withReason?: boolean;
+  field?: string;
+  fieldLabel?: string;
   variant?: ButtonProps['variant'];
 }) {
   const t = useTranslations('admin');
@@ -41,7 +46,7 @@ export function AdminAction({
     try {
       await apiClient(path, {
         method: 'POST',
-        body: withReason ? { ...body, reason: reason.trim() } : (body ?? {}),
+        body: withReason ? { ...body, [field]: reason.trim() } : (body ?? {}),
       });
       toast.success(t('done'));
       setOpen(false);
@@ -65,7 +70,7 @@ export function AdminAction({
         }}
       >
         <label htmlFor={`${id}-reason`} className="text-sm font-medium">
-          {t('reason')}
+          {fieldLabel ?? t('reason')}
         </label>
         <Textarea
           id={`${id}-reason`}

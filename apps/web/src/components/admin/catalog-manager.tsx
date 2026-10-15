@@ -75,6 +75,10 @@ function CategoryForm({
     nameRu: category?.name.ru ?? '',
     icon: category?.icon ?? '',
     sort: String(category?.sort ?? 0),
+    commission:
+      category?.commissionBp === null || category?.commissionBp === undefined
+        ? ''
+        : String(category.commissionBp / 100),
   });
 
   async function submit() {
@@ -85,9 +89,18 @@ function CategoryForm({
       icon: form.icon.trim() || null,
       sort: Number(form.sort) || 0,
     };
+    // Percent → basis points with integer arithmetic ("12.5" → 1250); empty = inherit.
+    const pct = form.commission.trim();
+    const [whole = '0', frac = ''] = pct.split('.');
+    const commissionBp = /^\d{1,2}(\.\d{1,2})?$/.test(pct)
+      ? Number(whole) * 100 + Number(frac.padEnd(2, '0'))
+      : null;
     const ok = await run(() =>
       category
-        ? apiClient(`/admin/categories/${category.id}`, { method: 'PATCH', body })
+        ? apiClient(`/admin/categories/${category.id}`, {
+            method: 'PATCH',
+            body: { ...body, commissionBp },
+          })
         : apiClient('/admin/categories', { method: 'POST', body: { ...body, active: false } }),
     );
     if (ok) onDone?.();
@@ -174,6 +187,18 @@ function CategoryForm({
           }}
         />
       </Field>
+      {category ? (
+        <Field id={`${id}-commission`} label={t('commission')}>
+          <Input
+            id={`${id}-commission`}
+            inputMode="decimal"
+            value={form.commission}
+            onChange={(e) => {
+              setForm({ ...form, commission: e.target.value });
+            }}
+          />
+        </Field>
+      ) : null}
       <div className="flex flex-col gap-2 sm:col-span-3">
         <FormError id={`${id}-error`} message={error} />
         <Button type="submit" size="sm" className="w-fit" disabled={pending}>

@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
 import { OrderStatusBadge } from '@/components/orders/status-badge';
+import { PaymentActions } from '@/components/orders/payment-actions';
 import { ShipmentActions } from '@/components/orders/shipment-actions';
 import { Link, redirect } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -100,6 +101,38 @@ export default async function OrderPage({ params, searchParams }: Props) {
                 </li>
               ))}
             </ul>
+            {so.tracking || so.timeline.length > 1 ? (
+              <div className="border-t border-border px-4 py-3 text-sm">
+                {so.tracking ? (
+                  <p className="font-medium" data-testid="shipment-tracking">
+                    {t('orders.tracking', { carrier: so.tracking.carrier, code: so.tracking.code })}
+                  </p>
+                ) : null}
+                {so.timeline.length > 1 ? (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-muted-foreground">
+                      {t('orders.timeline')}
+                    </summary>
+                    <ol className="mt-2 flex flex-col gap-1">
+                      {so.timeline.map((step) => (
+                        <li
+                          key={`${step.status}-${step.at}`}
+                          className="flex justify-between gap-3"
+                        >
+                          <span>{t(`orders.ss_${step.status}`)}</span>
+                          <time dateTime={step.at} className="text-muted-foreground">
+                            {format.dateTime(new Date(step.at), {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </time>
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                ) : null}
+              </div>
+            ) : null}
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
               <ShipmentActions
                 orderNumber={order.number}
@@ -114,6 +147,12 @@ export default async function OrderPage({ params, searchParams }: Props) {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-4 text-sm">
           <h2 className="mb-2 font-semibold">{t('orders.address')}</h2>
+          <p className="mb-1 font-medium">{t(`orders.dt_${order.deliveryType}`)}</p>
+          {order.pickupPoint ? (
+            <p className="mb-1">
+              {[order.pickupPoint.name[l], order.pickupPoint.hours].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
           <p>{order.address.recipientName}</p>
           <p className="text-muted-foreground">{formatPhone(order.address.recipientPhone)}</p>
           <p className="text-muted-foreground">
@@ -125,7 +164,28 @@ export default async function OrderPage({ params, searchParams }: Props) {
         </section>
         <section className="rounded-xl border border-border bg-card p-4 text-sm">
           <h2 className="mb-2 font-semibold">{t('orders.payment')}</h2>
-          <p className="text-muted-foreground">{t('checkout.cod')}</p>
+          <p className="text-muted-foreground">{t(`checkout.method_${order.paymentMethod}`)}</p>
+          <p className="mt-1 font-medium" data-testid="payment-status">
+            {t(`orders.pay_${order.payment.status}`)}
+          </p>
+          {order.payment.status === 'UNPAID' ? (
+            <div className="mt-3 flex flex-col gap-2">
+              {order.payment.dueAt ? (
+                <p className="text-muted-foreground">
+                  {t('orders.payBefore', {
+                    time: format.dateTime(new Date(order.payment.dueAt), { timeStyle: 'short' }),
+                  })}
+                </p>
+              ) : null}
+              <PaymentActions orderNumber={order.number} />
+            </div>
+          ) : null}
+          {order.deliveryTotalTiyin !== '0' ? (
+            <div className="mt-3 flex justify-between">
+              <span>{t('checkout.deliveryLine')}</span>
+              <Price value={order.deliveryTotalTiyin} locale={l} className="font-normal" />
+            </div>
+          ) : null}
           <div className="mt-3 flex justify-between border-t border-border pt-3 text-base">
             <span className="font-semibold">{t('orders.total')}</span>
             <Price value={order.totalTiyin} locale={l} className="font-bold" />

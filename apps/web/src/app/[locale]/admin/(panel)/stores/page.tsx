@@ -137,6 +137,14 @@ export default async function AdminStoresPage({
                     variant="destructive"
                   />
                 ) : null}
+                {admin && store.status !== 'PENDING' ? (
+                  <Link
+                    href={`/admin/finance/stores/${store.id}`}
+                    className="inline-flex h-9 items-center px-2 text-sm text-primary hover:underline"
+                  >
+                    {t('admin.storeFinance')}
+                  </Link>
+                ) : null}
                 {admin && store.status === 'SUSPENDED' ? (
                   <AdminAction
                     path={`/admin/stores/${store.id}/reactivate`}

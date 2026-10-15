@@ -21,6 +21,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           { href: '/admin/catalog', label: t('tabCatalog') },
           { href: '/admin/users', label: t('tabUsers') },
           { href: '/admin/orders', label: t('tabOrders') },
+          { href: '/admin/finance', label: t('tabFinance') },
+          { href: '/admin/delivery', label: t('tabDelivery') },
           { href: '/admin/audit', label: t('tabAudit') },
         ]
       : []),

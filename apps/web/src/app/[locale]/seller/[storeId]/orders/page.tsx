@@ -4,6 +4,7 @@ import { Package } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { ShipmentButtons } from '@/components/seller/shipment-buttons';
+import { TrackingForm } from '@/components/seller/tracking-form';
 import type { Locale } from '@/i18n/routing';
 import { formatPhone } from '@/lib/format-phone';
 import { getSellerShipments } from '@/lib/seller-api';
@@ -93,6 +94,11 @@ export default async function SellerOrdersPage({
               </dd>
             </div>
           </dl>
+          {['ACCEPTED', 'PACKED', 'HANDED_TO_DELIVERY'].includes(shipment.status) ? (
+            <div className="mb-3 rounded-lg bg-muted/50 p-3">
+              <TrackingForm sellerOrderId={shipment.id} initial={shipment.tracking} />
+            </div>
+          ) : null}
           <ShipmentButtons sellerOrderId={shipment.id} allowed={shipment.allowedTransitions} />
         </li>
       ))}

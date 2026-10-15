@@ -65,6 +65,12 @@ const variantFields = {
     .regex(/^\d{17}$/)
     .nullable()
     .optional(),
+  /** Package (unit) code from the IKPU catalogue, required with the IKPU for online payment. */
+  packageCode: z
+    .string()
+    .regex(/^\d{1,20}$/)
+    .nullable()
+    .optional(),
   vatRateBp: z.number().int().min(0).max(10_000).nullable().optional(),
   optionValueIds: z.array(z.uuid()).max(5).default([]),
 };
@@ -86,6 +92,7 @@ export const updateVariantSchema = z
     stock: variantFields.stock.optional(),
     stockAdjust: z.number().int().min(-1_000_000).max(1_000_000).optional(),
     mxikCode: variantFields.mxikCode,
+    packageCode: variantFields.packageCode,
     vatRateBp: variantFields.vatRateBp,
     active: z.boolean().optional(),
   })
@@ -103,6 +110,7 @@ export const sellerVariantSchema = z.object({
   compareAtPriceTiyin: tiyinSchema.nullable(),
   stock: z.number().int(),
   mxikCode: z.string().nullable(),
+  packageCode: z.string().nullable(),
   vatRateBp: z.number().int().nullable(),
   active: z.boolean(),
   options: z.array(z.object({ id: z.uuid(), attribute: z.string(), name: localizedNameSchema })),

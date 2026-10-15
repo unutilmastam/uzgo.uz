@@ -43,8 +43,11 @@ export class PaymentsController {
 
   @Public()
   @Get('payments/methods')
-  methods(): { items: PaymentMethod[] } {
-    return { items: enabledPaymentMethods(this.env) };
+  methods(): { items: PaymentMethod[]; windowMinutes: number } {
+    return {
+      items: enabledPaymentMethods(this.env),
+      windowMinutes: this.env.PAYMENT_WINDOW_MINUTES,
+    };
   }
 
   /** The provider page where the order's owner pays (only while it is collectable). */

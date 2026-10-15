@@ -124,6 +124,29 @@ without either it is accepted only if it carries no cookies at all.
 - **Orders are permanent:** database triggers forbid deleting orders,
   shipments and items and changing items and order events.
 
+## Payments, money and callbacks (Phase 6, ADR 0017–0019)
+
+- **Provider callbacks** (`/payments/payme`, `/payments/click/*`) are public
+  routes authenticated by the provider's secret: Payme Basic auth
+  (`Paycom:<KEY>`), Click MD5 `sign_string` with `SECRET_KEY`; both compared in
+  constant time. Optional Payme source-IP allow-list (`PAYME_ALLOWED_IPS`).
+  They are not rate-limited per IP and always answer in the provider's format.
+- **Amounts** come only from the server: the provider's amount must equal the
+  order total exactly (Payme tiyin integers; Click soʻm strings converted with
+  integer arithmetic). Clients never send prices.
+- **Idempotency and races**: unique provider transaction ids; attempt rows are
+  locked (`FOR UPDATE`) before state changes; at most one captured payment per
+  order (partial unique index); duplicate callbacks return the same answer.
+- **Stock and expiry**: online orders hold stock until `paymentDueAt`; a job
+  cancels unpaid orders (leaving open provider transactions to time out).
+- **Simulated provider** `DEV_ONLINE` only with `DEV_PAYMENTS_ENABLED`, which env
+  validation refuses in production; its page is labelled as a test.
+- **Ledger** is double-entry, append-only, and the database rejects any
+  unbalanced journal at commit. Refunds and payouts are never deleted; one open
+  refund per shipment. Bank details: audit keeps only the last 4 digits.
+- **Notifications** carry no address or name; failures are retried and logged
+  with masked phones only.
+
 ## Uploads (Phase 5)
 
 Product images: one file per request, ≤ 8 MB, kept in memory (never on disk

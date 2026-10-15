@@ -132,6 +132,38 @@ Phase 5 error codes: `TOTP_REQUIRED`, `TOTP_LOCKED` (429), `TOTP_NOT_SET_UP`,
 `PRODUCT_ARCHIVED`, `USER_NOT_FOUND`, `ALREADY_MEMBER`, `TEAM_LIMIT`,
 `CATEGORY_CYCLE`, `PARENT_HAS_PRODUCTS`.
 
+## Endpoints (Phase 6)
+
+| Method         | Path                                                                                    | Access                | Notes                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| GET            | `/payments/methods`                                                                     | public                | `{ items, windowMinutes }` — only configured methods                                                       |
+| POST           | `/checkout`                                                                             | session + key         | adds `paymentMethod` (`CASH_ON_DELIVERY`, `PAYME`, `CLICK`, `DEV_ONLINE`), `deliveryType`, `pickupPointId` |
+| GET            | `/orders/:number/payment-link?locale=`                                                  | order owner           | provider page URL while the order is payable                                                               |
+| POST           | `/orders/:number/cancel`                                                                | order owner           | whole unpaid online order (stock released)                                                                 |
+| POST           | `/payments/payme`                                                                       | Payme (Basic auth)    | Merchant API JSON-RPC; HTTP 200 always                                                                     |
+| POST           | `/payments/click/prepare`, `/payments/click/complete`                                   | Click (`sign_string`) | SHOP API, form-encoded                                                                                     |
+| POST           | `/payments/dev/:number`                                                                 | owner, dev only       | `{ outcome: success\|cancel }` — simulated provider                                                        |
+| GET            | `/delivery/quote?districtId&type&pickupPointId`                                         | session               | delivery for the caller's cart, same rules as checkout                                                     |
+| GET            | `/delivery/pickup-points?districtId`                                                    | public                | active points                                                                                              |
+| PATCH          | `/seller/seller-orders/:id/tracking`                                                    | store member          | `{ carrier, trackingCode }` once accepted                                                                  |
+| GET / PUT      | `/seller/stores/:id/finance`, `/payout-details`                                         | owner                 | balance, held, available, ledger lines, payouts; bank details                                              |
+| PUT            | `/seller/stores/:id/notifications`                                                      | owner                 | `{ telegramChatId \| null }`                                                                               |
+| GET / POST     | `/admin/refunds?status`, `/admin/refunds/:id/succeed\|fail`                             | admin+                | `{ reference }` / `{ note }`                                                                               |
+| GET / POST     | `/admin/payouts?status`, `/admin/stores/:id/payouts`, `/admin/payouts/:id/paid\|cancel` | admin+                | payout ≤ available balance                                                                                 |
+| GET / PATCH    | `/admin/stores/:id/finance`, `/admin/stores/:id/commission`                             | admin+                | commission in basis points (`null` = category rules)                                                       |
+| GET            | `/admin/ledger`                                                                         | admin+                | account balances; total is always 0                                                                        |
+| GET / PUT      | `/admin/delivery/zones?regionId`, `/admin/delivery/zones/:districtId`                   | admin+                | fee / free-from in tiyin, ETA days, active                                                                 |
+| GET/POST/PATCH | `/admin/delivery/pickup-points[/:id]`                                                   | admin+                | pickup points                                                                                              |
+
+Order views add `payment { status, dueAt, paidAt }`, `deliveryType`,
+`pickupPoint`, and per shipment `tracking` and `timeline`.
+
+Phase 6 error codes: `PAYMENT_METHOD_UNAVAILABLE`, `FISCAL_DATA_MISSING`
+(`details.variantIds`), `ORDER_NOT_PAYABLE`, `DELIVERY_UNAVAILABLE`,
+`PAYOUT_DETAILS_MISSING`, `PAYOUT_EXCEEDS_BALANCE`. Provider callbacks use the
+providers' own error codes (Payme −31001/−31003/−31007/−31008/−31050/−31051/
+−32504…, Click −1…−9).
+
 Listings use page-based pagination (numbered pages in the storefront UI);
 cursor pagination stays the default for future feeds.
 

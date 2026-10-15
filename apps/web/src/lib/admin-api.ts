@@ -1,5 +1,9 @@
 import {
   adminAttributesResponseSchema,
+  adminPayoutListResponseSchema,
+  adminRefundListResponseSchema,
+  ledgerSummarySchema,
+  storeFinanceSchema,
   adminCategoriesResponseSchema,
   adminOrderListResponseSchema,
   adminProductListResponseSchema,
@@ -71,3 +75,54 @@ export const getAdminOrder = async (number: string) =>
 
 export const getAudit = (query: { action?: string; before?: string }) =>
   getJson(`/admin/audit${qs(query)}`, auditListResponseSchema);
+
+export const getLedgerSummary = () => getJson('/admin/ledger', ledgerSummarySchema);
+
+export const getAdminRefunds = (status: string, page: number) =>
+  getJson(`/admin/refunds${qs({ status, page })}`, adminRefundListResponseSchema);
+
+export const getAdminPayouts = (status: string, page: number) =>
+  getJson(`/admin/payouts${qs({ status, page })}`, adminPayoutListResponseSchema);
+
+export const getAdminStoreFinance = (storeId: string) =>
+  getJson(`/admin/stores/${storeId}/finance`, storeFinanceSchema);
+
+const zoneListSchema = z.object({
+  items: z.array(
+    z.object({
+      districtId: z.uuid(),
+      name: z.object({ uz: z.string(), ru: z.string() }),
+      zone: z
+        .object({
+          feeTiyin: z.string(),
+          freeFromTiyin: z.string().nullable(),
+          etaDaysMin: z.number(),
+          etaDaysMax: z.number(),
+          active: z.boolean(),
+        })
+        .nullable(),
+    }),
+  ),
+});
+export type AdminZoneRow = z.infer<typeof zoneListSchema>['items'][number];
+
+export const getAdminZones = async (regionId: string) =>
+  (await getJson(`/admin/delivery/zones${qs({ regionId })}`, zoneListSchema))?.items ?? [];
+
+const pointListSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.uuid(),
+      districtId: z.uuid(),
+      name: z.object({ uz: z.string(), ru: z.string() }),
+      address: z.string(),
+      hours: z.string().nullable(),
+      phone: z.string().nullable(),
+      active: z.boolean(),
+    }),
+  ),
+});
+export type AdminPickupPoint = z.infer<typeof pointListSchema>['items'][number];
+
+export const getAdminPickupPoints = async () =>
+  (await getJson('/admin/delivery/pickup-points', pointListSchema))?.items ?? [];

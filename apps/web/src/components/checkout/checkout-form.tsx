@@ -4,7 +4,13 @@ import {
   type CartView,
   cartResponseSchema,
   type CurrentUser,
+  type DeliveryQuote,
+  type DeliveryType,
+  deliveryQuoteSchema,
   orderResponseSchema,
+  type PaymentMethod,
+  type PickupPoint,
+  pickupPointsResponseSchema,
   type Region,
 } from '@uzgo/contracts';
 import { Button } from '@uzgo/ui/components/button';
@@ -12,7 +18,7 @@ import { EmptyState } from '@uzgo/ui/components/empty-state';
 import { Input } from '@uzgo/ui/components/input';
 import { Price } from '@uzgo/ui/components/price';
 import { Skeleton } from '@uzgo/ui/components/skeleton';
-import { Banknote, ShoppingCart } from 'lucide-react';
+import { Banknote, CreditCard, FlaskConical, ShoppingCart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { DistrictPicker } from '@/components/geo/district-picker';
@@ -28,13 +34,40 @@ const KNOWN_ERRORS = new Set([
   'CART_EMPTY',
   'INVALID_PHONE',
   'VALIDATION_FAILED',
+  'FISCAL_DATA_MISSING',
+  'DELIVERY_UNAVAILABLE',
+  'PAYMENT_METHOD_UNAVAILABLE',
 ]);
 
-export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Region[] }) {
+const METHOD_ICON: Record<PaymentMethod, typeof Banknote> = {
+  CASH_ON_DELIVERY: Banknote,
+  PAYME: CreditCard,
+  CLICK: CreditCard,
+  DEV_ONLINE: FlaskConical,
+};
+
+export function CheckoutForm({
+  user,
+  regions,
+  methods,
+  paymentWindowMinutes,
+}: {
+  user: CurrentUser;
+  regions: Region[];
+  methods: PaymentMethod[];
+  paymentWindowMinutes: number;
+}) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
-  const ids = { name: useId(), phone: useId(), line: useId(), comment: useId(), error: useId() };
+  const ids = {
+    name: useId(),
+    phone: useId(),
+    line: useId(),
+    comment: useId(),
+    error: useId(),
+    point: useId(),
+  };
   // One key per checkout attempt: retries (double clicks, network errors) cannot create a second order.
   const idempotencyKey = useRef<string>(crypto.randomUUID());
 
@@ -49,6 +82,12 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
   });
   const [line, setLine] = useState('');
   const [comment, setComment] = useState('');
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('COURIER');
+  const [points, setPoints] = useState<PickupPoint[]>([]);
+  const [pointId, setPointId] = useState('');
+  const [quote, setQuote] = useState<DeliveryQuote | null>(null);
+  const [method, setMethod] = useState<PaymentMethod>('CASH_ON_DELIVERY');
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -68,6 +107,54 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
       });
   }, [t]);
 
+  // Pickup points of the chosen district.
+  useEffect(() => {
+    if (!place.districtId || deliveryType !== 'PICKUP') return;
+    let cancelled = false;
+    void apiClient(`/delivery/pickup-points?districtId=${place.districtId}`)
+      .then((json) => {
+        if (!cancelled) setPoints(pickupPointsResponseSchema.parse(json).items);
+      })
+      .catch(() => {
+        if (!cancelled) setPoints([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [place.districtId, deliveryType]);
+
+  // The server prices delivery with the same rules checkout applies.
+  const quoteKey = `${place.districtId}|${deliveryType}|${pointId}|${cart?.totalTiyin ?? ''}`;
+  useEffect(() => {
+    const [districtId, type, point] = quoteKey.split('|');
+    if (!districtId || (type === 'PICKUP' && !point)) return;
+    let cancelled = false;
+    const query = new URLSearchParams({ districtId, type: type ?? 'COURIER' });
+    if (type === 'PICKUP' && point) query.set('pickupPointId', point);
+    void apiClient(`/delivery/quote?${query.toString()}`)
+      .then((json) => {
+        if (!cancelled) setQuote(deliveryQuoteSchema.parse(json));
+      })
+      .catch(() => {
+        if (!cancelled) setQuote(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [quoteKey]);
+
+  const quoteReady =
+    quote !== null && place.districtId !== '' && (deliveryType === 'COURIER' || pointId !== '');
+  const total = quoteReady ? quote.totalTiyin : (cart?.totalTiyin ?? '0');
+
+  async function goToPayment(number: string) {
+    setRedirecting(true);
+    const { url } = await apiClient<{ url: string }>(
+      `/orders/${number}/payment-link?locale=${locale}`,
+    );
+    window.location.assign(url);
+  }
+
   async function placeOrder() {
     if (!cart) return;
     setPending(true);
@@ -80,10 +167,13 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
           recipientName: name.trim(),
           recipientPhone: phone,
           districtId: place.districtId,
-          addressLine: line.trim(),
+          deliveryType,
+          ...(deliveryType === 'COURIER'
+            ? { addressLine: line.trim() }
+            : { pickupPointId: pointId }),
           ...(comment.trim() ? { comment: comment.trim() } : {}),
-          paymentMethod: 'CASH_ON_DELIVERY',
-          expectedTotalTiyin: cart.totalTiyin,
+          paymentMethod: method,
+          expectedTotalTiyin: total,
         },
       });
       const { order } = orderResponseSchema.parse(json);
@@ -95,11 +185,21 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
         totalTiyin: '0',
         hasIssues: false,
       });
-      router.replace({ pathname: `/orders/${order.number}`, query: { placed: '1' } });
+      if (method === 'CASH_ON_DELIVERY') {
+        router.replace({ pathname: `/orders/${order.number}`, query: { placed: '1' } });
+        return;
+      }
+      try {
+        await goToPayment(order.number);
+      } catch {
+        // The order exists; payment can be retried from its page.
+        router.replace({ pathname: `/orders/${order.number}`, query: { placed: '1' } });
+      }
     } catch (err) {
       const code = err instanceof ApiClientError ? err.code : '';
       if (code === 'PRICE_CHANGED') {
         await loadCart();
+        setQuote(null);
         setError(t('checkout.priceChanged'));
       } else {
         setError(KNOWN_ERRORS.has(code) ? t(`checkout.error_${code}`) : t('auth.error_generic'));
@@ -137,7 +237,9 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
   const ready =
     name.trim().length >= 2 &&
     place.districtId !== '' &&
-    line.trim().length >= 5 &&
+    (deliveryType === 'PICKUP' ? pointId !== '' : line.trim().length >= 5) &&
+    quoteReady &&
+    quote.available &&
     !cart.hasIssues;
 
   return (
@@ -191,21 +293,80 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
               districtId={place.districtId}
               onChange={setPlace}
             />
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <label htmlFor={ids.line} className="text-sm font-medium">
-                {t('checkout.addressLine')}
-              </label>
-              <Input
-                id={ids.line}
-                autoComplete="street-address"
-                required
-                maxLength={200}
-                value={line}
-                onChange={(e) => {
-                  setLine(e.target.value);
-                }}
-              />
-            </div>
+            <fieldset className="flex flex-col gap-2 sm:col-span-2">
+              <legend className="mb-1 text-sm font-medium">{t('checkout.deliveryType')}</legend>
+              {(['COURIER', 'PICKUP'] as const).map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm has-checked:border-primary has-checked:bg-secondary"
+                >
+                  <input
+                    type="radio"
+                    name="deliveryType"
+                    value={type}
+                    checked={deliveryType === type}
+                    onChange={() => {
+                      setDeliveryType(type);
+                      setPointId('');
+                      setQuote(null);
+                    }}
+                    className="size-4 accent-(--primary)"
+                  />
+                  {type === 'COURIER' ? t('checkout.courier') : t('checkout.pickup')}
+                </label>
+              ))}
+            </fieldset>
+            {deliveryType === 'COURIER' ? (
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label htmlFor={ids.line} className="text-sm font-medium">
+                  {t('checkout.addressLine')}
+                </label>
+                <Input
+                  id={ids.line}
+                  autoComplete="street-address"
+                  required
+                  maxLength={200}
+                  value={line}
+                  onChange={(e) => {
+                    setLine(e.target.value);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label htmlFor={ids.point} className="text-sm font-medium">
+                  {t('checkout.pickupPoint')}
+                </label>
+                {place.districtId && points.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('checkout.noPickupPoints')}</p>
+                ) : (
+                  <select
+                    id={ids.point}
+                    value={pointId}
+                    onChange={(e) => {
+                      setPointId(e.target.value);
+                    }}
+                    className="h-11 rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="" disabled>
+                      {t('checkout.selectPickup')}
+                    </option>
+                    {points.map((point) => (
+                      <option key={point.id} value={point.id}>
+                        {[point.name[locale], point.address, point.hours]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+            {quote && !quote.available ? (
+              <p role="alert" className="text-sm font-medium text-destructive sm:col-span-2">
+                {t('checkout.deliveryUnavailable')}
+              </p>
+            ) : null}
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <label htmlFor={ids.comment} className="text-sm font-medium">
                 {t('checkout.comment')}
@@ -227,17 +388,36 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
           <h2 id="payment" className="mb-4 text-lg font-semibold">
             {t('checkout.paymentTitle')}
           </h2>
-          <label className="flex items-center gap-3 rounded-lg border border-primary bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground">
-            <input
-              type="radio"
-              name="payment"
-              checked
-              readOnly
-              className="size-4 accent-(--primary)"
-            />
-            <Banknote aria-hidden="true" className="size-5" />
-            {t('checkout.cod')}
-          </label>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="sr-only">{t('checkout.paymentTitle')}</legend>
+            {methods.map((m) => {
+              const Icon = METHOD_ICON[m];
+              return (
+                <label
+                  key={m}
+                  className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm font-medium has-checked:border-primary has-checked:bg-secondary"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={m}
+                    checked={method === m}
+                    onChange={() => {
+                      setMethod(m);
+                    }}
+                    className="size-4 accent-(--primary)"
+                  />
+                  <Icon aria-hidden="true" className="size-5" />
+                  {t(`checkout.method_${m}`)}
+                </label>
+              );
+            })}
+          </fieldset>
+          {method !== 'CASH_ON_DELIVERY' ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t('checkout.onlineNote', { minutes: paymentWindowMinutes })}
+            </p>
+          ) : null}
         </section>
       </div>
       <aside className="h-fit rounded-xl border border-border bg-card p-5 lg:sticky lg:top-40">
@@ -257,10 +437,35 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
         <p className="mb-3 text-xs text-muted-foreground">
           {t('checkout.shipmentsNote', { count: cart.groups.length })}
         </p>
+        <dl className="mb-3 flex flex-col gap-1 text-sm">
+          <div className="flex justify-between">
+            <dt>{t('checkout.itemsLine')}</dt>
+            <dd>
+              <Price value={cart.totalTiyin} locale={locale} className="font-normal" />
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt>{t('checkout.deliveryLine')}</dt>
+            <dd data-testid="checkout-delivery" className="text-right">
+              {!quoteReady ? null : quote.deliveryTotalTiyin !== '0' ? (
+                <Price value={quote.deliveryTotalTiyin} locale={locale} className="font-normal" />
+              ) : deliveryType === 'COURIER' && quote.etaDays === null ? (
+                t('checkout.deliveryAgreed')
+              ) : (
+                t('checkout.deliveryFree')
+              )}
+            </dd>
+          </div>
+          {quoteReady && quote.etaDays ? (
+            <p className="text-xs text-muted-foreground">
+              {t('checkout.eta', { min: quote.etaDays.min, max: quote.etaDays.max })}
+            </p>
+          ) : null}
+        </dl>
         <div className="flex justify-between border-t border-border pt-3">
           <span className="font-semibold">{t('cart.total')}</span>
           <span data-testid="checkout-total">
-            <Price value={cart.totalTiyin} locale={locale} className="text-lg font-bold" />
+            <Price value={total} locale={locale} className="text-lg font-bold" />
           </span>
         </div>
         {error ? (
@@ -275,7 +480,7 @@ export function CheckoutForm({ user, regions }: { user: CurrentUser; regions: Re
           className="mt-4 w-full"
           disabled={!ready || pending}
         >
-          {t('checkout.placeOrder')}
+          {redirecting ? t('checkout.redirecting') : t('checkout.placeOrder')}
         </Button>
       </aside>
     </form>

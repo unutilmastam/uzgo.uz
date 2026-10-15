@@ -51,9 +51,17 @@ product moderation → product visible on the storefront. CI run #25 (commit
 
 Phase 6 notes: provider research and the proposal are in ADR 0017 (Payme +
 Click, UZGO as merchant of record, fiscal receipts via the providers' OFD).
-The owner confirmed the choice on 2026-10-15. Merchant credentials and the
-lawyer's opinion on the marketplace payment scheme are still needed before
-going live (owner actions in ADR 0017).
+The owner confirmed the choice on 2026-10-15. Delivered in sub-steps: 6a
+payment core (online orders hold stock, expiry job, simulated provider) → 6b
+Payme Merchant API → 6c Click SHOP API → 6d ledger, commission, refunds,
+payouts (ADR 0018) → 6e delivery tariffs, pickup points, tracking,
+notification outbox (ADR 0019) → 6f web UI (checkout, payment status, seller
+finance, admin finance and delivery). Tests cover duplicate and concurrent
+callbacks, wrong amounts, bad signatures, timeouts/cancellations, refunds and
+ledger balance. The real Payme/Click adapters are implemented against the
+documented protocols but switched on only with merchant credentials; before
+going live they must pass the providers' sandbox tests, and the owner actions
+in ADR 0017 (merchant contracts, lawyer's opinion, fiscalization) are needed.
 
 ## Open decisions
 
