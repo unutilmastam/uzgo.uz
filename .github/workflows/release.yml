@@ -1,0 +1,58 @@
+name: Release images
+
+# After CI passes on main: build the production images and push them to GHCR,
+# tagged with the commit SHA (ADR 0020). Deploying is a separate, manual step
+# (deploy.yml), so a green build never reaches users by itself.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  images:
+    name: Build and push images
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      - name: Build and push api, migrate, web
+        env:
+          DOCKER_BUILDKIT: '1'
+        run: |
+          registry="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/uzgo"
+          source_label="org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}"
+          revision_label="org.opencontainers.image.revision=${SHA}"
+          docker build -f apps/api/Dockerfile --target api --label "$source_label" --label "$revision_label" -t "$registry-api:$SHA" .
+          docker build -f apps/api/Dockerfile --target migrate --label "$source_label" --label "$revision_label" -t "$registry-migrate:$SHA" .
+          docker build -f apps/web/Dockerfile --label "$source_label" --label "$revision_label" -t "$registry-web:$SHA" .
+          for image in api migrate web; do docker push "$registry-$image:$SHA"; done
+          echo "### Images for \`$SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deploy: Actions → Deploy → Run workflow (sha \`$SHA\`)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Log out
+        if: always()
+        run: docker logout ghcr.io

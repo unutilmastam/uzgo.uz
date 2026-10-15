@@ -10,7 +10,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PaymentsService } from '../src/payments/payments.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { createTestApp, login, TEST_ORIGIN } from './app.js';
+import { createTestApp, login, randomIp, TEST_ORIGIN } from './app.js';
 import { createProduct, createStore, retireTestStores } from './fixtures.js';
 
 const errorCode = (body: unknown) => apiErrorSchema.parse(body).error.code;
@@ -206,5 +206,45 @@ describe('online payments: core rules (simulated provider)', () => {
     expect(order.status).toBe('CREATED');
     expect(order.payment).toEqual({ status: 'NOT_REQUIRED', dueAt: null, paidAt: null });
     expect(order.sellerOrders[0]?.status).toBe('NEW');
+  });
+
+  it('caps open unpaid online orders per customer (stock hoarding)', async () => {
+    const seller = await login(app);
+    const store = await createStore(prisma, { ownerId: seller.userId });
+    const product = await createProduct(prisma, {
+      storeId: store.id,
+      variants: [{ priceTiyin: 1_000_00n, stock: 50 }],
+    });
+    const variantId = product.variants[0]?.id ?? '';
+    const customer = await login(app);
+    // Own client IP: the checkout throttle (10/min per IP) is not what this test is about.
+    const ip = randomIp();
+    const order = async (paymentMethod: string, addToCart = true) => {
+      if (addToCart) {
+        await post('/cart/items', customer.cookie).send({ variantId, quantity: 1 }).expect(201);
+      }
+      return post('/checkout', customer.cookie)
+        .set('X-Forwarded-For', ip)
+        .set('Idempotency-Key', randomUUID())
+        .send({
+          recipientName: 'Ali Valiyev',
+          recipientPhone: '+998901234567',
+          districtId,
+          addressLine: 'Alpomish koʻchasi, 1',
+          paymentMethod,
+          expectedTotalTiyin: '100000',
+        });
+    };
+    for (let i = 0; i < 3; i += 1) {
+      const res = await order('DEV_ONLINE');
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+    }
+    const fourth = await order('DEV_ONLINE');
+    expect(fourth.status).toBe(409);
+    expect(errorCode(fourth.body)).toBe('TOO_MANY_UNPAID_ORDERS');
+    expect(await stockOf(variantId)).toBe(47);
+    // Cash on delivery stays allowed (the rejected order's item is still in the cart).
+    const cod = await order('CASH_ON_DELIVERY', false);
+    expect(cod.status, JSON.stringify(cod.body)).toBe(201);
   });
 });

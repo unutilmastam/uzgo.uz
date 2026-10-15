@@ -5,7 +5,7 @@ sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
 Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 4 (marketplace core: catalog, search, cart, checkout) — see `docs/ROADMAP.md`.
+**Status:** Phase 7 (production readiness: hosting, security review, backups, monitoring) — see `docs/ROADMAP.md`.
 
 ## Stack
 
@@ -23,6 +23,7 @@ apps/api/prisma     the only Prisma schema, migrations, seed
 packages/contracts  Zod schemas shared by web and api
 packages/config     shared tsconfig / ESLint / Prettier presets
 packages/ui         design tokens + shared components
+deploy/             production Compose stack, Caddyfile, ops scripts (RUNBOOK)
 docs/               specification, architecture, decisions
 ```
 
@@ -115,5 +116,7 @@ pnpm audit
 | `docs/API.md`           | API conventions                                   |
 | `docs/DESIGN_SYSTEM.md` | Design principles, colour/wordmark proposal       |
 | `docs/SECURITY.md`      | Threat model, auth, RBAC, logging, data residency |
-| `docs/DEPLOYMENT.md`    | Hosting requirements and options                  |
+| `docs/DEPLOYMENT.md`    | Hosting decision, requirements, secrets           |
+| `docs/RUNBOOK.md`       | Server setup, deploy, rollback, backup, restore   |
+| `docs/PERFORMANCE.md`   | Lighthouse results and next optimisations         |
 | `docs/decisions/`       | Architecture Decision Records                     |

@@ -160,7 +160,8 @@ Order views add `payment { status, dueAt, paidAt }`, `deliveryType`,
 
 Phase 6 error codes: `PAYMENT_METHOD_UNAVAILABLE`, `FISCAL_DATA_MISSING`
 (`details.variantIds`), `ORDER_NOT_PAYABLE`, `DELIVERY_UNAVAILABLE`,
-`PAYOUT_DETAILS_MISSING`, `PAYOUT_EXCEEDS_BALANCE`. Provider callbacks use the
+`PAYOUT_DETAILS_MISSING`, `PAYOUT_EXCEEDS_BALANCE`. Phase 7: `TOO_MANY_UNPAID_ORDERS`
+(409, a customer may hold at most 3 online orders awaiting payment). Provider callbacks use the
 providers' own error codes (Payme −31001/−31003/−31007/−31008/−31050/−31051/
 −32504…, Click −1…−9).
 
@@ -201,7 +202,10 @@ unless `NODE_ENV=test` and `SMS_PROVIDER=fake` (impossible in production).
 ## Rate limits
 
 Per IP and per phone on OTP; per user/IP on writes. Response `429` with
-`Retry-After`. In-memory first; Redis only via ADR.
+`Retry-After`. In-memory first; Redis only via ADR. The full table is in
+`SECURITY.md` → "Rate limits". Server-to-server calls from the web app carry
+`x-uzgo-internal-token` and `x-uzgo-client-ip` so they count against the
+visitor's IP (ADR 0021); the forwarded IP is ignored without a valid token.
 
 ## Health
 

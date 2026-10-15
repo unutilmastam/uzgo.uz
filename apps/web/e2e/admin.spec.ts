@@ -28,11 +28,11 @@ async function loginAt(page: Page, request: APIRequestContext, path: string, pho
   return loginOnPage(page, request, phone);
 }
 
-test('staff back office: TOTP → approve store → moderate product → storefront', async ({
+test('marketplace: staff approve → buyer orders → seller fulfils → buyer sees delivery', async ({
   browser,
   request,
 }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   // 1. A seller applies and prepares a product.
   const sellerContext = await browser.newContext();
   const seller = await sellerContext.newPage();
@@ -128,7 +128,57 @@ test('staff back office: TOTP → approve store → moderate product → storefr
   expect(after?.status()).toBe(200);
   await expect(seller.getByRole('heading', { name: product.title.uz })).toBeVisible();
 
-  // 6. The audit log records the decisions.
+  // 6. A buyer orders the product (cash on delivery).
+  const buyerContext = await browser.newContext();
+  const buyer = await buyerContext.newPage();
+  await buyer.goto(`/uz/p/${product.slug}`);
+  await buyer.getByRole('button', { name: 'Savatga' }).click();
+  await expect(buyer.getByText('Savatga qoʻshildi')).toBeVisible();
+  await buyer.goto('/uz/cart');
+  await buyer.getByRole('link', { name: 'Rasmiylashtirish uchun kiring' }).click();
+  await loginOnPage(buyer, request);
+  await expect(buyer).toHaveURL(/\/uz\/checkout$/);
+  await buyer.getByLabel('Qabul qiluvchi ismi').fill('Gʻayrat Maʼrufov');
+  await buyer.getByRole('combobox', { name: 'Viloyat' }).click();
+  await buyer.getByRole('option', { name: 'Surxondaryo viloyati' }).click();
+  await buyer.getByRole('combobox', { name: 'Tuman yoki shahar' }).click();
+  await buyer.getByRole('option', { name: 'Termiz shahri' }).click();
+  await buyer.getByLabel('Koʻcha, uy, xonadon').fill('Alpomish koʻchasi, 12-uy');
+  await buyer.getByRole('button', { name: 'Buyurtma berish' }).click();
+  await expect(buyer).toHaveURL(/\/uz\/orders\/UZ-\d{4}-\d{6}\?placed=1$/);
+  const orderPath = new URL(buyer.url()).pathname;
+  await expect(buyer.getByTestId('shipment-status')).toHaveText('Yangi');
+
+  // 7. The seller fulfils it step by step in the panel, with a tracking code.
+  await seller.goto(`/uz/seller/${store.id}/orders`);
+  const shipment = seller.getByTestId('seller-shipment').filter({ hasText: product.title.uz });
+  await expect(shipment).toContainText('Gʻayrat Maʼrufov');
+  await shipment.getByRole('button', { name: 'Qabul qilish' }).click();
+  await expect(shipment).toContainText('Sotuvchi qabul qildi');
+  await shipment.getByLabel('Yetkazib beruvchi').fill('BTS Express');
+  await shipment.getByLabel('Kuzatuv kodi').fill('BTS-123456');
+  await shipment.getByRole('button', { name: 'Saqlash', exact: true }).click();
+  await expect(seller.getByText('Saqlandi').first()).toBeVisible();
+  await shipment.getByRole('button', { name: 'Qadoqlandi' }).click();
+  await shipment.getByRole('button', { name: 'Yetkazishga topshirish' }).click();
+  await expect(shipment).toContainText('Yetkazishga topshirildi');
+  await shipment.getByRole('button', { name: 'Yetkazildi' }).click();
+  await expect(shipment.getByRole('button')).toHaveCount(0);
+  await expect(shipment).toContainText('Yetkazildi');
+
+  // 8. The buyer sees the delivery, the tracking code and the status history.
+  await buyer.goto(orderPath);
+  await expect(buyer.getByTestId('shipment-status')).toHaveText('Yetkazildi');
+  await expect(buyer.getByTestId('shipment-tracking')).toHaveText(
+    'Kuzatuv: BTS Express, BTS-123456',
+  );
+  await buyer.getByText('Holatlar tarixi').click();
+  for (const step of ['Yangi', 'Sotuvchi qabul qildi', 'Qadoqlandi', 'Yetkazishga topshirildi']) {
+    await expect(buyer.getByRole('listitem').filter({ hasText: step }).first()).toBeVisible();
+  }
+  await buyerContext.close();
+
+  // 9. The audit log records the decisions.
   await admin.goto('/uz/admin/audit?action=product.');
   await expect(
     admin.getByTestId('audit-event').filter({ hasText: 'product.approved' }).first(),

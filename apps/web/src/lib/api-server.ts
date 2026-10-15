@@ -9,17 +9,21 @@ import {
   regionsResponseSchema,
 } from '@uzgo/contracts';
 import { cookies } from 'next/headers';
+import { internalHeaders } from './internal-headers';
 import { getServerEnv } from './server-env';
 
 const SESSION_COOKIES = ['uzgo_session', '__Host-uzgo_session'];
 
-/** Server-to-server call to the API, forwarding only the session cookie. */
+/** Server-to-server call to the API, forwarding only the session cookie and the visitor IP. */
 export async function apiFetch(path: string): Promise<Response> {
   const jar = await cookies();
   const session = SESSION_COOKIES.map((name) => jar.get(name)).find(Boolean);
   return fetch(`${getServerEnv().API_INTERNAL_URL}/api/v1${path}`, {
     cache: 'no-store',
-    headers: session ? { cookie: `${session.name}=${session.value}` } : {},
+    headers: {
+      ...(await internalHeaders(true)),
+      ...(session ? { cookie: `${session.name}=${session.value}` } : {}),
+    },
     signal: AbortSignal.timeout(5000),
   });
 }

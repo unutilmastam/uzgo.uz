@@ -24,6 +24,7 @@ compose exec -T postgres psql -U uzgo -d postgres -v ON_ERROR_STOP=1 \
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'uzgo' AND pid <> pg_backend_pid();" \
   -c "DROP DATABASE uzgo;" -c "CREATE DATABASE uzgo OWNER uzgo;"
 compose exec -T postgres pg_restore -U uzgo -d uzgo --no-owner --exit-on-error <"$work/db.dump"
+ensure_app_role
 compose exec -T postgres psql -U uzgo -d uzgo -Atq -c "$COUNTS_SQL" >"$work/restored.txt"
 diff -u "$work/counts.txt" "$work/restored.txt" || { log "row counts differ — check before starting"; exit 1; }
 

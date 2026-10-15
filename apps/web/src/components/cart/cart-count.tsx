@@ -1,5 +1,6 @@
 'use client';
 
+import '@/lib/zod-client-config';
 import { cartResponseSchema } from '@uzgo/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

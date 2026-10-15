@@ -258,6 +258,15 @@ deleted, with an active in-stock variant, from an active store is visible.
   `SellerOrder(storeId, status, createdAt)`, `Session(userId)`,
   `OtpChallenge(phone, createdAt)`, GIN on product search vector.
 
+## Database roles (production, ADR 0021)
+
+- `uzgo` — owner: runs `prisma migrate deploy`, the install-time seed and
+  backups (`pg_dump --no-privileges`).
+- `uzgo_app` — the API: `SELECT/INSERT/UPDATE/DELETE` on tables and use of
+  sequences only (default privileges cover new tables). No DDL, no `TRUNCATE`,
+  no access to `_prisma_migrations`, cannot disable the append-only triggers.
+  Applied by `deploy/scripts/app-role.sql` on every deploy and restore.
+
 ## Deletion and retention
 
 | Data                                                                                | Rule                                                                                             |

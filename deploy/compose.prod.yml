@@ -48,6 +48,7 @@ services:
       API_INTERNAL_URL: http://api:4000
       PUBLIC_SITE_URL: https://${UZGO_DOMAIN}
       PUBLIC_INDEXING: ${PUBLIC_INDEXING:-false}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?set INTERNAL_API_TOKEN}
     tmpfs:
       - /tmp
       - /app/apps/web/.next/cache:uid=1000,gid=1000
@@ -60,11 +61,13 @@ services:
     env_file: [api.env]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://uzgo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/uzgo?schema=public
+      # Least-privilege role (ADR 0021): rows only, no schema changes or TRUNCATE.
+      DATABASE_URL: postgresql://uzgo_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@postgres:5432/uzgo?schema=public
       CORS_ORIGINS: https://${UZGO_DOMAIN}
       WEB_PUBLIC_URL: https://${UZGO_DOMAIN}
       # Exactly one proxy (Caddy) in front: req.ip is the real client address.
       TRUST_PROXY: '1'
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?set INTERNAL_API_TOKEN}
       STORAGE_DRIVER: local
       STORAGE_LOCAL_DIR: /data/uploads
     tmpfs: [/tmp]
@@ -73,7 +76,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
 
-  # One-shot: `prisma migrate deploy`. Run by deploy.sh before api/web start.
+  # One-shot: `prisma migrate deploy` as the owner role. Run by deploy.sh before api/web start.
   migrate:
     image: ${UZGO_REGISTRY:-ghcr.io/owner/uzgo}-migrate:${UZGO_TAG:?set UZGO_TAG}
     profiles: [tools]

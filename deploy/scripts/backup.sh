@@ -2,8 +2,9 @@
 # Encrypted backup of PostgreSQL + uploads, copied off-site (ADR 0020).
 # Usage: backup.sh [label]   (label: daily | pre-deploy | manual)
 # Output: $BACKUP_DIR/uzgo-<UTC time>-<label>.tar.age containing db.dump
-# (pg_dump custom format), uploads.tar and counts.txt (row counts taken in the
-# same snapshot as the dump, used by restore-test.sh).
+# (pg_dump custom format, without grants: restore.sh re-applies the API role),
+# uploads.tar and counts.txt (row counts taken in the same snapshot as the
+# dump, used by restore-test.sh).
 # shellcheck source=deploy/scripts/lib.sh
 source "$(dirname "$0")/lib.sh"
 
@@ -32,7 +33,7 @@ echo "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; SELECT pg_export_snapshot
 read -r -t 30 snapshot <&8
 [[ "$snapshot" =~ ^[0-9A-F-]+$ ]] || { log "no snapshot"; exit 1; }
 
-compose exec -T postgres pg_dump -U uzgo -d uzgo -Fc --no-owner --snapshot="$snapshot" >"$work/db.dump"
+compose exec -T postgres pg_dump -U uzgo -d uzgo -Fc --no-owner --no-privileges --snapshot="$snapshot" >"$work/db.dump"
 compose exec -T postgres psql -U uzgo -d uzgo -Atq -v ON_ERROR_STOP=1 \
   -c "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;" \
   -c "SET TRANSACTION SNAPSHOT '$snapshot';" \

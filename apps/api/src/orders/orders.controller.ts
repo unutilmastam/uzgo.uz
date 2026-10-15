@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -41,6 +42,7 @@ export class OrdersController {
   /** Places the order for the whole cart. Requires an Idempotency-Key (UUID) header. */
   @Post('checkout')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async checkout(
     @CurrentAuth() auth: AuthContext,
     @Headers('idempotency-key') key: string | undefined,

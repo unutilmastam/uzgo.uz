@@ -9,7 +9,7 @@ import {
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { createTestApp, login, TEST_ORIGIN } from './app.js';
+import { createTestApp, login, randomIp, TEST_ORIGIN } from './app.js';
 import { createProduct, createStore, retireTestStores } from './fixtures.js';
 
 const errorCode = (body: unknown) => apiErrorSchema.parse(body).error.code;
@@ -20,8 +20,14 @@ describe('checkout and orders', () => {
   let districtId = '';
   const http = () => request(app.getHttpServer());
 
+  // Each request gets its own client IP: these tests check order rules, not the
+  // per-IP checkout throttle (10/min), and they place many orders quickly.
   const post = (path: string, cookie: string) =>
-    http().post(path).set('Cookie', cookie).set('Origin', TEST_ORIGIN);
+    http()
+      .post(path)
+      .set('Cookie', cookie)
+      .set('Origin', TEST_ORIGIN)
+      .set('X-Forwarded-For', randomIp());
 
   async function addToCart(cookie: string, variantId: string, quantity: number) {
     await post('/api/v1/cart/items', cookie).send({ variantId, quantity }).expect(201);

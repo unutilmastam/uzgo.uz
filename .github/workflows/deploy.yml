@@ -1,0 +1,91 @@
+name: Deploy
+
+# Manual production deploy (ADR 0020, docs/RUNBOOK.md). Run it from the GitHub
+# app: Actions → Deploy → Run workflow. Without a SHA the latest commit on main
+# is deployed. The server takes a backup, migrates, starts the new images and
+# rolls back automatically if they are not healthy.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit SHA to deploy (empty = latest main)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Add required reviewers to this environment in the repository settings.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve the release
+        id: release
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          sha="${INPUT_SHA:-$(git rev-parse HEAD)}"
+          [[ "$sha" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::not a commit SHA: $sha"; exit 1; }
+          sha="$(git rev-parse --verify "$sha^{commit}")"
+          git merge-base --is-ancestor "$sha" origin/main || { echo "::error::$sha is not on main"; exit 1; }
+          registry="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/uzgo"
+          echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          for image in api migrate web; do
+            docker manifest inspect "$registry-$image:$sha" >/dev/null ||
+              { echo "::error::image $registry-$image:$sha not found — wait for 'Release images'"; exit 1; }
+          done
+          docker logout ghcr.io
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "registry=$registry" >> "$GITHUB_OUTPUT"
+
+      - name: Check deploy secrets
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          [[ -n "$HOST" && -n "$KEY" && -n "$KNOWN" ]] ||
+            { echo "::error::Set DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS (docs/RUNBOOK.md)"; exit 1; }
+
+      - name: Deploy over SSH
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER || 'deploy' }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ steps.release.outputs.sha }}
+          REGISTRY: ${{ steps.release.outputs.registry }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          ssh_cmd=(ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes "$USER@$HOST")
+          # Ship the deploy files of this exact commit (compose, Caddyfile, scripts).
+          git archive "$SHA" deploy/compose.prod.yml deploy/Caddyfile deploy/scripts |
+            "${ssh_cmd[@]}" 'sudo tar -x --strip-components=1 -C /opt/uzgo'
+          # The registry token (valid only while this job runs) goes over stdin.
+          status=0
+          echo "$TOKEN" | "${ssh_cmd[@]}" \
+            "sudo /opt/uzgo/scripts/deploy.sh $SHA $REGISTRY $ACTOR" || status=$?
+          rm -f ~/.ssh/deploy_key
+          echo "### Deploy \`$SHA\`: $([[ $status -eq 0 ]] && echo OK || echo FAILED, rolled back)" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

@@ -1,4 +1,17 @@
-# DEPLOYMENT (options — decision before Phase 7)
+# DEPLOYMENT
+
+## Decision (Phase 7, ADR 0020)
+
+The owner chose a **VPS in a Tashkent data centre** running Docker Compose
+(`deploy/compose.prod.yml`): Caddy (automatic HTTPS) → web + API, PostgreSQL
+18 without a public port, uploads on a volume, encrypted nightly backups copied
+to another provider in Uzbekistan, monitoring with Telegram alerts. The domain
+is not bought yet: it is the `UZGO_DOMAIN` setting, so changing it later needs
+only the env file and DNS. Images are built by GitHub Actions ("Release
+images") and deployed with the manual "Deploy" workflow, with automatic
+rollback. Step-by-step operations: **`docs/RUNBOOK.md`**. Hardening: ADR 0021.
+
+The sections below are the original analysis that led to the decision.
 
 ## What production needs
 
@@ -54,7 +67,10 @@ Set in the host's secret store, never in git (`apps/api/.env.example` lists
 all variables): `DATABASE_URL`, `AUTH_SECRET` (≥ 32 random bytes),
 `TOTP_ENCRYPTION_KEY` (exactly 32 random bytes, base64 — losing it means every
 staff member must re-enrol TOTP; rotating it needs a re-encryption script),
-real SMS provider credentials. `STAFF_TOTP_REQUIRED` must stay `true`.
+Eskiz credentials (`SMS_PROVIDER=eskiz`), `INTERNAL_API_TOKEN`,
+`APP_DB_PASSWORD`, `POSTGRES_PASSWORD`, optional `ALERT_TELEGRAM_CHAT_ID`.
+`STAFF_TOTP_REQUIRED` must stay `true`. Templates: `deploy/env.example`,
+`deploy/api.env.example`.
 Payments: `PAYME_MERCHANT_ID`, `PAYME_KEY` (and the TEST KEY only on staging),
 `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_MERCHANT_USER_ID`,
 `CLICK_SECRET_KEY`; `WEB_PUBLIC_URL`; optional `PAYME_ALLOWED_IPS`,
@@ -67,6 +83,9 @@ Callback URLs to register with the providers (HTTPS, public):
 inside the API process; with several instances they stay correct (conditional
 updates, `SKIP LOCKED`).
 
-## Open decision
+## Still open
 
-Hosting provider — **owner**, with legal check on data residency, **before Phase 7**.
+- Which Tashkent provider (any VPS meeting the sizing above with Ubuntu LTS
+  and a public IPv4) and which second provider for off-site backups — owner.
+- Domain — owner (any time; see `UZGO_DOMAIN`).
+- Legal check on data residency — owner + lawyer, before launch.

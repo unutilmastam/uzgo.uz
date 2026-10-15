@@ -37,6 +37,7 @@ const KNOWN_ERRORS = new Set([
   'FISCAL_DATA_MISSING',
   'DELIVERY_UNAVAILABLE',
   'PAYMENT_METHOD_UNAVAILABLE',
+  'TOO_MANY_UNPAID_ORDERS',
 ]);
 
 const METHOD_ICON: Record<PaymentMethod, typeof Banknote> = {

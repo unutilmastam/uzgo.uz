@@ -28,6 +28,9 @@ import {
   SELLER_ORDER_TRANSITIONS,
 } from './state-machine.js';
 
+/** Open online orders awaiting payment per customer (each holds stock). */
+const MAX_UNPAID_ORDERS = 3;
+
 type Names = { uz: string; ru: string };
 type Tx = Prisma.TransactionClient;
 
@@ -198,6 +201,19 @@ export class OrdersService {
             );
           }
           return existing.response as unknown as OrderView;
+        }
+
+        // Unpaid online orders hold stock; cap them so one account cannot
+        // reserve a seller's whole stock (SECURITY.md, Phase 7 review).
+        if (online) {
+          const unpaid = await tx.order.count({ where: { userId, status: 'AWAITING_PAYMENT' } });
+          if (unpaid >= MAX_UNPAID_ORDERS) {
+            throw new AppException(
+              HttpStatus.CONFLICT,
+              'TOO_MANY_UNPAID_ORDERS',
+              'Pay or cancel your unpaid orders first',
+            );
+          }
         }
 
         const cart = await tx.cart.findUnique({

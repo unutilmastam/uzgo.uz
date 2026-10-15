@@ -1,3 +1,4 @@
+import './zod-client-config';
 import { apiErrorSchema } from '@uzgo/contracts';
 
 export class ApiClientError extends Error {

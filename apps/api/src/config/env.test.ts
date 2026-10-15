@@ -79,6 +79,7 @@ describe('parseEnv', () => {
       SMS_PROVIDER: 'eskiz',
       ESKIZ_EMAIL: 'ops@example.uz',
       ESKIZ_PASSWORD: 'placeholder',
+      INTERNAL_API_TOKEN: 'i'.repeat(40),
     };
     const error = errorOf(() => parseEnv(production));
     expect(error.issues.some((issue) => issue.startsWith('STORAGE_LOCAL_DIR'))).toBe(true);
@@ -93,6 +94,14 @@ describe('parseEnv', () => {
       parseEnv({ ...production, ESKIZ_PASSWORD: undefined, STORAGE_LOCAL_DIR: '/data/uploads' }),
     );
     expect(noCreds.issues.some((issue) => issue.startsWith('ESKIZ_PASSWORD'))).toBe(true);
+    const noToken = errorOf(() =>
+      parseEnv({
+        ...production,
+        INTERNAL_API_TOKEN: undefined,
+        STORAGE_LOCAL_DIR: '/data/uploads',
+      }),
+    );
+    expect(noToken.issues.some((issue) => issue.startsWith('INTERNAL_API_TOKEN'))).toBe(true);
   });
 
   it('requires a 32-byte TOTP key and keeps staff 2FA on in production', () => {

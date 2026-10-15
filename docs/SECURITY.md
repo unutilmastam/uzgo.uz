@@ -166,14 +166,17 @@ archived|restored|image_added|image_removed|approved|rejected`,
 `variant.created|updated` (price changes record from/to),
 `category.*`, `attribute.*`, `user.blocked|unblocked`. The admin viewer shows
 masked phones and never IP hashes. A PostgreSQL trigger rejects UPDATE and DELETE on the table.
-(Before production: run the app with a DB role without TRUNCATE on it.)
+In production the API connects as `uzgo_app`, which cannot TRUNCATE, alter
+tables or disable triggers (ADR 0021).
 
 ## HTTP hardening
 
 Security headers (Helmet-style: HSTS, CSP, X-Content-Type-Options,
 Referrer-Policy, frame-ancestors), strict CORS allow-list from env, JSON body
 limit (e.g. 1 MB; uploads separately limited), no stack traces in production
-responses.
+responses. HTML pages carry a per-request nonce CSP (ADR 0021); Caddy adds
+HSTS (1 year), removes `Server`, redirects HTTP→HTTPS and `www.`→apex, and caps
+request bodies at 25 MB.
 
 ## Logging and masking
 
@@ -204,3 +207,58 @@ fiscal receipt requirements for online payments.
 
 No real secrets in git; `.env.example` with placeholders only. Production
 secrets in the host's secret store / env. Rotate on suspicion.
+
+## Phase 7 security review (2026-10-15)
+
+Scope: the code (API, web), the production stack (`deploy/`), CI and
+dependencies, checked against the threat model above. Method: reading the
+code paths, the API test suite (206 tests, also run as the least-privilege
+DB role), browser e2e (34 tests incl. axe and CSP), the stack smoke test in CI
+(HTTPS, headers, test routes, DB role, backup/restore, rollback) and
+`pnpm audit`.
+
+| #   | Finding                                                                                                                              | Severity            | Status                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------- | --------------------------------------------------------- |
+| 1   | API used the DB owner role: a compromised app could TRUNCATE or drop the triggers protecting orders, ledger and audit log            | High                | Fixed — `uzgo_app` role (ADR 0021)                        |
+| 2   | Server-rendered pages reached the API from one container IP, so all visitors shared one rate-limit bucket (site-wide 429 under load) | High (availability) | Fixed — internal token + forwarded visitor IP             |
+| 3   | No `script-src` in CSP: an XSS bug would run freely                                                                                  | Medium              | Fixed — nonce CSP, e2e check                              |
+| 4   | Unlimited unpaid online orders could hold a seller's whole stock                                                                     | Medium              | Fixed — max 3 unpaid per customer, checkout 10/min per IP |
+| 5   | `robots.txt` was prerendered at build time (wrong domain/indexing switch in the image)                                               | Low                 | Fixed — rendered at request time                          |
+| 6   | Next.js data cache kept API responses across restarts/restores                                                                       | Low                 | Fixed — cache on tmpfs in production                      |
+| 7   | 5xx errors and failing jobs were only logged                                                                                         | Low                 | Fixed — throttled Telegram alerts without personal data   |
+| 8   | `braces` ReDoS via `@next/eslint-plugin-next` (lint time only)                                                                       | Accepted            | Reviewed exception in `pnpm-workspace.yaml`               |
+
+Checked without findings: OTP limits and hashing; session and cart cookies
+(`__Host-`, `Secure`, `HttpOnly`, `SameSite=Lax`); origin guard; RBAC and
+store isolation (API tests per boundary); staff TOTP; server-side prices and
+totals; idempotent checkout; Payme/Click authentication, amount checks and
+row locking; upload re-encoding; audit log; log redaction; test-only routes
+(404 in production, checked in the smoke test); Swagger off in production;
+PostgreSQL not reachable from outside; containers non-root, read-only,
+without capabilities; secrets only in env files with mode 600.
+
+### Rate limits (per client IP unless stated)
+
+| Route                             | Limit                          | Notes                                                                                                |
+| --------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| All API routes (default)          | 120 / min                      | In memory; SSR calls counted per visitor (ADR 0021)                                                  |
+| `POST /auth/otp/request`          | 5 / min                        | Plus per phone 5 / hour and 10 / day, resend cooldown 60 s, per IP `OTP_IP_HOURLY_LIMIT` (20 / hour) |
+| `POST /auth/otp/verify`           | 10 / min                       | Plus 5 attempts per code, code TTL 180 s                                                             |
+| `POST /auth/totp/setup            | enable                         | verify`                                                                                              | 5 / min | Plus lock for 15 min after 5 failures |
+| `POST /checkout`                  | 10 / min                       | Plus max 3 unpaid online orders per customer                                                         |
+| `POST /seller/stores` (apply)     | 5 / min                        |                                                                                                      |
+| `POST /seller/stores/:id/members` | 10 / min                       |                                                                                                      |
+| Product image upload              | 30 / min                       | One file ≤ 8 MB per request                                                                          |
+| Payme / Click callbacks           | not limited                    | Authenticated by provider secret; optional Payme IP allow-list                                       |
+| Request body                      | 1 MB JSON (API), 25 MB (Caddy) |                                                                                                      |
+
+### Remaining risks and owner actions
+
+- Legal review of data residency, offer and privacy texts (drafts published,
+  marked as drafts); register the personal-data database if required.
+- Payme/Click sandbox certification before live payments; Eskiz templates.
+- Single server: availability depends on one VPS (backups + runbook tested).
+- In-memory rate limits reset on restart and do not span several API
+  instances (Redis ADR when scaling out).
+- GitHub: enable secret scanning, branch protection and a required reviewer
+  on the `production` environment (RUNBOOK §2).

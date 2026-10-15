@@ -35,7 +35,11 @@ export default async function SellerOrdersPage({
   return (
     <ul className="flex flex-col gap-4">
       {shipments.map((shipment) => (
-        <li key={shipment.id} className="rounded-xl border border-border bg-card p-5">
+        <li
+          key={shipment.id}
+          data-testid="seller-shipment"
+          className="rounded-xl border border-border bg-card p-5"
+        >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-col">
               <span className="font-semibold">

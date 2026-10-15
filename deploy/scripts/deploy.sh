@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Deploys one release (images tagged with a commit SHA) and rolls back the
 # application images if the new release does not become healthy (ADR 0020).
-# Usage: deploy.sh <commit-sha>
+# Usage: deploy.sh <commit-sha> [registry] [registry-user]
+#   With registry-user, a registry token is read from stdin for a short-lived
+#   `docker login` (logged out again when the script ends).
 #   SKIP_PULL=1    use images already on this host (CI smoke test)
 #   SKIP_BACKUP=1  no pre-deploy backup (first install only)
 # Migrations are forward-only: every migration must work with the previous
@@ -17,6 +19,17 @@ exec 9>"$UZGO_HOME/.deploy.lock"
 flock -n 9 || { log "another deploy is running"; exit 3; }
 
 set_tag() { sed -i -e "s/^UZGO_TAG=.*/UZGO_TAG=$1/" "$UZGO_HOME/.env"; }
+
+registry="${2:-}"
+registry_user="${3:-}"
+if [[ -n "$registry" ]]; then
+  [[ "$registry" =~ ^[a-z0-9.-]+(/[a-z0-9._-]+)+$ ]] || { log "bad registry"; exit 2; }
+  sed -i -e "s#^UZGO_REGISTRY=.*#UZGO_REGISTRY=$registry#" "$UZGO_HOME/.env"
+fi
+if [[ -n "$registry_user" ]]; then
+  docker login "${registry%%/*}" -u "$registry_user" --password-stdin >/dev/null
+  trap 'docker logout "${registry%%/*}" >/dev/null 2>&1 || true' EXIT
+fi
 
 smoke() {
   # Through Caddy on this host, so TLS, routing and both apps are exercised.
@@ -46,7 +59,10 @@ if [[ -n "$previous" && "${SKIP_BACKUP:-0}" != "1" ]]; then
 fi
 
 compose --profile tools run --rm migrate || rollback "migration failed"
+ensure_app_role || rollback "database role setup failed"
 compose up -d --wait --wait-timeout 180 api web caddy || rollback "containers not healthy"
+# Pick up Caddyfile changes shipped with this release (invalid config keeps the old one).
+compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || alert "Caddy reload failed for $tag (old proxy config still active)"
 for _ in $(seq 1 10); do smoke && break; sleep 3; done
 smoke || rollback "smoke check failed"
 

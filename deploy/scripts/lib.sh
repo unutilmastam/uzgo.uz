@@ -41,3 +41,12 @@ alert() {
 # Exact row count of every table, in one snapshot when $1 is a snapshot id.
 # shellcheck disable=SC2034 # used by the scripts that source this file
 COUNTS_SQL="SELECT table_name || '=' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM public.%I', table_name), false, true, '')))[1]::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;"
+
+# Least-privilege role of the API (ADR 0021); idempotent, run as the owner.
+ensure_app_role() {
+  local password
+  password="$(env_value "$UZGO_HOME/.env" APP_DB_PASSWORD)"
+  [[ "$password" =~ ^[A-Za-z0-9]{32,}$ ]] || { log "APP_DB_PASSWORD must be 32+ letters/digits"; return 1; }
+  { printf '%s\n' "\\set app_password '${password}'"; cat "$UZGO_HOME/scripts/app-role.sql"; } |
+    compose exec -T postgres psql -U uzgo -d uzgo -q -f - >/dev/null
+}

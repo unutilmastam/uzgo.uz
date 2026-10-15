@@ -10,12 +10,15 @@ import {
   type StoreDetail,
   storeDetailResponseSchema,
 } from '@uzgo/contracts';
+import { internalHeaders } from './internal-headers';
 import { getServerEnv } from './server-env';
 
 /** Public catalog data: no cookies, cached in the Next.js data cache. */
 async function publicGet(path: string, revalidate: number): Promise<Response> {
   return fetch(`${getServerEnv().API_INTERNAL_URL}/api/v1${path}`, {
     next: { revalidate },
+    // Cached and shared by all visitors, so no visitor IP (and no dynamic headers()).
+    headers: await internalHeaders(false),
     signal: AbortSignal.timeout(5000),
   });
 }

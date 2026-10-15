@@ -1,6 +1,7 @@
 import { Badge } from '@uzgo/ui/components/badge';
 import { Banknote, Store } from 'lucide-react';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
@@ -46,6 +47,7 @@ export default async function ProductPage({ params }: Props) {
   const [{ slug }, t, locale] = await Promise.all([params, getTranslations(), getLocale()]);
   const l = locale as Locale;
   const product = await load(slug);
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   const prices = product.variants.map((v) => BigInt(v.priceTiyin));
   const lowest = prices.reduce((a, b) => (b < a ? b : a));
   const inStock = product.variants.some((v) => v.available > 0);
@@ -67,7 +69,11 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: jsonLd(structured) }}
+      />
       <Breadcrumbs
         items={[
           { href: '/catalog', label: t('catalog.title') },

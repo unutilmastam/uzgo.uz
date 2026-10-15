@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import type { Request } from 'express';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AlertsModule } from './alerts/alerts.module.js';
@@ -11,6 +12,7 @@ import { CatalogModule } from './catalog/catalog.module.js';
 import { OriginGuard } from './auth/origin.guard.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 import { LedgerModule } from './ledger/ledger.module.js';
+import { rateLimitTracker } from './common/http.js';
 import { LoggerModule } from './common/logger.module.js';
 import { ConfigModule, ENV } from './config/config.module.js';
 import type { Env } from './config/env.js';
@@ -41,6 +43,8 @@ import { UsersModule } from './users/users.module.js';
         throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
         // Browser e2e only (env validation allows it only with NODE_ENV=test).
         skipIf: () => env.RATE_LIMIT_DISABLED,
+        getTracker: (req: Record<string, unknown>) =>
+          rateLimitTracker(req as unknown as Request, env.INTERNAL_API_TOKEN),
       }),
     }),
     AuditModule,

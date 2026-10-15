@@ -3,6 +3,8 @@ import { z } from 'zod';
 // Server-only configuration. Never import this from a client component.
 const serverEnvSchema = z.object({
   API_INTERNAL_URL: z.url({ protocol: /^https?$/ }).default('http://localhost:4000'),
+  /** Shared secret for server-to-server API calls (same value as the API's). */
+  INTERNAL_API_TOKEN: z.string().min(32).optional(),
   /** Public origin of the site, used for sitemap and canonical URLs. */
   PUBLIC_SITE_URL: z
     .url({ protocol: /^https?$/ })

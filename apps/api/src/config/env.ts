@@ -112,6 +112,8 @@ export const envSchema = z
       .string()
       .regex(/^\d{5,15}:[\w-]{30,60}$/, 'must look like a Telegram bot token')
       .optional(),
+    /** Shared secret of the web server's server-to-server calls (rate limiting per visitor). */
+    INTERNAL_API_TOKEN: z.string().min(32, 'must be at least 32 characters').optional(),
     /** Ops Telegram chat for operator alerts (5xx errors, failing jobs). Needs TELEGRAM_BOT_TOKEN. */
     ALERT_TELEGRAM_CHAT_ID: z
       .string()
@@ -169,6 +171,14 @@ export const envSchema = z
         code: 'custom',
         path: ['STAFF_TOTP_REQUIRED'],
         message: 'the staff second factor cannot be disabled in production',
+      });
+    }
+    if (!env.INTERNAL_API_TOKEN) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['INTERNAL_API_TOKEN'],
+        message:
+          'required in production (otherwise all server-rendered pages share one rate limit)',
       });
     }
     // Production keeps uploads on a mounted volume with an absolute path

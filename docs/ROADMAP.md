@@ -15,7 +15,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
-| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
+| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | IN PROGRESS |
 | 8     | Mobile apps                                                                    | NOT STARTED |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
 
@@ -64,18 +64,34 @@ going live they must pass the providers' sandbox tests, and the owner actions
 in ADR 0017 (merchant contracts, lawyer's opinion, fiscalization) are needed.
 CI run #33 (commit 733bba9) passed incl. e2e.
 
+Phase 7 notes: the owner chose a Tashkent VPS; the domain comes later and is a
+setting (ADR 0020). Delivered: production Docker images (API, migrate, web;
+pinned base, non-root, read-only), Compose stack with Caddy HTTPS, migrations
+and automatic rollback in `deploy.sh`, encrypted backups with an automated
+restore test and a disaster-recovery restore, host monitor + Telegram alerts,
+log rotation, Eskiz SMS adapter, release/deploy workflows, `docs/RUNBOOK.md`.
+Security review (SECURITY.md) fixed: least-privilege DB role, per-visitor rate
+limits for server rendering, nonce CSP, unpaid-order cap (ADR 0021). Lighthouse
+mobile 89–97 performance, 100 accessibility and best practices
+(`docs/PERFORMANCE.md`). Full buyer ↔ seller e2e: staff approval → order →
+seller fulfilment with tracking → buyer sees delivery. Legal pages (offer,
+privacy) are drafts for a lawyer. The stack smoke test (deploy, HTTPS,
+headers, DB role, backup, restore, rollback, monitor) runs in CI on every push.
+Not done in this phase by design: buying the server/domain, merchant
+contracts, real deploy (owner actions in RUNBOOK §1–3, §10).
+
 ## Open decisions
 
-| Decision                                                                                                                                                    | Who                          | When                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------- |
-| Launch region (working assumption: Surxondaryo first, then all Uzbekistan)                                                                                  | Owner                        | Before Phase 4 seed / Phase 6 delivery zones         |
-| First seller categories (working assumption: clothing, electronics, household appliances, groceries) and whether perishable food waits until delivery works | Owner                        | Before Phase 4 seed                                  |
-| Final designer logo (optional; colours/wordmark implemented in Phase 2)                                                                                     | Owner                        | Phase 2                                              |
-| SMS provider                                                                                                                                                | Owner                        | Before production auth (Phase 3 uses DevSmsProvider) |
-| Payment providers — decided: Payme + Click (ADR 0017); merchant contracts + credentials                                                                     | Owner                        | Before online payments go live                       |
-| Delivery partners / map provider                                                                                                                            | Phase 6 research, then owner | Phase 6                                              |
-| Production hosting provider (data residency)                                                                                                                | Owner + lawyer               | Before Phase 7                                       |
-| Legal: personal-data residency & registration, offer/terms, privacy, returns, fiscal receipts                                                               | Owner + lawyer               | Before public launch                                 |
-| Commission rates per category/store                                                                                                                         | Owner                        | Phase 6                                              |
-| Return window length (default draft 10 days)                                                                                                                | Owner + lawyer               | Phase 4–6                                            |
-| Domain (assumed uzgo.uz) and email                                                                                                                          | Owner                        | Before Phase 7                                       |
+| Decision                                                                                                                                                    | Who                          | When                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------- |
+| Launch region (working assumption: Surxondaryo first, then all Uzbekistan)                                                                                  | Owner                        | Before Phase 4 seed / Phase 6 delivery zones |
+| First seller categories (working assumption: clothing, electronics, household appliances, groceries) and whether perishable food waits until delivery works | Owner                        | Before Phase 4 seed                          |
+| Final designer logo (optional; colours/wordmark implemented in Phase 2)                                                                                     | Owner                        | Phase 2                                      |
+| SMS provider — Eskiz adapter implemented (Phase 7); account, sender name and templates                                                                      | Owner                        | Before launch                                |
+| Payment providers — decided: Payme + Click (ADR 0017); merchant contracts + credentials                                                                     | Owner                        | Before online payments go live               |
+| Delivery partners / map provider                                                                                                                            | Phase 6 research, then owner | Phase 6                                      |
+| Production hosting — decided: Tashkent VPS (ADR 0020); pick the provider and an off-site backup provider                                                    | Owner + lawyer               | Before launch                                |
+| Legal: personal-data residency & registration, offer/terms, privacy, returns, fiscal receipts                                                               | Owner + lawyer               | Before public launch                         |
+| Commission rates per category/store                                                                                                                         | Owner                        | Phase 6                                      |
+| Return window length (default draft 10 days)                                                                                                                | Owner + lawyer               | Phase 4–6                                    |
+| Domain and email (configurable via `UZGO_DOMAIN`)                                                                                                           | Owner                        | Before launch                                |

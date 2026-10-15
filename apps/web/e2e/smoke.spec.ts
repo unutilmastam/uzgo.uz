@@ -167,3 +167,35 @@ for (const theme of ['light', 'dark'] as const) {
     });
   }
 }
+
+test('pages run under the nonce Content-Security-Policy without violations', async ({ page }) => {
+  const violations: string[] = [];
+  page.on('console', (message) => {
+    if (/Content Security Policy|Refused to/i.test(message.text())) violations.push(message.text());
+  });
+  const res = await page.goto('/uz');
+  const csp = res?.headers()['content-security-policy'] ?? '';
+  expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
+  await expect(page.getByRole('article').first()).toBeVisible();
+  // Hydration and client-side navigation work under the policy.
+  await page.getByRole('article').first().getByRole('link').first().click();
+  await expect(page.getByRole('button', { name: 'Savatga' })).toBeVisible();
+  expect(violations).toEqual([]);
+});
+
+test('legal pages show the offer and privacy policy (draft) in both languages', async ({
+  page,
+}) => {
+  await page.goto('/uz/info/terms');
+  await expect(
+    page.getByRole('heading', { name: 'Foydalanish shartlari (ommaviy oferta)' }),
+  ).toBeVisible();
+  await expect(page.getByTestId('legal-draft')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '5. Toʻlov' })).toBeVisible();
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(axe.violations).toEqual([]);
+
+  await page.goto('/ru/info/privacy');
+  await expect(page.getByRole('heading', { name: 'Политика конфиденциальности' })).toBeVisible();
+  await expect(page.getByText('хранятся на серверах на территории Узбекистана')).toBeVisible();
+});

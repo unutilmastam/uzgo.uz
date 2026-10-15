@@ -25,6 +25,8 @@ CADDY_TLS=tls internal
 UZGO_REGISTRY=$registry
 UZGO_TAG=
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
+APP_DB_PASSWORD=$(openssl rand -hex 24)
+INTERNAL_API_TOKEN=$(openssl rand -hex 32)
 PUBLIC_INDEXING=false
 ENV
 cat >"$home/api.env" <<ENV
@@ -68,6 +70,15 @@ get https://localhost/robots.txt | grep -qi 'disallow: /'
 get https://localhost/sitemap.xml >/dev/null
 test "$(curl -s -k -o /dev/null -w '%{http_code}' https://localhost/api/v1/__test__/last-otp?phone=1)" = 404
 test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/uz)" = 308
+# The API's database role cannot rewrite history or the schema (ADR 0021).
+app_url="postgresql://uzgo_app:$(grep '^APP_DB_PASSWORD=' "$home/.env" | cut -d= -f2)@127.0.0.1/uzgo"
+compose exec -T postgres psql "$app_url" -Atc 'SELECT count(*) FROM "Region"' | grep -qE '^[1-9]'
+for sql in 'TRUNCATE "AuditEvent"' 'ALTER TABLE "Order" DISABLE TRIGGER ALL' 'CREATE TABLE smoke (i int)'; do
+  if compose exec -T postgres psql "$app_url" -c "$sql" >/dev/null 2>&1; then
+    echo "API role was allowed: $sql" >&2
+    exit 1
+  fi
+done
 # The database publishes no ports.
 test -z "$(docker port "$(compose ps -q postgres)")"
 
