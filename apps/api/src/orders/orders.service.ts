@@ -24,7 +24,12 @@ import type {
   SellerOrderStatus,
 } from '../generated/prisma/enums.js';
 import { planDelivery } from '../delivery/delivery.js';
-import { notifySellers, notifyShipmentStatus } from '../notifications/templates.js';
+import {
+  notifyCourierOffer,
+  notifySellers,
+  notifyShipmentStatus,
+} from '../notifications/templates.js';
+import { foodConfig } from '../food/food-config.js';
 import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { foodOrderInfo, foodShipmentInclude } from '../food/food-view.js';
@@ -38,7 +43,7 @@ import {
 } from './state-machine.js';
 
 /** Open online orders awaiting payment per customer (each holds stock). */
-const MAX_UNPAID_ORDERS = 3;
+export const MAX_UNPAID_ORDERS = 3;
 
 type Names = { uz: string; ru: string };
 type Tx = Prisma.TransactionClient;
@@ -65,7 +70,7 @@ const orderInclude = {
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
 /** Stable JSON (sorted keys) so equal requests hash equally. */
-function canonical(value: unknown): string {
+export function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
@@ -78,7 +83,7 @@ function canonical(value: unknown): string {
 }
 
 /** Order year in Uzbekistan time. */
-function tashkentYear(date: Date): string {
+export function tashkentYear(date: Date): string {
   return new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Tashkent' }).format(date);
 }
 
@@ -217,6 +222,17 @@ export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: numb
 }
 
 const notFound = () => new AppException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Order not found');
+
+/** Order view by id inside any transaction (food checkout, idempotent replies). */
+export async function loadOrderView(
+  db: Tx,
+  orderId: string,
+  actor: OrderActor,
+  windowDays: number,
+): Promise<OrderView> {
+  const order = await db.order.findUniqueOrThrow({ where: { id: orderId }, include: orderInclude });
+  return toOrderView(order, actor, windowDays);
+}
 
 @Injectable()
 export class OrdersService {
@@ -882,6 +898,10 @@ export async function transitionInTx(
     providerRefunded: by.providerRefunded ?? false,
   });
   await notifyShipmentStatus(tx, sellerOrderId, to);
+  // UZGO-courier food: nearby couriers hear about the job as cooking starts.
+  if (locked.kind === 'FOOD' && locked.foodDeliveryMode === 'UZGO' && to === 'ACCEPTED') {
+    await notifyCourierOffer(tx, sellerOrderId, foodConfig.offerRadiusM);
+  }
   if (RESTOCK_STATUSES.has(to)) {
     // Food dishes have no stock: only marketplace lines go back to the shelf.
     const items = await tx.orderItem.findMany({

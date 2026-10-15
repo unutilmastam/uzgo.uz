@@ -6,10 +6,16 @@ export function pushTarget(
 ):
   | { pathname: '/order/[number]'; params: { number: string } }
   | { pathname: '/seller/[storeId]'; params: { storeId: string } }
+  | { pathname: '/courier'; params: Record<string, never> }
   | null {
   const parsed = pushDataSchema.safeParse(data);
   if (!parsed.success) return null;
-  return parsed.data.type === 'order'
-    ? { pathname: '/order/[number]', params: { number: parsed.data.number } }
-    : { pathname: '/seller/[storeId]', params: { storeId: parsed.data.storeId } };
+  switch (parsed.data.type) {
+    case 'order':
+      return { pathname: '/order/[number]', params: { number: parsed.data.number } };
+    case 'shipment':
+      return { pathname: '/seller/[storeId]', params: { storeId: parsed.data.storeId } };
+    case 'courier':
+      return { pathname: '/courier', params: {} };
+  }
 }

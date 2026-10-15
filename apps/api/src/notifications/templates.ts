@@ -28,6 +28,35 @@ const CUSTOMER: Partial<Record<SellerOrderStatus, Record<Locale, (n: string) => 
   },
 };
 
+/** Food orders move fast: texts say what happens in the kitchen and on the road. */
+const FOOD_CUSTOMER: Partial<Record<SellerOrderStatus, Record<Locale, (n: string) => string>>> = {
+  ACCEPTED: {
+    uz: (n) => `UZGO Food: ${n} buyurtmangiz tayyorlanmoqda.`,
+    ru: (n) => `UZGO Food: заказ ${n} готовится.`,
+  },
+  HANDED_TO_DELIVERY: {
+    uz: (n) => `UZGO Food: ${n} buyurtmangiz yoʻlda.`,
+    ru: (n) => `UZGO Food: заказ ${n} в пути.`,
+  },
+  DELIVERED: {
+    uz: (n) => `UZGO Food: ${n} yetkazildi. Yoqimli ishtaha!`,
+    ru: (n) => `UZGO Food: заказ ${n} доставлен. Приятного аппетита!`,
+  },
+  CANCELLED_BY_SELLER: {
+    uz: (n) => `UZGO Food: ${n} buyurtmangizni restoran bekor qildi.`,
+    ru: (n) => `UZGO Food: ресторан отменил заказ ${n}.`,
+  },
+  DELIVERY_FAILED: {
+    uz: (n) => `UZGO Food: ${n} buyurtmangizni yetkazib boʻlmadi.`,
+    ru: (n) => `UZGO Food: не удалось доставить заказ ${n}.`,
+  },
+};
+/** Food: SMS only when something went wrong; the rest goes to the app. */
+const FOOD_SMS = new Set<SellerOrderStatus>(['CANCELLED_BY_SELLER', 'DELIVERY_FAILED']);
+
+const COURIER_OFFER =
+  'UZGO: yangi yetkazish taklifi yaqin atrofda. / Новый заказ на доставку рядом.';
+
 const PAID: Record<Locale, (n: string) => string> = {
   uz: (n) => `UZGO: ${n} buyurtmangiz uchun toʻlov qabul qilindi.`,
   ru: (n) => `UZGO: оплата заказа ${n} получена.`,
@@ -44,7 +73,8 @@ type Row = {
   text: string;
   template: string;
   orderId: string;
-  data?: { type: 'order'; number: string } | { type: 'shipment'; storeId: string };
+  data?:
+    { type: 'order'; number: string } | { type: 'shipment'; storeId: string } | { type: 'courier' };
 };
 
 async function enqueue(tx: Tx, rows: Row[]) {
@@ -67,15 +97,17 @@ const pushText = (text: string) => text.replace(/^UZGO: /, '');
 
 /** Customer: shipment status changes they care about. */
 export async function notifyShipmentStatus(tx: Tx, sellerOrderId: string, to: SellerOrderStatus) {
-  const template = CUSTOMER[to];
-  if (!template && to !== 'NEW') return;
   const shipment = await tx.sellerOrder.findUniqueOrThrow({
     where: { id: sellerOrderId },
     select: {
       number: true,
       orderId: true,
       order: {
-        select: { number: true, user: { select: { id: true, phone: true, locale: true } } },
+        select: {
+          number: true,
+          kind: true,
+          user: { select: { id: true, phone: true, locale: true } },
+        },
       },
     },
   });
@@ -83,13 +115,17 @@ export async function notifyShipmentStatus(tx: Tx, sellerOrderId: string, to: Se
     await notifySellers(tx, [sellerOrderId]);
     return;
   }
+  const food = shipment.order.kind === 'FOOD';
+  const template = (food ? FOOD_CUSTOMER : CUSTOMER)[to];
   if (!template) return;
   const user = shipment.order.user;
-  const text = template[localeOf(user.locale)](shipment.number);
-  const name = `shipment.${to.toLowerCase()}`;
-  const rows: Row[] = [
-    { channel: 'SMS', recipient: user.phone, text, template: name, orderId: shipment.orderId },
-  ];
+  const number = food ? shipment.order.number : shipment.number;
+  const text = template[localeOf(user.locale)](number);
+  const name = `${food ? 'food' : 'shipment'}.${to.toLowerCase()}`;
+  const rows: Row[] =
+    !food || FOOD_SMS.has(to)
+      ? [{ channel: 'SMS', recipient: user.phone, text, template: name, orderId: shipment.orderId }]
+      : [];
   if ((await withPushDevices(tx, [user.id])).has(user.id)) {
     rows.push({
       channel: 'PUSH',
@@ -186,4 +222,49 @@ export async function notifySellers(tx: Tx, sellerOrderIds: string[]) {
     ];
   });
   await enqueue(tx, rows);
+}
+
+/**
+ * New UZGO-courier job (ADR 0024): push to online, active couriers whose
+ * last position is within `radiusM` of the restaurant. No personal data.
+ */
+export async function notifyCourierOffer(tx: Tx, sellerOrderId: string, radiusM: number) {
+  const shipment = await tx.sellerOrder.findUniqueOrThrow({
+    where: { id: sellerOrderId },
+    select: {
+      orderId: true,
+      store: { select: { restaurant: { select: { lat: true, lng: true } } } },
+    },
+  });
+  const origin = shipment.store.restaurant;
+  if (!origin) return;
+  // ~1° latitude = 111 km: a bounding box first, exact distance below.
+  const dLat = radiusM / 111_000;
+  const dLng = radiusM / (111_000 * Math.cos((origin.lat * Math.PI) / 180));
+  const couriers = await tx.courierProfile.findMany({
+    where: {
+      status: 'ACTIVE',
+      online: true,
+      lastLat: { gte: origin.lat - dLat, lte: origin.lat + dLat },
+      lastLng: { gte: origin.lng - dLng, lte: origin.lng + dLng },
+      lastSeenAt: { gte: new Date(Date.now() - 15 * 60_000) },
+    },
+    take: 50,
+    select: { userId: true },
+  });
+  const pushUsers = await withPushDevices(
+    tx,
+    couriers.map((c) => c.userId),
+  );
+  await enqueue(
+    tx,
+    [...pushUsers].map((userId) => ({
+      channel: 'PUSH' as const,
+      recipient: userId,
+      text: COURIER_OFFER,
+      template: 'courier.offer',
+      orderId: shipment.orderId,
+      data: { type: 'courier' as const },
+    })),
+  );
 }

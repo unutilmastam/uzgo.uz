@@ -9,6 +9,7 @@ describe('push deep links', () => {
     });
     const storeId = '01a1402e-9251-727c-91cb-9ceff87e8604';
     expect(pushTarget({ type: 'shipment', storeId })?.params).toEqual({ storeId });
+    expect(pushTarget({ type: 'courier' })?.pathname).toBe('/courier');
   });
 
   it('ignores unknown or malformed payloads', () => {

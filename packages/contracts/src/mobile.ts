@@ -35,5 +35,7 @@ export type UnregisterPushDevice = z.infer<typeof unregisterPushDeviceSchema>;
 export const pushDataSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('order'), number: z.string() }),
   z.object({ type: z.literal('shipment'), storeId: z.uuid() }),
+  /** A new UZGO Food delivery offer nearby (courier mode). */
+  z.object({ type: z.literal('courier') }),
 ]);
 export type PushData = z.infer<typeof pushDataSchema>;

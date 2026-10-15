@@ -90,9 +90,11 @@ export async function createRestaurant(
   } = {},
 ) {
   const slug = `test-store-food-${suffix()}`;
+  const district = await prisma.district.findUniqueOrThrow({ where: { slug: 'termiz_city' } });
   const store = await prisma.store.create({
     data: {
       kind: 'RESTAURANT',
+      districtId: district.id,
       slug,
       name: { uz: `Oshxona ${slug}`, ru: `Кафе ${slug}` },
       status: 'ACTIVE',
