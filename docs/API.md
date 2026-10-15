@@ -202,6 +202,40 @@ unless `NODE_ENV=test` and `SMS_PROVIDER=fake` (impossible in production).
 Push payloads (`pushDataSchema`): `{ type: "order", number }` or
 `{ type: "shipment", storeId }`.
 
+## Market growth (Phase 9a, ADR 0023)
+
+| Method | Path                                    | Auth             | Notes                                                                                       |
+| ------ | --------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------- |
+| GET    | `/favorites`                            | user             | Saved products (visible ones) as product cards                                              |
+| GET    | `/favorites/ids`                        | user             | `{ productIds }`                                                                            |
+| PUT    | `/favorites/:productId`                 | user             | 204; max 500 (`FAVORITES_LIMIT`); 60/min                                                    |
+| DELETE | `/favorites/:productId`                 | user             | 204                                                                                         |
+| GET    | `/catalog/products/:slug/reviews?page=` | public           | Published reviews, 10 per page, star `distribution`; cached 60 s                            |
+| GET    | `/products/:slug/reviews/mine`          | user             | `{ canReview, review }` (`hidden` when a moderator hid it)                                  |
+| PUT    | `/products/:slug/reviews/mine`          | user             | `{ rating 1–5, text? ≤1000, no links }`; only after delivery (`REVIEW_NOT_ALLOWED`); 10/min |
+| DELETE | `/products/:slug/reviews/mine`          | user             | 204                                                                                         |
+| GET    | `/admin/reviews?status=&maxRating=`     | moderator + TOTP | Newest first, masked author phone                                                           |
+| POST   | `/admin/reviews/:id/hide`               | moderator + TOTP | `{ note }` (staff only), audited                                                            |
+| POST   | `/admin/reviews/:id/publish`            | moderator + TOTP | Audited                                                                                     |
+| GET    | `/admin/promo-codes`                    | admin + TOTP     | With uses and UZGO cost                                                                     |
+| POST   | `/admin/promo-codes`                    | admin + TOTP     | `createPromoSchema`; terms fixed afterwards; `PROMO_CODE_TAKEN`                             |
+| PATCH  | `/admin/promo-codes/:id`                | admin + TOTP     | `{ active?, endsAt?, usageLimit?, description? }`                                           |
+
+- `GET /delivery/quote?…&promoCode=` (30/min) adds `discountTiyin`, `promo`,
+  `promoError` (`PROMO_INVALID`, `PROMO_EXPIRED`, `PROMO_MIN_ORDER` with
+  `promoMinOrderTiyin`, `PROMO_LIMIT_REACHED`); `totalTiyin` is items +
+  delivery − discount.
+- `POST /checkout` accepts `promoCode`; `expectedTotalTiyin` is the
+  discounted total. An unusable code fails with its `PROMO_*` code (422).
+- Order views carry `discountTiyin` and `promoCode`; shipments carry
+  `discountTiyin` (their share), `deliveredAt`, `returnUntil`,
+  `returnRequest { reason, comment }` and `returnDecisionNote`.
+- Transitions: `RETURN_REQUESTED` needs `returnReason` + `returnComment`
+  (`RETURN_REASON_REQUIRED`) inside the window (`RETURN_WINDOW_CLOSED`, 409);
+  `RETURN_REJECTED` needs `reason`, the note shown to the customer
+  (`DECISION_NOTE_REQUIRED`).
+- Product cards and detail carry `rating: { average, count } | null`.
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →

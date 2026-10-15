@@ -128,7 +128,16 @@ test('marketplace: staff approve → buyer orders → seller fulfils → buyer s
   expect(after?.status()).toBe(200);
   await expect(seller.getByRole('heading', { name: product.title.uz })).toBeVisible();
 
-  // 6. A buyer orders the product (cash on delivery).
+  // 6. Admin creates a UZGO-funded promo code (10 000 soʻm off).
+  const promoCode = `E2E-${String(Date.now()).slice(-8)}`;
+  await admin.goto('/uz/admin/promo');
+  await admin.getByLabel('Kod', { exact: true }).fill(promoCode);
+  await admin.getByLabel('Turi', { exact: true }).selectOption('FIXED');
+  await admin.getByLabel('Chegirma, soʻm').fill('10000');
+  await admin.getByRole('button', { name: 'Yaratish' }).click();
+  await expect(admin.getByTestId('promo-row').filter({ hasText: promoCode })).toBeVisible();
+
+  // 7. A buyer orders the product (cash on delivery) with the promo code.
   const buyerContext = await browser.newContext();
   const buyer = await buyerContext.newPage();
   await buyer.goto(`/uz/p/${product.slug}`);
@@ -144,15 +153,23 @@ test('marketplace: staff approve → buyer orders → seller fulfils → buyer s
   await buyer.getByRole('combobox', { name: 'Tuman yoki shahar' }).click();
   await buyer.getByRole('option', { name: 'Termiz shahri' }).click();
   await buyer.getByLabel('Koʻcha, uy, xonadon').fill('Alpomish koʻchasi, 12-uy');
+  const fullTotal = (await buyer.getByTestId('checkout-total').textContent()) ?? '';
+  await buyer.getByLabel('Promokod').fill(promoCode.toLowerCase());
+  await buyer.getByRole('button', { name: 'Qoʻllash' }).click();
+  await expect(buyer.getByTestId('checkout-discount')).toContainText(/10\s000/);
+  await expect(buyer.getByTestId('checkout-total')).not.toHaveText(fullTotal);
   await buyer.getByRole('button', { name: 'Buyurtma berish' }).click();
   await expect(buyer).toHaveURL(/\/uz\/orders\/UZ-\d{4}-\d{6}\?placed=1$/);
   const orderPath = new URL(buyer.url()).pathname;
   await expect(buyer.getByTestId('shipment-status')).toHaveText('Yangi');
+  await expect(buyer.getByTestId('order-discount')).toContainText(promoCode);
 
-  // 7. The seller fulfils it step by step in the panel, with a tracking code.
+  // 8. The seller fulfils it step by step in the panel, with a tracking code.
   await seller.goto(`/uz/seller/${store.id}/orders`);
   const shipment = seller.getByTestId('seller-shipment').filter({ hasText: product.title.uz });
   await expect(shipment).toContainText('Gʻayrat Maʼrufov');
+  // Cash to collect is the discounted amount; UZGO covers the discount.
+  await expect(shipment.getByTestId('shipment-promo')).toContainText('UZGO');
   await shipment.getByRole('button', { name: 'Qabul qilish' }).click();
   await expect(shipment).toContainText('Sotuvchi qabul qildi');
   await shipment.getByLabel('Yetkazib beruvchi').fill('BTS Express');
@@ -166,7 +183,7 @@ test('marketplace: staff approve → buyer orders → seller fulfils → buyer s
   await expect(shipment.getByRole('button')).toHaveCount(0);
   await expect(shipment).toContainText('Yetkazildi');
 
-  // 8. The buyer sees the delivery, the tracking code and the status history.
+  // 9. The buyer sees the delivery, the tracking code and the status history.
   await buyer.goto(orderPath);
   await expect(buyer.getByTestId('shipment-status')).toHaveText('Yetkazildi');
   await expect(buyer.getByTestId('shipment-tracking')).toHaveText(
@@ -176,9 +193,50 @@ test('marketplace: staff approve → buyer orders → seller fulfils → buyer s
   for (const step of ['Yangi', 'Sotuvchi qabul qildi', 'Qadoqlandi', 'Yetkazishga topshirildi']) {
     await expect(buyer.getByRole('listitem').filter({ hasText: step }).first()).toBeVisible();
   }
+
+  // 10. Delivered: the buyer saves the product, reviews it and asks for a return.
+  await buyer.goto(`/uz/p/${product.slug}`);
+  await buyer.getByTestId('favorite-button').click();
+  await expect(buyer.getByText('Sevimlilarga qoʻshildi')).toBeVisible();
+  await buyer.getByRole('button', { name: 'Sharh yozish' }).click();
+  await buyer.getByRole('radio', { name: '5 yulduz' }).check({ force: true });
+  await buyer.getByLabel('Sharh (ixtiyoriy)').fill('Zoʻr telefon, tez yetkazishdi');
+  await buyer.getByRole('button', { name: 'Yuborish' }).click();
+  await expect(buyer.getByTestId('my-review')).toContainText('Zoʻr telefon');
+  await buyer.goto('/uz/favorites');
+  await expect(buyer.getByText(product.title.uz)).toBeVisible();
+
+  await buyer.goto(orderPath);
+  await expect(buyer.getByTestId('return-info')).toContainText('gacha soʻrash mumkin');
+  await buyer.getByRole('button', { name: 'Qaytarishni soʻrash' }).click();
+  await buyer.getByLabel('Qaytarish sababi:').selectOption('DEFECTIVE');
+  await buyer.getByLabel('Muammoni tasvirlang').fill('Ekran miltillayapti');
+  await buyer.getByRole('button', { name: 'Qaytarishni soʻrash' }).click();
+  await expect(buyer.getByTestId('shipment-status')).toHaveText('Qaytarish soʻralgan');
+
+  // 11. The seller rejects the return with a note the buyer can read.
+  await seller.goto(`/uz/seller/${store.id}/orders`);
+  await expect(shipment).toContainText('Ekran miltillayapti');
+  await shipment.getByRole('button', { name: 'Qaytarishni rad etish' }).click();
+  await shipment
+    .getByLabel('Rad etish sababi (xaridorga koʻrinadi)')
+    .fill('Tekshiruvda nuqson topilmadi');
+  await shipment.getByRole('button', { name: 'Qaytarishni rad etish' }).click();
+  await expect(shipment).toContainText('Qaytarish rad etildi');
+  await buyer.goto(orderPath);
+  await expect(buyer.getByTestId('return-info')).toContainText('Tekshiruvda nuqson topilmadi');
   await buyerContext.close();
 
-  // 9. The audit log records the decisions.
+  // 12. A moderator hides the review; it leaves the product rating.
+  await admin.goto('/uz/admin/reviews');
+  const review = admin.getByTestId('admin-review').filter({ hasText: product.title.uz });
+  await expect(review).toContainText('Zoʻr telefon');
+  await review.getByRole('button', { name: 'Yashirish' }).click();
+  await review.getByLabel('Yashirish sababi (faqat xodimlarga koʻrinadi)').fill('Sinov');
+  await review.getByRole('button', { name: 'Yashirish' }).click();
+  await expect(review).toContainText('Yashirilgan');
+
+  // 13. The audit log records the decisions.
   await admin.goto('/uz/admin/audit?action=product.');
   await expect(
     admin.getByTestId('audit-event').filter({ hasText: 'product.approved' }).first(),

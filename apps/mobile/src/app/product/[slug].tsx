@@ -35,12 +35,15 @@ export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { api, t, locale, setCart, errorText } = useApp();
   const c = useColors();
+  const [reviewed, setReviewed] = useState(0);
   const detail = useRequest(
     () =>
       api.request(`/catalog/products/${encodeURIComponent(slug)}`, {
         schema: productDetailResponseSchema,
+        // A new review changes the rating: skip the one-minute cache then.
+        fresh: reviewed > 0,
       }),
-    [slug],
+    [slug, reviewed],
   );
   const product = detail.data?.product;
   const groups = useMemo(() => (product ? optionGroups(product.variants) : []), [product]);
@@ -225,7 +228,13 @@ export default function ProductScreen() {
             <AppText variant="heading">{t('description')}</AppText>
             <AppText>{localized(product.description, locale)}</AppText>
           </View>
-          <ProductReviews slug={product.slug} rating={product.rating} onChanged={detail.reload} />
+          <ProductReviews
+            slug={product.slug}
+            rating={product.rating}
+            onChanged={() => {
+              setReviewed((n) => n + 1);
+            }}
+          />
         </View>
       </Screen>
     </>

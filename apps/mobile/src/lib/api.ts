@@ -31,6 +31,8 @@ type Options<S extends z.ZodType> = {
   schema?: S;
   idempotencyKey?: string;
   locale?: 'uz' | 'ru';
+  /** Skip the HTTP cache (public catalog responses are cacheable for a minute). */
+  fresh?: boolean;
 };
 
 /**
@@ -70,6 +72,7 @@ export function createApiClient(deps: {
         method: options.method ?? 'GET',
         headers,
         credentials: 'omit',
+        ...(options.fresh ? { cache: 'no-store' as const } : {}),
         ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       });
     } catch {

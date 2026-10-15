@@ -89,3 +89,66 @@ test('seller: shipments of my store → accept → tracking → deliver', async 
   await page.getByRole('button', { name: 'Hammasi' }).click();
   await expect(page.getByText('Yetkazildi')).toBeVisible();
 });
+
+test('buyer after delivery: rating, review and a return request in the app', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120_000);
+  const { seller, product, title, variantId } = await liveProduct(request);
+  const buyer = await apiUser(request);
+  await buyer.call('patch', '/users/me', { firstName: 'Dilnoza', lastName: 'Karimova' });
+  await buyer.call('post', '/cart/items', { variantId, quantity: 1 });
+  const regions = (await buyer.call('get', '/geo/regions')) as {
+    items: { id: string; code: string }[];
+  };
+  const districts = (await buyer.call(
+    'get',
+    `/geo/regions/${regions.items.find((r) => r.code === 'UZ-SU')?.id ?? ''}/districts`,
+  )) as { items: { id: string }[] };
+  const districtId = districts.items[0]?.id ?? '';
+  // An unknown promo code is reported by the quote, not silently ignored.
+  const quote = (await buyer.call(
+    'get',
+    `/delivery/quote?districtId=${districtId}&promoCode=NO-SUCH-CODE`,
+  )) as { totalTiyin: string; promoError: string | null };
+  expect(quote.promoError).toBe('PROMO_INVALID');
+  const { order } = (await buyer.call('post', '/checkout', {
+    recipientName: 'Dilnoza Karimova',
+    recipientPhone: '+998901234567',
+    districtId,
+    addressLine: 'Navoiy koʻchasi, 5',
+    paymentMethod: 'CASH_ON_DELIVERY',
+    expectedTotalTiyin: quote.totalTiyin,
+  })) as { order: { number: string; sellerOrders: { id: string }[] } };
+  for (const to of ['ACCEPTED', 'PACKED', 'HANDED_TO_DELIVERY', 'DELIVERED']) {
+    await seller.call(
+      'post',
+      `/seller/seller-orders/${order.sellerOrders[0]?.id ?? ''}/transition`,
+      {
+        to,
+      },
+    );
+  }
+
+  await signedInPage(page, buyer.token);
+  await page.goto(`/product/${product.slug}`);
+  await expect(page.getByRole('heading', { name: title })).toBeVisible();
+  await page.getByRole('button', { name: 'Sharh yozish' }).click();
+  await page.getByRole('radio', { name: '4 yulduz' }).click();
+  await page.getByLabel('Sharh (ixtiyoriy)').fill('Yaxshi, lekin qadoq oddiy');
+  await page.getByRole('button', { name: 'Yuborish' }).click();
+  await expect(page.getByText('Sizning sharhingiz')).toBeVisible();
+  await expect(page.getByTestId('review').first()).toContainText('Dilnoza K.');
+  await expect(page.getByTestId('product-rating')).toContainText('4.0');
+
+  await page.goto(`/order/${order.number}`);
+  await expect(page.getByTestId('return-info')).toContainText('gacha soʻrash mumkin');
+  await page.getByRole('button', { name: 'Qaytarishni soʻrash' }).click();
+  await page.getByRole('radio', { name: 'Yetkazishda shikastlangan' }).click();
+  await page.getByLabel('Muammoni tasvirlang').fill('Quti ezilib kelgan');
+  await page.getByRole('button', { name: 'Qaytarishni soʻrash' }).click();
+  await expect(page.getByText('Qaytarish soʻralgan').first()).toBeVisible();
+  await expect(page.getByTestId('return-info')).toContainText('Quti ezilib kelgan');
+  await page.screenshot({ path: 'test-results/screenshots/return.png', fullPage: true });
+});

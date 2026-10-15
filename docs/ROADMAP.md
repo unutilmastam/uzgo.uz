@@ -108,6 +108,16 @@ all directions ("Hammasi"). Split into 9a–9d, one sub-phase per command
 (CLAUDE.md: never several phases at once); 9b–9d each start with the owner's
 provider decisions.
 
+Phase 9a notes (ADR 0023): favorites; verified-purchase reviews with atomic
+rating aggregates and moderation; returns with reason, comment, window
+(`RETURN_WINDOW_DAYS`) and decision note; UZGO-funded promo codes (row-locked
+limits, discount split over lines, `PLATFORM_PROMOTIONS` ledger account,
+Payme receipt discount/shipping lines — to verify in the Payme sandbox).
+Web + mobile UI. Verified by API integration tests (incl. concurrent promo
+use, ledger balance, refunds), contract tests, web e2e (admin promo → buyer
+checkout with code → delivery → favorite, review, return → seller rejects →
+moderator hides review) and mobile e2e (review + return in the app).
+
 ## Open decisions
 
 | Decision                                                                                                                                                    | Who                          | When                                         |
@@ -121,5 +131,5 @@ provider decisions.
 | Production hosting — decided: Tashkent VPS (ADR 0020); pick the provider and an off-site backup provider                                                    | Owner + lawyer               | Before launch                                |
 | Legal: personal-data residency & registration, offer/terms, privacy, returns, fiscal receipts                                                               | Owner + lawyer               | Before public launch                         |
 | Commission rates per category/store                                                                                                                         | Owner                        | Phase 6                                      |
-| Return window length (default draft 10 days)                                                                                                                | Owner + lawyer               | Phase 4–6                                    |
+| Return window length — `RETURN_WINDOW_DAYS` (default 10, ≤ payout hold) and return policy text; promo terms text                                            | Owner + lawyer               | Before launch                                |
 | Domain and email (configurable via `UZGO_DOMAIN`)                                                                                                           | Owner                        | Before launch                                |

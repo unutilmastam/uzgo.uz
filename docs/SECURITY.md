@@ -164,6 +164,18 @@ without either it is accepted only if it carries no cookies at all.
 - Audit exceptions for Expo build tooling are documented in
   `pnpm-workspace.yaml` (node-forge, uuid, decode-uri-component).
 
+## Market growth (Phase 9a, ADR 0023)
+
+- Reviews: only after the customer received the product; one per product;
+  text shown as plain text (React escaping), links refused, 1000 characters;
+  author shown as "first name + last initial", never the phone. Moderators
+  hide with a note (TOTP, audited).
+- Promo codes are UZGO money: admins only with TOTP, every change audited,
+  terms immutable; limits enforced under a row lock at checkout; the server
+  computes every discount; order money columns are immutable (trigger).
+- Returns only inside `RETURN_WINDOW_DAYS` (≤ payout hold in production);
+  rejections need a note.
+
 ## Uploads (Phase 5)
 
 Product images: one file per request, ≤ 8 MB, kept in memory (never on disk
@@ -256,18 +268,21 @@ without capabilities; secrets only in env files with mode 600.
 
 ### Rate limits (per client IP unless stated)
 
-| Route                             | Limit                          | Notes                                                                                                |
-| --------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| All API routes (default)          | 120 / min                      | In memory; SSR calls counted per visitor (ADR 0021)                                                  |
-| `POST /auth/otp/request`          | 5 / min                        | Plus per phone 5 / hour and 10 / day, resend cooldown 60 s, per IP `OTP_IP_HOURLY_LIMIT` (20 / hour) |
-| `POST /auth/otp/verify`           | 10 / min                       | Plus 5 attempts per code, code TTL 180 s                                                             |
-| `POST /auth/totp/setup            | enable                         | verify`                                                                                              | 5 / min | Plus lock for 15 min after 5 failures |
-| `POST /checkout`                  | 10 / min                       | Plus max 3 unpaid online orders per customer                                                         |
-| `POST /seller/stores` (apply)     | 5 / min                        |                                                                                                      |
-| `POST /seller/stores/:id/members` | 10 / min                       |                                                                                                      |
-| Product image upload              | 30 / min                       | One file ≤ 8 MB per request                                                                          |
-| Payme / Click callbacks           | not limited                    | Authenticated by provider secret; optional Payme IP allow-list                                       |
-| Request body                      | 1 MB JSON (API), 25 MB (Caddy) |                                                                                                      |
+| Route                              | Limit                          | Notes                                                                                                |
+| ---------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| All API routes (default)           | 120 / min                      | In memory; SSR calls counted per visitor (ADR 0021)                                                  |
+| `POST /auth/otp/request`           | 5 / min                        | Plus per phone 5 / hour and 10 / day, resend cooldown 60 s, per IP `OTP_IP_HOURLY_LIMIT` (20 / hour) |
+| `POST /auth/otp/verify`            | 10 / min                       | Plus 5 attempts per code, code TTL 180 s                                                             |
+| `POST /auth/totp/setup             | enable                         | verify`                                                                                              | 5 / min | Plus lock for 15 min after 5 failures |
+| `POST /checkout`                   | 10 / min                       | Plus max 3 unpaid online orders per customer                                                         |
+| `GET /delivery/quote`              | 30 / min                       | Also checks promo codes: limited so it is not a code-guessing oracle                                 |
+| `PUT /products/:slug/reviews/mine` | 10 / min                       | Reviews only after delivery; links refused                                                           |
+| `PUT /favorites/:productId`        | 60 / min                       | Max 500 per customer                                                                                 |
+| `POST /seller/stores` (apply)      | 5 / min                        |                                                                                                      |
+| `POST /seller/stores/:id/members`  | 10 / min                       |                                                                                                      |
+| Product image upload               | 30 / min                       | One file ≤ 8 MB per request                                                                          |
+| Payme / Click callbacks            | not limited                    | Authenticated by provider secret; optional Payme IP allow-list                                       |
+| Request body                       | 1 MB JSON (API), 25 MB (Caddy) |                                                                                                      |
 
 ### Remaining risks and owner actions
 

@@ -266,6 +266,8 @@ export function ProductReviews({
     api
       .request(`/catalog/products/${encodeURIComponent(slug)}/reviews`, {
         schema: productReviewsResponseSchema,
+        // After the customer's own change the list must not come from the cache.
+        fresh: version > 0,
       })
       .then(
         (res) => {

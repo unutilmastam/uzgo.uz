@@ -154,6 +154,23 @@ and 206 districts = 175 tumans + 31 cities of regional significance, with Uzbek
 - `Payout` (storeId, amountTiyin, status, period, reference).
 - `CommissionRule` (categoryId? / storeId?, rateBasisPoints).
 
+**Phase 9a — market growth (ADR 0023)**
+
+- `Favorite` (userId, productId; PK on the pair).
+- `ProductReview` (productId, userId — unique pair, rating 1–5 CHECK, text ≤ 1000,
+  status PUBLISHED | HIDDEN, moderationNote). `Product.ratingSum/ratingCount`
+  count published reviews (CHECK `count ≤ sum ≤ 5 × count`), updated in the
+  same transaction under a row lock.
+- `PromoCode` (code unique, A–Z/0–9/"-", kind PERCENT | FIXED with matching
+  value CHECKs, maxDiscount, minOrder, startsAt/endsAt, usageLimit,
+  perUserLimit, active, description). `Order.promoCodeId`.
+- Discounts: `Order/SellerOrder/OrderItem.discountTiyin` (0 ≤ discount ≤ items).
+  `Order.totalTiyin = items + delivery − discount` (CHECK); shipment totals stay
+  at full price. Money columns are immutable after checkout (trigger).
+- Returns: `SellerOrder.deliveredAt` (start of the window), `returnReason`
+  (enum), `returnComment`, `returnDecisionNote`.
+- Ledger account `PLATFORM_PROMOTIONS` (UZGO's promo expense).
+
 ## State machines
 
 Implemented as explicit transition tables in code and tested. Every transition
@@ -203,7 +220,9 @@ stateDiagram-v2
 `DELIVERY_FAILED`, `RETURNED`, `RETURN_REJECTED`, and `DELIVERED` once the
 return window (configurable, default 10 days — to verify against consumer law)
 has closed. Cancellation, `DELIVERY_FAILED` and `RETURNED` put the goods back
-into stock.
+into stock. Since Phase 9a the window is `RETURN_WINDOW_DAYS` from
+`deliveredAt` (≤ `PAYOUT_HOLD_DAYS` in production); a return request needs a
+reason and comment, a rejection a decision note (ADR 0023).
 
 **Implemented (Phase 4):** the transition table lives in
 `apps/api/src/orders/state-machine.ts` with the allowed actor per transition
