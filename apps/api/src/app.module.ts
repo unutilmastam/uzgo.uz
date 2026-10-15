@@ -10,7 +10,8 @@ import { CatalogModule } from './catalog/catalog.module.js';
 import { OriginGuard } from './auth/origin.guard.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
 import { LoggerModule } from './common/logger.module.js';
-import { ConfigModule } from './config/config.module.js';
+import { ConfigModule, ENV } from './config/config.module.js';
+import type { Env } from './config/env.js';
 import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { OrdersModule } from './orders/orders.module.js';
@@ -28,7 +29,14 @@ import { UsersModule } from './users/users.module.js';
     LoggerModule,
     PrismaModule,
     // In-memory per-IP rate limit (SPEC §17); Redis only via ADR for multiple instances.
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRootAsync({
+      inject: [ENV],
+      useFactory: (env: Env) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+        // Browser e2e only (env validation allows it only with NODE_ENV=test).
+        skipIf: () => env.RATE_LIMIT_DISABLED,
+      }),
+    }),
     AuditModule,
     SmsModule,
     StorageModule,

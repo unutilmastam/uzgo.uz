@@ -91,7 +91,46 @@ SameSite=Lax; Path=/`. Only the hash is stored in the DB.
 | GET            | `/orders`, `/orders/:number`                   | session                     | own orders only (others 404)                                                                                                                                |
 | POST           | `/orders/:number/seller-orders/:id/transition` | session (owner)             | `{ to, reason? }` — customer transitions only                                                                                                               |
 | GET            | `/seller/orders?storeId=`                      | session (store member)      | 403 for foreign stores                                                                                                                                      |
-| POST           | `/seller/seller-orders/:id/transition`         | store member or admin       | 204; 404 for foreign shipments                                                                                                                              |
+| POST           | `/seller/seller-orders/:id/transition`         | store member                | 204; 404 for foreign shipments (staff use `/admin/orders`)                                                                                                  |
+
+## Endpoints (Phase 5)
+
+Seller routes need a session and store membership (non-members: 404).
+Every `/admin/*` route needs a staff role **and** a TOTP-verified session
+(`403 TOTP_REQUIRED` otherwise).
+
+| Method          | Path                                                                                    | Access      | Notes                                                                    |
+| --------------- | --------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| GET / POST      | `/auth/totp/status`, `/setup`, `/enable`, `/verify`                                     | staff       | `{ code }`; setup returns the secret once; 5/min                         |
+| GET / POST      | `/seller/stores`                                                                        | session     | apply: name, slug, districtId, legalType, legalName, taxId, contactPhone |
+| GET             | `/seller/categories/:id/attributes`                                                     | session     | attributes (with value ids) a leaf category allows                       |
+| GET / POST      | `/seller/stores/:storeId/products`                                                      | member      | `?status&page`; create draft                                             |
+| GET / PATCH     | `/seller/stores/:storeId/products/:id`                                                  | member      | content edits re-queue approved products                                 |
+| POST            | `…/products/:id/submit`, `/archive`, `/restore`                                         | member      | submit needs an active store, an image and an active variant             |
+| POST / PATCH    | `…/products/:id/variants`, `…/variants/:variantId`                                      | member      | tiyin strings; `stock` or atomic `stockAdjust`                           |
+| POST / DELETE   | `…/products/:id/images`, `…/images/:imageId`                                            | member      | multipart field `file`, ≤ 8 MB, re-encoded to WebP                       |
+| PUT             | `…/products/:id/images/order`                                                           | member      | `{ ids }` — every image exactly once                                     |
+| GET/POST/DELETE | `/seller/stores/:storeId/members[/:userId]`                                             | owner       | add staff by phone (account must exist)                                  |
+| GET             | `/admin/stores?status&page`, `/admin/stores/:id`                                        | moderator+  | review queue (oldest first for PENDING)                                  |
+| POST            | `/admin/stores/:id/approve`, `/reject`                                                  | moderator+  | reject needs `{ reason }`                                                |
+| POST            | `/admin/stores/:id/suspend`, `/reactivate`                                              | admin+      | suspend needs `{ reason }`                                               |
+| GET             | `/admin/products?status&page`, `/admin/products/:id`                                    | moderator+  | default status PENDING_REVIEW                                            |
+| POST            | `/admin/products/:id/approve`, `/reject`                                                | moderator+  | reject (or take down) needs `{ reason }`, shown to the seller            |
+| GET/POST/PATCH  | `/admin/categories[/:id]`, `PUT /admin/categories/:id/attributes`                       | admin+      | cycle and leaf checks; renames reindex search                            |
+| GET/POST/PATCH  | `/admin/attributes[/:id[/values[/:valueId]]]`                                           | admin+      | unique codes                                                             |
+| GET / POST      | `/admin/users?phone&role&page`, `/:id/block`, `/:id/unblock`                            | admin+      | staff targets need a super admin; blocking revokes sessions              |
+| POST            | `/admin/users/:id/totp-reset`                                                           | super admin | removes the factor and revokes sessions                                  |
+| GET / POST      | `/admin/orders?status&number&page`, `/:number`, `/:number/seller-orders/:id/transition` | admin+      | state machine as `ADMIN` actor                                           |
+| GET             | `/admin/audit?action&entityType&entityId&actorId&before`                                | admin+      | newest first, 50 per page, `nextBefore` cursor; `action=store.` = prefix |
+
+Phase 5 error codes: `TOTP_REQUIRED`, `TOTP_LOCKED` (429), `TOTP_NOT_SET_UP`,
+`TOTP_NOT_ENABLED`, `TOTP_ALREADY_ENABLED`, `SLUG_TAKEN`, `CODE_TAKEN`,
+`APPLICATION_PENDING`, `STORE_LIMIT`, `STORE_NOT_ACTIVE`, `STORE_NOT_APPROVED`,
+`INVALID_TRANSITION`, `INVALID_CATEGORY`, `INVALID_ATTRIBUTES`, `SKU_TAKEN`,
+`INVALID_PRICE`, `STOCK_NEGATIVE`, `IMAGE_REQUIRED`, `VARIANT_REQUIRED`,
+`INVALID_IMAGE`, `FILE_TOO_LARGE`, `IMAGE_LIMIT`, `VARIANT_LIMIT`,
+`PRODUCT_ARCHIVED`, `USER_NOT_FOUND`, `ALREADY_MEMBER`, `TEAM_LIMIT`,
+`CATEGORY_CYCLE`, `PARENT_HAS_PRODUCTS`.
 
 Listings use page-based pagination (numbered pages in the storefront UI);
 cursor pagination stays the default for future feeds.
@@ -107,7 +146,8 @@ Auth error codes: `INVALID_PHONE`, `INVALID_CODE`, `OTP_RESEND_TOO_SOON`
 `ACCOUNT_BLOCKED`, `SMS_UNAVAILABLE`, `UNAUTHENTICATED`, `FORBIDDEN`,
 `ORIGIN_NOT_ALLOWED`, `ORIGIN_REQUIRED`.
 
-`GET /__test__/last-otp` exists only for browser e2e tests: it answers 404
+`GET /__test__/last-otp` and `POST /__test__/grant-role` exist only for browser
+e2e tests: they answer 404
 unless `NODE_ENV=test` and `SMS_PROVIDER=fake` (impossible in production).
 
 ## Pagination

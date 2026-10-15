@@ -68,7 +68,12 @@ Customers log in with **phone + one-time SMS code** (ADR 0004, 0013).
 - **First super admin:** no default admin exists. After the owner logs in once:
   `pnpm --filter @uzgo/api user:grant-role +998XXXXXXXXX SUPER_ADMIN` on the
   server (audited `role.granted`, `via: cli`).
-- **Staff second factor (TOTP):** still required before production (Phase 5/7).
+- **Staff second factor (TOTP, Phase 5, ADR 0016):** RFC 6238 codes from an
+  authenticator app; secrets AES-256-GCM encrypted (`TOTP_ENCRYPTION_KEY`);
+  replay refused; 5 wrong codes → 15 min lock (audited `auth.totp_locked`);
+  verified per session for 12 h. All `/admin/*` routes need it.
+  `STAFF_TOTP_REQUIRED=false` is rejected in production. A super admin can
+  reset a lost factor (`auth.totp_reset`, all sessions revoked).
 - **Privacy:** client IPs are stored only as HMACs; audit metadata holds field
   names and masked phones, never personal values or codes.
 
@@ -82,6 +87,13 @@ membership, Phase 5), `MODERATOR`, `ADMIN`, `SUPER_ADMIN`.
 - Only `SUPER_ADMIN` can grant or revoke `ADMIN`/`SUPER_ADMIN`; nobody can
   change their own roles. All role changes are audited.
 - Services add ownership checks (store membership, order owner) from Phase 4.
+- **Seller isolation (Phase 5):** every `/seller/stores/:storeId/...` call
+  checks `StoreMember`; non-members get 404. Team management is owner-only;
+  suspended/rejected stores are read-only.
+- **Back office (Phase 5):** moderators review stores and products; admins also
+  manage catalogue, users (block = sessions revoked), orders and the audit
+  viewer; staff accounts can only be blocked or reset by a super admin; nobody
+  acts on their own account.
 
 ## CSRF
 
@@ -112,11 +124,25 @@ without either it is accepted only if it carries no cookies at all.
 - **Orders are permanent:** database triggers forbid deleting orders,
   shipments and items and changing items and order events.
 
+## Uploads (Phase 5)
+
+Product images: one file per request, ≤ 8 MB, kept in memory (never on disk
+before validation), decoded by libvips with a 40 MP pixel limit, auto-rotated,
+resized to ≤ 1600 px and re-encoded to WebP — this strips EXIF/GPS and any
+payload hidden in the file. SVG and anything not decodable is refused.
+Storage keys are random; the media route sends `nosniff` and a sandbox CSP.
+
 ## Audit log
 
 `AuditEvent` rows: `user.created`, `auth.login`, `auth.logout`,
 `auth.logout_all`, `auth.otp_locked`, `user.profile_updated`, `role.granted`,
-`role.revoked`. A PostgreSQL trigger rejects UPDATE and DELETE on the table.
+`role.revoked`; Phase 5: `auth.totp_enabled`, `auth.totp_locked`,
+`auth.totp_reset`, `store.applied|approved|rejected|suspended|reactivated`,
+`store.member_added|member_removed`, `product.created|updated|submitted|
+archived|restored|image_added|image_removed|approved|rejected`,
+`variant.created|updated` (price changes record from/to),
+`category.*`, `attribute.*`, `user.blocked|unblocked`. The admin viewer shows
+masked phones and never IP hashes. A PostgreSQL trigger rejects UPDATE and DELETE on the table.
 (Before production: run the app with a DB role without TRUNCATE on it.)
 
 ## HTTP hardening

@@ -77,6 +77,13 @@ erDiagram
   `OrderEvent`, `IdempotencyKey`. Hand-written SQL adds money/stock/format
   `CHECK`s, `order_number_seq`, and triggers that forbid deleting orders,
   shipments and items and changing items and events.
+- **Phase 5:** `Store` gains legal fields (`legalType`, `legalName`,
+  `taxId` with a 9-digit `CHECK`, `contactPhone` with an E.164 `CHECK`) and
+  review fields (`reviewedAt`, `reviewedById`, `reviewNote`); `StoreStatus`
+  gains `REJECTED`. `Product` gains `moderationNote`, `submittedAt`,
+  `reviewedAt`. `Session.totpVerifiedAt` and `StaffTotp` (encrypted secret,
+  `lastUsedStep` for replay protection, failure counter and lock) support the
+  staff second factor.
 - **Deferred:** `StockReservation` (needed for unpaid online orders) arrives with
   online payments in Phase 6. Cash-on-delivery orders decrement stock at
   checkout and restock on cancellation, failed delivery or return (ADR 0015).
@@ -201,9 +208,17 @@ come in Phase 6.
 
 ### Product
 
-`DRAFT → PENDING_REVIEW → APPROVED | REJECTED`; `REJECTED → DRAFT` (edit);
-any → `ARCHIVED`. Editing an `APPROVED` product's title/images/category sends it
-back to `PENDING_REVIEW` (price/stock edits do not). Only `APPROVED`, not
+`DRAFT → PENDING_REVIEW → APPROVED | REJECTED`; `REJECTED → DRAFT` (edit) or
+`REJECTED → PENDING_REVIEW` (resubmit); `APPROVED → REJECTED` (take-down);
+any → `ARCHIVED → DRAFT` (restore). Editing an `APPROVED` product's
+title/description/category/attributes/images or adding a variant sends it back
+to `PENDING_REVIEW` (price/stock/availability edits do not).
+
+### Store
+
+`PENDING → ACTIVE | REJECTED` (staff review); `ACTIVE ↔ SUSPENDED` (admins).
+A rejected owner may apply again; at most one pending application and three
+stores per owner. Only `APPROVED`, not
 deleted, with an active in-stock variant, from an active store is visible.
 
 ## Inventory and concurrency

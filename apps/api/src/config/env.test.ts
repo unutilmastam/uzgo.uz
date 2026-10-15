@@ -109,4 +109,14 @@ describe('parseEnv', () => {
     );
     expect(error.message).not.toContain('secret-password');
   });
+
+  it('allows disabling the request throttler only in tests', () => {
+    expect(parseEnv(valid).RATE_LIMIT_DISABLED).toBe(false);
+    const error = errorOf(() => parseEnv({ ...valid, RATE_LIMIT_DISABLED: 'true' }));
+    expect(error.issues.some((issue) => issue.startsWith('RATE_LIMIT_DISABLED'))).toBe(true);
+    expect(
+      parseEnv({ ...valid, NODE_ENV: 'test', SMS_PROVIDER: 'fake', RATE_LIMIT_DISABLED: 'true' })
+        .RATE_LIMIT_DISABLED,
+    ).toBe(true);
+  });
 });

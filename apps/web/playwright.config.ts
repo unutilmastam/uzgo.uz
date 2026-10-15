@@ -39,6 +39,8 @@ export default defineConfig({
         SMS_PROVIDER: 'fake',
         TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
         OTP_IP_HOURLY_LIMIT: '10000',
+        // Every e2e login comes from 127.0.0.1; allowed only with NODE_ENV=test.
+        RATE_LIMIT_DISABLED: 'true',
       },
     },
     {

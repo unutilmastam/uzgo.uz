@@ -20,3 +20,4 @@ Decision, Consequences. Superseded ADRs stay, marked "Superseded by NNNN".
 | 0013 | Authentication implementation details (Phase 3) |
 | 0014 | Product search in PostgreSQL (Phase 4)          |
 | 0015 | Checkout and orders (Phase 4, cash on delivery) |
+| 0016 | Seller onboarding, back office and staff TOTP   |

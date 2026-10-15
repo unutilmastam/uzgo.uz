@@ -13,7 +13,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
-| 5     | Seller panel, moderation, admin panel                                          | NOT STARTED |
+| 5     | Seller panel, moderation, admin panel                                          | IN PROGRESS |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
 | 8     | Mobile apps                                                                    | NOT STARTED |
@@ -32,13 +32,21 @@ Phase 2 notes: e2e ran locally with the session's preinstalled Chromium
 
 Phase 3 notes: API integration tests run against real PostgreSQL (64 tests);
 browser e2e logs in through the real API with the FakeSmsProvider. Staff TOTP
-is deliberately left for Phase 5 (admin panel) / Phase 7 (before production).
+was added in Phase 5.
 CI run #8 (commit 06e8a40) passed incl. e2e.
 
 Phase 4 notes: delivered in sub-steps 4a catalog → 4b stores/products/media →
 4d search → 4c web pages → 4e cart → 4f checkout/orders. Online payments,
 stock reservations with expiry, delivery fees and the seller/admin UIs are
 later phases by design. CI run #15 (commit 6b2ed5e) passed incl. e2e and CodeQL.
+
+Phase 5 notes: delivered in sub-steps 5a seller onboarding + store review +
+staff TOTP → 5b seller catalogue API (images re-encoded by `sharp`) → 5c admin
+API → 5d seller web panel → 5e admin web panel (ADR 0016). Every permission
+boundary has an API test (customer / seller / other store / staff without TOTP /
+moderator vs admin vs super admin). Browser e2e covers seller application and
+draft product, and the full staff flow: TOTP enrolment → store approval →
+product moderation → product visible on the storefront.
 
 ## Open decisions
 

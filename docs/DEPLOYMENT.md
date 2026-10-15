@@ -48,6 +48,14 @@ launch; separate DB server when traffic grows.
 4. Owner works from a phone: deployments must be triggerable from GitHub
    (Actions workflow), not from a local machine.
 
+## Production secrets (checklist)
+
+Set in the host's secret store, never in git (`apps/api/.env.example` lists
+all variables): `DATABASE_URL`, `AUTH_SECRET` (≥ 32 random bytes),
+`TOTP_ENCRYPTION_KEY` (exactly 32 random bytes, base64 — losing it means every
+staff member must re-enrol TOTP; rotating it needs a re-encryption script),
+real SMS provider credentials. `STAFF_TOTP_REQUIRED` must stay `true`.
+
 ## Open decision
 
 Hosting provider — **owner**, with legal check on data residency, **before Phase 7**.

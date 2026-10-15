@@ -51,6 +51,12 @@ export const envSchema = z
       .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64-encoded'),
     /** Staff (moderator/admin) routes require a verified TOTP second factor. Always true in production. */
     STAFF_TOTP_REQUIRED: booleanString.default(true),
+    /**
+     * Browser e2e only: turns off the per-IP request throttler (every e2e login
+     * comes from 127.0.0.1). Allowed only with NODE_ENV=test. The OTP limits
+     * stored in the database still apply.
+     */
+    RATE_LIMIT_DISABLED: booleanString.default(false),
     /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),
@@ -70,6 +76,13 @@ export const envSchema = z
         code: 'custom',
         path: ['SMS_PROVIDER'],
         message: 'the fake SMS provider is allowed only when NODE_ENV=test',
+      });
+    }
+    if (env.RATE_LIMIT_DISABLED && env.NODE_ENV !== 'test') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RATE_LIMIT_DISABLED'],
+        message: 'rate limiting can be disabled only when NODE_ENV=test',
       });
     }
     if (env.NODE_ENV !== 'production') return;
