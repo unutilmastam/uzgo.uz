@@ -67,3 +67,72 @@ export async function retireTestStores(prisma: PrismaService): Promise<void> {
     data: { status: 'SUSPENDED' },
   });
 }
+
+/** Termiz centre; the fake geocoder's streets are within ~1 km. */
+export const TERMIZ = { lat: 37.2242, lng: 67.2783 };
+export const ALWAYS_OPEN = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
+  day,
+  open: '00:00',
+  close: '00:00',
+}));
+
+/** A restaurant (open all week) with one menu category and the given dishes. */
+export async function createRestaurant(
+  prisma: PrismaService,
+  data: {
+    ownerId?: string;
+    deliveryMode?: 'SELF' | 'UZGO';
+    selfDeliveryFeeTiyin?: bigint;
+    minOrderTiyin?: bigint;
+    deliveryRadiusM?: number;
+    openingHours?: { day: number; open: string; close: string }[];
+    dishes?: { priceTiyin: bigint; available?: boolean; fiscal?: boolean }[];
+  } = {},
+) {
+  const slug = `test-store-food-${suffix()}`;
+  const store = await prisma.store.create({
+    data: {
+      kind: 'RESTAURANT',
+      slug,
+      name: { uz: `Oshxona ${slug}`, ru: `Кафе ${slug}` },
+      status: 'ACTIVE',
+      taxId: '301234567',
+      ...(data.ownerId ? { members: { create: { userId: data.ownerId, role: 'OWNER' } } } : {}),
+      restaurant: {
+        create: {
+          address: 'Termiz, Alpomish koʻchasi 1',
+          lat: TERMIZ.lat,
+          lng: TERMIZ.lng,
+          deliveryMode: data.deliveryMode ?? 'SELF',
+          deliveryRadiusM: data.deliveryRadiusM ?? 5000,
+          selfDeliveryFeeTiyin: data.selfDeliveryFeeTiyin ?? 0n,
+          minOrderTiyin: data.minOrderTiyin ?? 0n,
+          prepMinutes: 20,
+          openingHours: data.openingHours ?? ALWAYS_OPEN,
+        },
+      },
+      menuCategories: { create: { name: { uz: 'Asosiy', ru: 'Основные' } } },
+    },
+    include: { menuCategories: true },
+  });
+  const categoryId = store.menuCategories[0]?.id ?? '';
+  const dishes = [];
+  for (const [index, dish] of (data.dishes ?? [{ priceTiyin: 30_000_00n }]).entries()) {
+    dishes.push(
+      await prisma.foodMenuItem.create({
+        data: {
+          storeId: store.id,
+          categoryId,
+          name: { uz: `Taom ${String(index + 1)}`, ru: `Блюдо ${String(index + 1)}` },
+          priceTiyin: dish.priceTiyin,
+          available: dish.available ?? true,
+          sort: index,
+          ...(dish.fiscal === false
+            ? {}
+            : { mxikCode: '10202001001000000', packageCode: '1500567', vatRateBp: 1200 }),
+        },
+      }),
+    );
+  }
+  return { store, dishes };
+}
