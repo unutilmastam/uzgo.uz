@@ -16,7 +16,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
-| 8     | Mobile apps                                                                    | IN PROGRESS |
+| 8     | Mobile apps                                                                    | VERIFIED    |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
 
 Phase 0 is documentation only; "VERIFIED" means the documents exist, are
@@ -95,6 +95,9 @@ react-native-web against the real API. Builds: test APK via the "Mobile app"
 workflow; store builds via EAS once the owner creates the accounts
 (`docs/MOBILE.md`). Native-only behaviour (keystore, push delivery) needs the
 manual device checklist.
+CI run #47 (commit 2000dd0) passed incl. web and mobile e2e and the
+Android/iOS bundles; "Mobile app" run #1 built an installable Android test
+APK on GitHub (33.7 MB artifact).
 
 ## Open decisions
 
