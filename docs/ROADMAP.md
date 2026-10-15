@@ -14,7 +14,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
-| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
+| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | BLOCKED     |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
 | 8     | Mobile apps                                                                    | NOT STARTED |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
@@ -49,6 +49,12 @@ draft product, and the full staff flow: TOTP enrolment → store approval →
 product moderation → product visible on the storefront. CI run #25 (commit
 7f57ad8) passed incl. e2e.
 
+Phase 6 notes: provider research and the proposal are in ADR 0017 (Payme +
+Click, UZGO as merchant of record, fiscal receipts via the providers' OFD).
+**Blocked on the owner's confirmation** of that choice (the Phase 6 prompt
+requires it before any payment code). Merchant credentials and the lawyer's
+opinion on the marketplace payment scheme are listed there as owner actions.
+
 ## Open decisions
 
 | Decision                                                                                                                                                    | Who                          | When                                                 |
@@ -57,7 +63,7 @@ product moderation → product visible on the storefront. CI run #25 (commit
 | First seller categories (working assumption: clothing, electronics, household appliances, groceries) and whether perishable food waits until delivery works | Owner                        | Before Phase 4 seed                                  |
 | Final designer logo (optional; colours/wordmark implemented in Phase 2)                                                                                     | Owner                        | Phase 2                                              |
 | SMS provider                                                                                                                                                | Owner                        | Before production auth (Phase 3 uses DevSmsProvider) |
-| Payment providers                                                                                                                                           | Phase 6 research, then owner | Phase 6                                              |
+| Payment providers (proposal: Payme + Click, ADR 0017)                                                                                                       | Owner                        | Now (blocks Phase 6)                                 |
 | Delivery partners / map provider                                                                                                                            | Phase 6 research, then owner | Phase 6                                              |
 | Production hosting provider (data residency)                                                                                                                | Owner + lawyer               | Before Phase 7                                       |
 | Legal: personal-data residency & registration, offer/terms, privacy, returns, fiscal receipts                                                               | Owner + lawyer               | Before public launch                                 |
