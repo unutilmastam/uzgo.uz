@@ -15,7 +15,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
-| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | IN PROGRESS |
+| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
 | 8     | Mobile apps                                                                    | NOT STARTED |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
 
@@ -79,6 +79,9 @@ privacy) are drafts for a lawyer. The stack smoke test (deploy, HTTPS,
 headers, DB role, backup, restore, rollback, monitor) runs in CI on every push.
 Not done in this phase by design: buying the server/domain, merchant
 contracts, real deploy (owner actions in RUNBOOK §1–3, §10).
+CI run #36 (commit 92716cb) passed incl. e2e, the image build and the stack
+smoke test; CodeQL passed; "Release images" run #1 pushed the three images to
+GHCR.
 
 ## Open decisions
 
