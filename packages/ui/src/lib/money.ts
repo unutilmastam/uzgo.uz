@@ -42,3 +42,25 @@ export function discountPercent(oldPrice: Tiyin, price: Tiyin): number {
   if (before <= 0n || after >= before) return 0;
   return Number(((before - after) * 100n) / before);
 }
+
+/**
+ * Parses a soʻm amount typed by a person ("2 500 000", "12500,50") into a
+ * tiyin decimal string, using string arithmetic only. Returns null if invalid.
+ */
+export function parseSomInput(input: string): string | null {
+  // \s also matches the non-breaking spaces of formatted prices.
+  const cleaned = input.replace(/\s/g, '').replace(/\./g, ',');
+  const match = /^(\d{1,11})(?:,(\d{1,2}))?$/.exec(cleaned);
+  if (!match) return null;
+  const whole = match[1] ?? '0';
+  const fraction = (match[2] ?? '').padEnd(2, '0');
+  const tiyin = BigInt(whole) * 100n + BigInt(fraction);
+  return tiyin.toString();
+}
+
+/** Tiyin → plain soʻm input value: 250000000 → "2500000", 1250050 → "12500,50". */
+export function somInputValue(value: Tiyin): string {
+  const tiyin = toTiyin(value);
+  const rest = tiyin % 100n;
+  return `${(tiyin / 100n).toString()}${rest === 0n ? '' : `,${rest.toString().padStart(2, '0')}`}`;
+}

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import {
   apiErrorSchema,
+  sellerAttributesResponseSchema,
   sellerProductListResponseSchema,
   sellerProductResponseSchema,
   storeMembersResponseSchema,
@@ -196,6 +197,23 @@ describe('seller catalogue management', () => {
     await http().get(`/api/v1${owner.base}/${product.id}`).set('Cookie', staff.cookie).expect(404);
     const after = await http().get('/api/v1/auth/me').set('Cookie', staff.cookie).expect(200);
     expect((after.body as { user: { roles: string[] } }).user.roles).not.toContain('SELLER_STAFF');
+  });
+
+  it('lists the attributes a leaf category allows (inherited), with value ids', async () => {
+    const seller = await login(app);
+    const res = await http()
+      .get(`/api/v1/seller/categories/${smartphones}/attributes`)
+      .set('Cookie', seller.cookie)
+      .expect(200);
+    const items = sellerAttributesResponseSchema.parse(res.body).items;
+    expect(items.map((a) => a.code).sort()).toEqual(['brand', 'color', 'memory']);
+    expect(items.find((a) => a.code === 'color')?.values.map((v) => v.id)).toContain(black);
+    const electronics = await prisma.category.findUniqueOrThrow({ where: { slug: 'electronics' } });
+    await http()
+      .get(`/api/v1/seller/categories/${electronics.id}/attributes`)
+      .set('Cookie', seller.cookie)
+      .expect(400);
+    await http().get(`/api/v1/seller/categories/${smartphones}/attributes`).expect(401);
   });
 
   it('refuses mass assignment of status, store and price fields on create', async () => {

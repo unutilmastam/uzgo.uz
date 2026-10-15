@@ -5,6 +5,7 @@ import {
   type CreateVariant,
   PRODUCT_IMAGE_LIMITS,
   type ProductStatus,
+  type SellerAttribute,
   type SellerProduct,
   type SellerProductList,
   type UpdateProduct,
@@ -215,6 +216,22 @@ export class SellerProductsService {
       current = node.parentId;
     }
     return allowed;
+  }
+
+  /** Attributes (with value ids) a product in this leaf category can use. */
+  async attributesFor(categoryId: string): Promise<SellerAttribute[]> {
+    const allowed = await this.categoryAttributes(categoryId, this.prisma);
+    const rows = await this.prisma.attribute.findMany({
+      where: { id: { in: [...allowed] } },
+      orderBy: [{ sort: 'asc' }, { code: 'asc' }],
+      include: { values: { orderBy: [{ sort: 'asc' }, { code: 'asc' }] } },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name as Names,
+      values: row.values.map((v) => ({ id: v.id, code: v.code, name: v.name as Names })),
+    }));
   }
 
   /** Values must exist, belong to allowed attributes, and be one per attribute. */

@@ -194,3 +194,13 @@ export const PRODUCT_IMAGE_LIMITS = {
   maxSide: 1600,
   types: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
 } as const;
+
+/** GET /api/v1/seller/categories/:id/attributes — what a product in this category can use. */
+export const sellerAttributeSchema = z.object({
+  id: z.uuid(),
+  code: z.string(),
+  name: localizedNameSchema,
+  values: z.array(z.object({ id: z.uuid(), code: z.string(), name: localizedNameSchema })),
+});
+export type SellerAttribute = z.infer<typeof sellerAttributeSchema>;
+export const sellerAttributesResponseSchema = z.object({ items: z.array(sellerAttributeSchema) });

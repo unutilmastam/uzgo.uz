@@ -16,7 +16,13 @@ export class ApiClientError extends Error {
  */
 export async function apiClient<T = unknown>(
   path: string,
-  init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
+  init: {
+    method?: string;
+    body?: unknown;
+    /** Multipart upload; the browser sets the boundary header. */
+    formData?: FormData;
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<T> {
   let res: Response;
   try {
@@ -27,7 +33,11 @@ export async function apiClient<T = unknown>(
         ...(init.body === undefined ? {} : { 'content-type': 'application/json' }),
         ...init.headers,
       },
-      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+      ...(init.formData
+        ? { body: init.formData }
+        : init.body === undefined
+          ? {}
+          : { body: JSON.stringify(init.body) }),
     });
   } catch {
     throw new ApiClientError(0, 'NETWORK_ERROR');
