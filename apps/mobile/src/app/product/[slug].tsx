@@ -25,6 +25,7 @@ import { radius, spacing, useColors } from '@/lib/theme';
 import { useRequest } from '@/lib/use-request';
 import { choose, defaultVariant, findVariant, optionGroups, selectionOf } from '@/lib/variants';
 import { FavoriteButton } from '@/components/favorite-button';
+import { ProductReviews, Stars } from '@/components/reviews';
 import { Stepper } from '@/components/stepper';
 import { useApp } from '@/state/app';
 
@@ -107,6 +108,18 @@ export default function ProductScreen() {
             </AppText>
             <FavoriteButton productId={product.id} slug={product.slug} />
           </View>
+          {product.rating ? (
+            <View style={ui.row} testID="product-rating">
+              <Stars
+                value={product.rating.average}
+                label={t('ratingLabel', { average: product.rating.average })}
+              />
+              <AppText variant="small" color="foreground">
+                {product.rating.average.toFixed(1)}
+              </AppText>
+              <AppText variant="small">{t('reviewCount', { count: product.rating.count })}</AppText>
+            </View>
+          ) : null}
           {variant ? (
             <View style={{ gap: 2 }}>
               <Price value={variant.priceTiyin} />
@@ -212,6 +225,7 @@ export default function ProductScreen() {
             <AppText variant="heading">{t('description')}</AppText>
             <AppText>{localized(product.description, locale)}</AppText>
           </View>
+          <ProductReviews slug={product.slug} rating={product.rating} onChanged={detail.reload} />
         </View>
       </Screen>
     </>

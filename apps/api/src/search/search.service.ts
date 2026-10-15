@@ -4,6 +4,7 @@ import { CatalogService } from '../catalog/catalog.service.js';
 import { AppException } from '../common/http-exception.filter.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ratingOf } from '../reviews/rating.js';
 import { STORAGE, type StorageAdapter } from '../storage/storage.adapter.js';
 import { searchTokens } from './normalize.js';
 
@@ -115,6 +116,8 @@ export class SearchService {
         id: true,
         slug: true,
         title: true,
+        ratingSum: true,
+        ratingCount: true,
         category: { select: { slug: true, icon: true, parent: { select: { icon: true } } } },
         store: { select: { id: true, slug: true, name: true, isDemo: true } },
         images: { orderBy: { sort: 'asc' }, take: 1, select: { storageKey: true, alt: true } },
@@ -142,6 +145,7 @@ export class SearchService {
           store: { ...p.store, name: p.store.name as Names },
           priceTiyin: variant.priceTiyin.toString(),
           compareAtPriceTiyin: variant.compareAtPriceTiyin?.toString() ?? null,
+          rating: ratingOf(p.ratingSum, p.ratingCount),
           image: image
             ? {
                 url: this.storage.publicUrl(image.storageKey),

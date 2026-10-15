@@ -32,6 +32,12 @@ export const variantSchema = z.object({
 });
 export type Variant = z.infer<typeof variantSchema>;
 
+/** Published review aggregate; null while a product has no reviews (Phase 9a). */
+export const ratingSchema = z
+  .object({ average: z.number().min(1).max(5), count: z.number().int().positive() })
+  .nullable();
+export type Rating = z.infer<typeof ratingSchema>;
+
 /** Product card in listings and search results. */
 export const productSummarySchema = z.object({
   id: z.uuid(),
@@ -43,6 +49,7 @@ export const productSummarySchema = z.object({
   priceTiyin: tiyinSchema,
   compareAtPriceTiyin: tiyinSchema.nullable(),
   image: imageSchema.nullable(),
+  rating: ratingSchema,
 });
 export type ProductSummary = z.infer<typeof productSummarySchema>;
 
@@ -63,6 +70,7 @@ export const productDetailResponseSchema = z.object({
     attributes: z.array(optionSchema),
     images: z.array(imageSchema),
     variants: z.array(variantSchema),
+    rating: ratingSchema,
   }),
 });
 export type ProductDetail = z.infer<typeof productDetailResponseSchema>['product'];

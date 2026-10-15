@@ -15,6 +15,8 @@ export type ProductCardProps = {
   image?: ReactNode;
   /** Extra badges shown over the image (e.g. "Demo"). */
   badges?: ReactNode;
+  /** Small line under the title, e.g. the star rating. */
+  meta?: ReactNode;
   /** Action area, e.g. an add-to-cart button. */
   action?: ReactNode;
   href?: string;
@@ -31,6 +33,7 @@ export function ProductCard({
   storeName,
   image,
   badges,
+  meta,
   action,
   href,
   linkAs: Link = 'a',
@@ -76,6 +79,7 @@ export function ProductCard({
             title
           )}
         </h3>
+        {meta}
         {storeName ? <p className="truncate text-xs text-muted-foreground">{storeName}</p> : null}
       </div>
       {action ? <div className="relative z-10 mt-auto px-1 pb-1">{action}</div> : null}

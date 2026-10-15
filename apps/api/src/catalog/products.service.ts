@@ -2,6 +2,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { ProductDetail, StoreDetail } from '@uzgo/contracts';
 import { AppException } from '../common/http-exception.filter.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ratingOf } from '../reviews/rating.js';
 import { STORAGE, type StorageAdapter } from '../storage/storage.adapter.js';
 import { AVAILABLE_CAP, visibleProductWhere } from './visibility.js';
 
@@ -24,6 +25,8 @@ export class ProductsService {
         slug: true,
         title: true,
         description: true,
+        ratingSum: true,
+        ratingCount: true,
         category: {
           select: {
             id: true,
@@ -102,6 +105,7 @@ export class ProductsService {
       slug: product.slug,
       title: product.title as Names,
       description: product.description as Names,
+      rating: ratingOf(product.ratingSum, product.ratingCount),
       category: {
         slug: product.category.slug,
         name: product.category.name as Names,

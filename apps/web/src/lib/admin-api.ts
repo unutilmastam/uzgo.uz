@@ -1,4 +1,5 @@
 import {
+  adminReviewListSchema,
   adminAttributesResponseSchema,
   adminPayoutListResponseSchema,
   adminRefundListResponseSchema,
@@ -126,3 +127,9 @@ export type AdminPickupPoint = z.infer<typeof pointListSchema>['items'][number];
 
 export const getAdminPickupPoints = async () =>
   (await getJson('/admin/delivery/pickup-points', pointListSchema))?.items ?? [];
+
+export const getAdminReviews = (
+  status: 'PUBLISHED' | 'HIDDEN' | undefined,
+  maxRating: number | undefined,
+  page: number,
+) => getJson(`/admin/reviews${qs({ status, maxRating, page })}`, adminReviewListSchema);

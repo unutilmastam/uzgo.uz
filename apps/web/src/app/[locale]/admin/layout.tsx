@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: '/admin', label: t('tabOverview'), exact: true },
     { href: '/admin/stores', label: t('tabStores') },
     { href: '/admin/products', label: t('tabProducts') },
+    { href: '/admin/reviews', label: t('tabReviews') },
     ...(isAdmin(user)
       ? [
           { href: '/admin/catalog', label: t('tabCatalog') },

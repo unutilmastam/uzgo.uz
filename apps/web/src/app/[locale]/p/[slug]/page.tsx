@@ -8,9 +8,11 @@ import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
 import { CategoryIcon } from '@/components/category-icon';
 import { FavoriteButton } from '@/components/product/favorite-button';
 import { ProductPurchase } from '@/components/product/product-purchase';
+import { ReviewForm, ReviewList } from '@/components/product/reviews';
+import { Stars } from '@/components/product/stars';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
-import { getProduct, NotFoundError } from '@/lib/catalog-api';
+import { getProduct, getProductReviews, NotFoundError } from '@/lib/catalog-api';
 import { categoryTint } from '@/lib/category-style';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -47,7 +49,10 @@ function jsonLd(value: unknown): string {
 export default async function ProductPage({ params }: Props) {
   const [{ slug }, t, locale] = await Promise.all([params, getTranslations(), getLocale()]);
   const l = locale as Locale;
-  const product = await load(slug);
+  const [product, reviews] = await Promise.all([
+    load(slug),
+    getProductReviews(slug).catch(() => null),
+  ]);
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const prices = product.variants.map((v) => BigInt(v.priceTiyin));
   const lowest = prices.reduce((a, b) => (b < a ? b : a));
@@ -59,6 +64,15 @@ export default async function ProductPage({ params }: Props) {
     description: product.description[l],
     sku: product.variants[0]?.sku,
     ...(product.images[0] ? { image: product.images.map((i) => i.url) } : {}),
+    ...(product.rating
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: product.rating.average,
+            reviewCount: product.rating.count,
+          },
+        }
+      : {}),
     offers: {
       '@type': 'Offer',
       priceCurrency: 'UZS',
@@ -112,6 +126,22 @@ export default async function ProductPage({ params }: Props) {
               <h1 className="text-2xl leading-tight font-bold md:text-3xl">{product.title[l]}</h1>
               <FavoriteButton productId={product.id} slug={product.slug} />
             </div>
+            {product.rating ? (
+              <a
+                href="#reviews"
+                className="flex w-fit items-center gap-2 text-sm hover:underline"
+                data-testid="product-rating"
+              >
+                <Stars
+                  value={product.rating.average}
+                  label={t('reviews.ratingLabel', { average: product.rating.average })}
+                />
+                <span className="font-medium">{product.rating.average.toFixed(1)}</span>
+                <span className="text-muted-foreground">
+                  {t('reviews.count', { count: product.rating.count })}
+                </span>
+              </a>
+            ) : null}
             <Link
               href={`/s/${product.store.slug}`}
               className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -154,6 +184,53 @@ export default async function ProductPage({ params }: Props) {
           </section>
         ) : null}
       </div>
+      <section aria-labelledby="reviews" className="mt-10 flex flex-col gap-4">
+        <h2 id="reviews" className="scroll-mt-24 text-lg font-semibold">
+          {t('reviews.title')}
+        </h2>
+        {reviews && reviews.total > 0 && product.rating ? (
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-col items-start gap-1">
+              <span className="text-4xl font-bold">{product.rating.average.toFixed(1)}</span>
+              <Stars
+                value={product.rating.average}
+                label={t('reviews.ratingLabel', { average: product.rating.average })}
+              />
+              <span className="text-sm text-muted-foreground">
+                {t('reviews.count', { count: product.rating.count })}
+              </span>
+            </div>
+            <dl className="flex min-w-56 flex-col gap-1 text-sm">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const n = reviews.distribution[star - 1] ?? 0;
+                const percent = Math.round((n / reviews.total) * 100);
+                return (
+                  <div key={star} className="flex items-center gap-2">
+                    <dt className="w-16 shrink-0 text-muted-foreground">
+                      {t('reviews.stars', { count: star })}
+                    </dt>
+                    <dd className="flex flex-1 items-center gap-2">
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                        <span
+                          className="block h-full rounded-full bg-amber-400"
+                          style={{ width: `${String(percent)}%` }}
+                        />
+                      </span>
+                      <span className="w-8 text-right tabular-nums">{n}</span>
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </div>
+        ) : null}
+        <ReviewForm slug={product.slug} />
+        {reviews ? (
+          <ReviewList slug={product.slug} initial={reviews} />
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('reviews.unavailable')}</p>
+        )}
+      </section>
     </div>
   );
 }

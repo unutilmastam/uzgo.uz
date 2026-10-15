@@ -18,6 +18,7 @@ import { ConfigModule, ENV } from './config/config.module.js';
 import type { Env } from './config/env.js';
 import { DeliveryModule } from './delivery/delivery.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
@@ -58,6 +59,7 @@ import { UsersModule } from './users/users.module.js';
     CatalogModule,
     CartModule,
     FavoritesModule,
+    ReviewsModule,
     OrdersModule,
     PaymentsModule,
     LedgerModule,

@@ -35,3 +35,8 @@ export function formatDateTime(iso: string, _locale: Locale): string {
   const date = `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${String(d.getUTCFullYear())}`;
   return `${date}, ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
+
+/** "16.10.2026" in Tashkent time. */
+export function formatDate(iso: string, locale: Locale): string {
+  return formatDateTime(iso, locale).split(',')[0] ?? '';
+}

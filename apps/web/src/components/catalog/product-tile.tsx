@@ -3,6 +3,7 @@ import { Badge } from '@uzgo/ui/components/badge';
 import { ProductCard } from '@uzgo/ui/components/product-card';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { CategoryIcon } from '@/components/category-icon';
+import { Stars } from '@/components/product/stars';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { categoryTint } from '@/lib/category-style';
@@ -44,6 +45,19 @@ export async function ProductTile({
             <CategoryIcon icon={product.categoryIcon} className="size-14" strokeWidth={1.5} />
           </div>
         )
+      }
+      meta={
+        product.rating ? (
+          <p className="flex items-center gap-1 text-xs">
+            <Stars
+              value={product.rating.average}
+              label={t('reviews.ratingLabel', { average: product.rating.average })}
+            />
+            <span className="text-muted-foreground">
+              {t('reviews.countShort', { count: product.rating.count })}
+            </span>
+          </p>
+        ) : null
       }
       badges={product.store.isDemo ? <Badge variant="muted">{t('common.demo')}</Badge> : null}
       labels={{

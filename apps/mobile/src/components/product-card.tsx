@@ -4,14 +4,15 @@ import { discountPercent } from '@uzgo/ui/lib/money';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppText, Badge, Price } from '@/components/ui';
+import { Stars } from '@/components/reviews';
+import { AppText, Badge, Price, styles as ui } from '@/components/ui';
 import { mediaUrl } from '@/lib/config';
 import { localized } from '@/lib/format';
 import { radius, spacing, useColors } from '@/lib/theme';
 import { useApp } from '@/state/app';
 
 export function ProductCard({ product }: { product: ProductSummary }) {
-  const { locale } = useApp();
+  const { locale, t } = useApp();
   const c = useColors();
   const title = localized(product.title, locale);
   const image = mediaUrl(product.image?.url);
@@ -50,6 +51,16 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         <AppText variant="small" color="foreground" numberOfLines={2}>
           {title}
         </AppText>
+        {product.rating ? (
+          <View style={ui.row}>
+            <Stars
+              value={product.rating.average}
+              size={12}
+              label={t('ratingLabel', { average: product.rating.average })}
+            />
+            <AppText variant="small">{`(${String(product.rating.count)})`}</AppText>
+          </View>
+        ) : null}
         <AppText variant="small" numberOfLines={1}>
           {localized(product.store.name, locale)}
         </AppText>

@@ -6,7 +6,9 @@ import {
   type ProductDetail,
   productDetailResponseSchema,
   type ProductList,
+  type ProductReviews,
   productListResponseSchema,
+  productReviewsResponseSchema,
   type StoreDetail,
   storeDetailResponseSchema,
 } from '@uzgo/contracts';
@@ -84,4 +86,10 @@ export async function getProducts(query: ListingQuery): Promise<ProductList> {
   }
   const path = `/catalog/products?${params.toString()}`;
   return productListResponseSchema.parse(await json(await publicGet(path, 30), path));
+}
+
+/** First page of published reviews (cached like the product itself). */
+export async function getProductReviews(slug: string): Promise<ProductReviews> {
+  const path = `/catalog/products/${encodeURIComponent(slug)}/reviews`;
+  return productReviewsResponseSchema.parse(await json(await publicGet(path, 60), path));
 }
