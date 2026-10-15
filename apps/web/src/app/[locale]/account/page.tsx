@@ -1,5 +1,5 @@
 import { Badge } from '@uzgo/ui/components/badge';
-import { Package, Store } from 'lucide-react';
+import { Heart, Package, Store } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { LogoutButtons } from '@/components/auth/logout-buttons';
@@ -72,6 +72,13 @@ export default async function AccountPage() {
         >
           <Package aria-hidden="true" className="size-5 text-primary" />
           {t('myOrders')}
+        </Link>
+        <Link
+          href="/favorites"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 font-semibold hover:border-primary lg:col-start-2"
+        >
+          <Heart aria-hidden="true" className="size-5 text-primary" />
+          {t('favorites')}
         </Link>
         <Link
           href="/seller"

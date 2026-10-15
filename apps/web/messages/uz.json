@@ -197,7 +197,8 @@
     "role_SELLER_STAFF": "Doʻkon xodimi",
     "role_MODERATOR": "Moderator",
     "role_ADMIN": "Administrator",
-    "role_SUPER_ADMIN": "Bosh administrator"
+    "role_SUPER_ADMIN": "Bosh administrator",
+    "favorites": "Sevimlilar"
   },
   "auth": {
     "title": "Kirish yoki roʻyxatdan oʻtish",
@@ -654,5 +655,16 @@
     "phone": "Telefon",
     "error_PAYOUT_EXCEEDS_BALANCE": "Summa mavjud balansdan katta.",
     "error_PAYOUT_DETAILS_MISSING": "Doʻkonda bank rekvizitlari yoʻq."
+  },
+  "favorites": {
+    "title": "Sevimlilar",
+    "emptyTitle": "Hali sevimli mahsulotlar yoʻq",
+    "emptyDescription": "Mahsulot sahifasidagi yurakcha belgisini bosing.",
+    "add": "Sevimlilarga qoʻshish",
+    "remove": "Sevimlilardan olib tashlash",
+    "added": "Sevimlilarga qoʻshildi",
+    "removed": "Sevimlilardan olib tashlandi",
+    "error_generic": "Nimadir xato ketdi. Qayta urinib koʻring.",
+    "error_FAVORITES_LIMIT": "Sevimlilar roʻyxati toʻldi (500 ta)."
   }
 }

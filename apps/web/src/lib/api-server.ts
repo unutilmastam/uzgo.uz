@@ -1,6 +1,7 @@
 import {
   type CurrentUser,
   currentUserResponseSchema,
+  favoritesResponseSchema,
   orderListResponseSchema,
   paymentMethodsResponseSchema,
   type OrderView,
@@ -61,4 +62,11 @@ export async function getPaymentMethods() {
   const res = await apiFetch('/payments/methods');
   if (!res.ok) return { items: ['CASH_ON_DELIVERY' as const], windowMinutes: 30 };
   return paymentMethodsResponseSchema.parse(await res.json());
+}
+
+/** The caller's saved products that are still on sale. */
+export async function getMyFavorites() {
+  const res = await apiFetch('/favorites');
+  if (!res.ok) throw new Error(`API /favorites failed with ${String(res.status)}`);
+  return favoritesResponseSchema.parse(await res.json()).items;
 }

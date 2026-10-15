@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
 import { CategoryIcon } from '@/components/category-icon';
+import { FavoriteButton } from '@/components/product/favorite-button';
 import { ProductPurchase } from '@/components/product/product-purchase';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -107,7 +108,10 @@ export default async function ProductPage({ params }: Props) {
         </div>
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl leading-tight font-bold md:text-3xl">{product.title[l]}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl leading-tight font-bold md:text-3xl">{product.title[l]}</h1>
+              <FavoriteButton productId={product.id} slug={product.slug} />
+            </div>
             <Link
               href={`/s/${product.store.slug}`}
               className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"

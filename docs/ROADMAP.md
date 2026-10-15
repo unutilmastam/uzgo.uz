@@ -17,7 +17,10 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
 | 8     | Mobile apps                                                                    | VERIFIED    |
-| 9     | Further ecosystem services                                                     | NOT STARTED |
+| 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | IN PROGRESS |
+| 9b    | UZGO Food (separate module; provider decisions first)                          | NOT STARTED |
+| 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | NOT STARTED |
+| 9d    | Unified search and AI assistant (AI provider decision first)                   | NOT STARTED |
 
 Phase 0 is documentation only; "VERIFIED" means the documents exist, are
 consistent with SPEC and were reviewed. No code checks apply.
@@ -98,6 +101,12 @@ manual device checklist.
 CI run #47 (commit 2000dd0) passed incl. web and mobile e2e and the
 Android/iOS bundles; "Mobile app" run #1 built an installable Android test
 APK on GitHub (33.7 MB artifact).
+
+Phase 9 notes: no prompt in PROMPTS.md; SPEC says "further services as
+separate modules, only when justified". Asked on 2026-10-15; the owner chose
+all directions ("Hammasi"). Split into 9a–9d, one sub-phase per command
+(CLAUDE.md: never several phases at once); 9b–9d each start with the owner's
+provider decisions.
 
 ## Open decisions
 

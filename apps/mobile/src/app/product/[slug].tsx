@@ -24,6 +24,7 @@ import { localized } from '@/lib/format';
 import { radius, spacing, useColors } from '@/lib/theme';
 import { useRequest } from '@/lib/use-request';
 import { choose, defaultVariant, findVariant, optionGroups, selectionOf } from '@/lib/variants';
+import { FavoriteButton } from '@/components/favorite-button';
 import { Stepper } from '@/components/stepper';
 import { useApp } from '@/state/app';
 
@@ -100,9 +101,12 @@ export default function ProductScreen() {
         </ScrollView>
         <View style={{ padding: spacing.lg, gap: spacing.lg }}>
           {product.store.isDemo ? <Badge tone="muted" label={t('demoNotice')} /> : null}
-          <AppText variant="title" accessibilityRole="header">
-            {title}
-          </AppText>
+          <View style={[ui.between, { alignItems: 'flex-start' }]}>
+            <AppText variant="title" accessibilityRole="header" style={{ flex: 1 }}>
+              {title}
+            </AppText>
+            <FavoriteButton productId={product.id} slug={product.slug} />
+          </View>
           {variant ? (
             <View style={{ gap: 2 }}>
               <Price value={variant.priceTiyin} />

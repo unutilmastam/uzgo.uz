@@ -152,6 +152,14 @@ export default function AccountScreen() {
         <AppText variant="title">{name ? t('greeting', { name }) : t('greetingNoName')}</AppText>
         <AppText variant="muted">{formatPhone(user.phone)}</AppText>
       </View>
+      <Button
+        title={t('favorites')}
+        icon="heart-outline"
+        variant="outline"
+        onPress={() => {
+          router.push('/favorites');
+        }}
+      />
       {isSeller ? (
         <Button
           title={t('sellerPanel')}

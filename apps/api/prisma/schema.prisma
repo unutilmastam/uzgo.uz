@@ -91,6 +91,8 @@ model User {
   rolesGranted    UserRole[]       @relation("RoleGrantedBy")
   sessions        Session[]
   pushDevices     PushDevice[]
+  reviews         ProductReview[]
+  favorites       Favorite[]
   auditEvents     AuditEvent[]
   storeMembers    StoreMember[]
   cart            Cart?
@@ -390,9 +392,14 @@ model Product {
   createdAt      DateTime                 @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime                 @updatedAt @db.Timestamptz(3)
   deletedAt      DateTime?                @db.Timestamptz(3)
+  /// Published review aggregates (kept in the same transaction as reviews, Phase 9a).
+  ratingCount    Int                      @default(0)
+  ratingSum      Int                      @default(0)
   variants       ProductVariant[]
   images         ProductImage[]
   attributes     ProductAttributeValue[]
+  reviews        ProductReview[]
+  favorites      Favorite[]
 
   @@index([status, categoryId])
   @@index([storeId, status])
@@ -592,7 +599,12 @@ model Order {
   paidAt             DateTime?        @db.Timestamptz(3)
   itemsTotalTiyin    BigInt
   deliveryTotalTiyin BigInt
+  /// Promo discount funded by UZGO (items only), Phase 9a.
+  discountTiyin      BigInt           @default(0)
+  /// What the customer pays: items + delivery − discount.
   totalTiyin         BigInt
+  promoCodeId        String?          @db.Uuid
+  promoCode          PromoCode?       @relation(fields: [promoCodeId], references: [id], onDelete: Restrict)
   recipientName      String
   recipientPhone     String
   districtId         String           @db.Uuid
@@ -615,30 +627,41 @@ model Order {
   @@index([status, createdAt])
   @@index([districtId])
   @@index([paymentDueAt])
+  @@index([promoCodeId, userId])
 }
 
 model SellerOrder {
-  id              String            @id @default(uuid(7)) @db.Uuid
-  orderId         String            @db.Uuid
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  storeId         String            @db.Uuid
-  store           Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  orderId            String            @db.Uuid
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  storeId            String            @db.Uuid
+  store              Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)
   /// e.g. UZ-2026-000123-1
-  number          String            @unique
-  status          SellerOrderStatus @default(NEW)
-  itemsTotalTiyin BigInt
-  deliveryTiyin   BigInt
-  totalTiyin      BigInt
+  number             String            @unique
+  status             SellerOrderStatus @default(NEW)
+  itemsTotalTiyin    BigInt
+  deliveryTiyin      BigInt
+  /// Items + delivery (the seller's amount, before any promo).
+  totalTiyin         BigInt
+  /// This shipment's share of the order's promo discount (UZGO pays it to the seller).
+  discountTiyin      BigInt            @default(0)
   /// Marketplace commission for this shipment (snapshot at checkout).
-  commissionTiyin BigInt            @default(0)
+  commissionTiyin    BigInt            @default(0)
   /// Set by the seller when handing over to a courier service.
-  carrier         String?
-  trackingCode    String?
-  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
-  items           OrderItem[]
-  events          OrderEvent[]
-  refunds         Refund[]
+  carrier            String?
+  trackingCode       String?
+  /// When the shipment was delivered (start of the return window).
+  deliveredAt        DateTime?         @db.Timestamptz(3)
+  /// Customer's return request (Phase 9a).
+  returnReason       ReturnReason?
+  returnComment      String?
+  /// Seller/staff note on the return decision (required when rejecting).
+  returnDecisionNote String?
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(3)
+  items              OrderItem[]
+  events             OrderEvent[]
+  refunds            Refund[]
 
   @@index([orderId])
   @@index([storeId, status, createdAt])
@@ -660,6 +683,8 @@ model OrderItem {
   unitPriceTiyin BigInt
   quantity       Int
   lineTotalTiyin BigInt
+  /// Share of the promo discount on this line (fiscal receipt, refunds).
+  discountTiyin  BigInt         @default(0)
   mxikCode       String?
   packageCode    String?
   vatRateBp      Int?
@@ -750,6 +775,8 @@ enum LedgerAccount {
   SELLER_PAYABLE
   /// UZGO commission income.
   PLATFORM_REVENUE
+  /// UZGO-funded promo discounts (expense).
+  PLATFORM_PROMOTIONS
 }
 
 /// Double-entry ledger: every journal (journalId) sums to zero. Positive
@@ -873,4 +900,84 @@ model Notification {
 
   @@index([status, nextAttemptAt])
   @@index([orderId])
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  DAMAGED_IN_DELIVERY
+  CHANGED_MIND
+  OTHER
+}
+
+/// A customer's saved product (Phase 9a).
+model Favorite {
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([userId, productId])
+  @@index([userId, createdAt])
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+/// Product review by a customer who received the product (Phase 9a).
+/// Rating 1–5 (CHECK in the migration); one review per customer and product.
+model ProductReview {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  productId      String       @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating         Int
+  text           String?
+  status         ReviewStatus @default(PUBLISHED)
+  /// Moderator's reason for hiding (shown to staff only).
+  moderationNote String?
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@unique([productId, userId])
+  @@index([productId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+enum PromoKind {
+  PERCENT
+  FIXED
+}
+
+/// UZGO-funded promo code (Phase 9a, ADR 0023). Discounts apply to items,
+/// never to delivery; usage is counted over orders that were not cancelled.
+model PromoCode {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  /// Upper-case A–Z, 0–9 and "-".
+  code             String    @unique
+  kind             PromoKind
+  /// PERCENT: basis points (1000 = 10 %).
+  percentBp        Int?
+  /// FIXED: amount in tiyin.
+  amountTiyin      BigInt?
+  /// PERCENT: optional cap in tiyin.
+  maxDiscountTiyin BigInt?
+  minOrderTiyin    BigInt    @default(0)
+  startsAt         DateTime? @db.Timestamptz(3)
+  endsAt           DateTime? @db.Timestamptz(3)
+  usageLimit       Int?
+  perUserLimit     Int       @default(1)
+  active           Boolean   @default(true)
+  description      String?
+  createdById      String?   @db.Uuid
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  orders           Order[]
+
+  @@index([active, code])
 }
