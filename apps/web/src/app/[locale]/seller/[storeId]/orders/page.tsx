@@ -1,5 +1,6 @@
 import { EmptyState } from '@uzgo/ui/components/empty-state';
 import { Price } from '@uzgo/ui/components/price';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { Package } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
@@ -98,6 +99,22 @@ export default async function SellerOrdersPage({
                 <Price value={shipment.totalTiyin} locale={locale} />
               </dd>
             </div>
+            {shipment.discountTiyin !== '0' ? (
+              <div className="flex flex-col gap-0.5 sm:col-span-2" data-testid="shipment-promo">
+                <dt className="text-muted-foreground">{t('seller.promoCollect')}</dt>
+                <dd>
+                  <Price
+                    value={(
+                      BigInt(shipment.totalTiyin) - BigInt(shipment.discountTiyin)
+                    ).toString()}
+                    locale={locale}
+                  />{' '}
+                  <span className="text-xs text-muted-foreground">
+                    {t('seller.promoNote', { amount: formatPrice(shipment.discountTiyin, locale) })}
+                  </span>
+                </dd>
+              </div>
+            ) : null}
           </dl>
           {['ACCEPTED', 'PACKED', 'HANDED_TO_DELIVERY'].includes(shipment.status) ? (
             <div className="mb-3 rounded-lg bg-muted/50 p-3">

@@ -3,6 +3,7 @@ import {
   deliveryQuoteSchema,
   districtsResponseSchema,
   orderResponseSchema,
+  PROMO_CODE_PATTERN,
   type PaymentMethod,
   paymentMethodsResponseSchema,
   pickupPointsResponseSchema,
@@ -27,6 +28,7 @@ import {
   Screen,
 } from '@/components/ui';
 import { ApiError } from '@/lib/api';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { formatPhone, localized, toApiPhone } from '@/lib/format';
 import { isOnlineMethod, payOrder } from '@/lib/payments';
 import { spacing } from '@/lib/theme';
@@ -50,6 +52,9 @@ export default function CheckoutScreen() {
   const [comment, setComment] = useState('');
   const [method, setMethod] = useState<PaymentMethod>('CASH_ON_DELIVERY');
   const [pending, setPending] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoMalformed, setPromoMalformed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const attempt = useRef<{ body: string; key: string } | null>(null);
 
@@ -81,14 +86,34 @@ export default function CheckoutScreen() {
     if (!districtId) return Promise.resolve(null);
     const params = new URLSearchParams({ districtId, type: deliveryType });
     if (deliveryType === 'PICKUP' && pickupPointId) params.set('pickupPointId', pickupPointId);
+    if (promoCode) params.set('promoCode', promoCode);
     return api.request(`/delivery/quote?${params.toString()}`, { schema: deliveryQuoteSchema });
-  }, [districtId, deliveryType, pickupPointId, cart?.totalTiyin]);
+  }, [districtId, deliveryType, pickupPointId, cart?.totalTiyin, promoCode]);
 
   if (!user) return <Redirect href={{ pathname: '/login', params: { next: '/checkout' } }} />;
   if (regions.error) return <ErrorState error={regions.error} onRetry={regions.reload} />;
   if (!regions.data || !methods.data) return <Loading />;
 
   const q = quote.data;
+  const appliedPromo = q?.promo ?? null;
+  const promoMessage = promoMalformed
+    ? t('promo_PROMO_INVALID')
+    : !promoCode
+      ? null
+      : q?.promoError
+        ? q.promoError === 'PROMO_MIN_ORDER' && q.promoMinOrderTiyin
+          ? t('promo_PROMO_MIN_ORDER', { amount: formatPrice(q.promoMinOrderTiyin, locale) })
+          : t(`promo_${q.promoError}`)
+        : !q
+          ? t('promoAfterAddress')
+          : null;
+
+  function applyPromo() {
+    const code = promoInput.trim().toUpperCase();
+    const valid = PROMO_CODE_PATTERN.test(code);
+    setPromoMalformed(code !== '' && !valid);
+    setPromoCode(valid ? code : '');
+  }
   const formReady =
     recipientName.trim().length >= 2 &&
     recipientPhone.trim().length >= 7 &&
@@ -108,6 +133,7 @@ export default function CheckoutScreen() {
         : { addressLine: addressLine.trim() }),
       ...(comment.trim() ? { comment: comment.trim() } : {}),
       paymentMethod: method,
+      ...(appliedPromo ? { promoCode: appliedPromo.code } : {}),
       expectedTotalTiyin: q.totalTiyin,
     };
     // The same body keeps its Idempotency-Key, so a retry after a network
@@ -141,6 +167,9 @@ export default function CheckoutScreen() {
       if (err instanceof ApiError && err.code === 'PRICE_CHANGED') {
         setError(t('priceChanged'));
         quote.reload();
+      } else if (err instanceof ApiError && err.code.startsWith('PROMO_')) {
+        setPromoCode('');
+        setError(t('promoChanged'));
       } else if (err instanceof ApiError && err.code === 'VALIDATION_FAILED') {
         setError(t('fillAllFields'));
       } else {
@@ -268,6 +297,37 @@ export default function CheckoutScreen() {
       </Card>
 
       <Card>
+        <Field
+          label={t('promoLabel')}
+          value={promoInput}
+          onChangeText={setPromoInput}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={32}
+          onSubmitEditing={applyPromo}
+          testID="promo-input"
+          {...(appliedPromo
+            ? { hint: appliedPromo.description ?? t('promoApplied') }
+            : promoMessage
+              ? { error: promoMessage }
+              : {})}
+        />
+        {promoCode && promoInput.trim().toUpperCase() === promoCode ? (
+          <Button
+            variant="outline"
+            title={t('promoRemove')}
+            onPress={() => {
+              setPromoInput('');
+              setPromoCode('');
+              setPromoMalformed(false);
+            }}
+          />
+        ) : (
+          <Button variant="outline" title={t('promoApply')} onPress={applyPromo} />
+        )}
+      </Card>
+
+      <Card>
         {q ? (
           <View style={{ gap: spacing.sm }}>
             <Row label={t('itemsLine')} value={<Price value={q.itemsTotalTiyin} />} />
@@ -287,6 +347,12 @@ export default function CheckoutScreen() {
               <AppText variant="small">
                 {t('eta', { min: q.etaDays.min, max: q.etaDays.max })}
               </AppText>
+            ) : null}
+            {appliedPromo && q.discountTiyin !== '0' ? (
+              <Row
+                label={t('discountLine', { code: appliedPromo.code })}
+                value={t('discountAmount', { amount: formatPrice(q.discountTiyin, locale) })}
+              />
             ) : null}
             <Divider />
             <Row label={t('total')} value={<Price value={q.totalTiyin} />} strong />

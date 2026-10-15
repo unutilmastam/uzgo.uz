@@ -1,5 +1,6 @@
 import { Badge } from '@uzgo/ui/components/badge';
 import { Price } from '@uzgo/ui/components/price';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { CircleCheck, Store } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -188,6 +189,14 @@ export default async function OrderPage({ params, searchParams }: Props) {
             <div className="mt-3 flex justify-between">
               <span>{t('checkout.deliveryLine')}</span>
               <Price value={order.deliveryTotalTiyin} locale={l} className="font-normal" />
+            </div>
+          ) : null}
+          {order.discountTiyin !== '0' ? (
+            <div className="mt-3 flex justify-between text-success" data-testid="order-discount">
+              <span>{t('checkout.discountLine', { code: order.promoCode ?? '' })}</span>
+              <span>
+                {t('checkout.discountAmount', { amount: formatPrice(order.discountTiyin, l) })}
+              </span>
             </div>
           ) : null}
           <div className="mt-3 flex justify-between border-t border-border pt-3 text-base">

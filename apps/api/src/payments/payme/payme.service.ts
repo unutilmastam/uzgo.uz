@@ -169,8 +169,17 @@ export class PaymeService {
     return order;
   }
 
-  /** Receipt lines for the fiscal receipt (IKPU, package code, VAT, seller TIN). */
+  /**
+   * Fiscal receipt detail (IKPU, package code, VAT, seller TIN). Lines sum to
+   * the payment: Σ(price × count − discount) + shipping = order total. The
+   * promo `discount` per line and the `shipping` block follow the Payme
+   * Merchant API receipt format — verify with Payme before going live.
+   */
   private async receiptDetail(orderId: string) {
+    const order = await this.prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+      select: { deliveryTotalTiyin: true },
+    });
     const items = await this.prisma.orderItem.findMany({
       where: { sellerOrder: { orderId } },
       orderBy: { createdAt: 'asc' },
@@ -178,6 +187,7 @@ export class PaymeService {
         title: true,
         unitPriceTiyin: true,
         quantity: true,
+        discountTiyin: true,
         mxikCode: true,
         packageCode: true,
         vatRateBp: true,
@@ -190,6 +200,7 @@ export class PaymeService {
         title: (item.title as { uz: string }).uz.slice(0, 128),
         price: Number(item.unitPriceTiyin),
         count: item.quantity,
+        ...(item.discountTiyin > 0n ? { discount: Number(item.discountTiyin) } : {}),
         code: item.mxikCode,
         package_code: item.packageCode,
         vat_percent: Math.round((item.vatRateBp ?? 0) / 100),
@@ -198,6 +209,9 @@ export class PaymeService {
           ? { commission_info: { tin: item.sellerOrder.store.taxId } }
           : {}),
       })),
+      ...(order.deliveryTotalTiyin > 0n
+        ? { shipping: { title: 'Yetkazib berish', price: Number(order.deliveryTotalTiyin) } }
+        : {}),
     };
   }
 

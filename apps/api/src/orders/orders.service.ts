@@ -26,6 +26,8 @@ import { planDelivery } from '../delivery/delivery.js';
 import { notifySellers, notifyShipmentStatus } from '../notifications/templates.js';
 import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { allocate } from '../promo/promo.js';
+import { PromoService } from '../promo/promo.service.js';
 import {
   canTransition,
   deriveOrderStatus,
@@ -47,6 +49,7 @@ export type TransitionInput = {
 
 const orderInclude = {
   district: { select: { name: true, region: { select: { name: true } } } },
+  promoCode: { select: { code: true } },
   sellerOrders: {
     orderBy: { number: 'asc' },
     include: {
@@ -162,6 +165,8 @@ export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: numb
     createdAt: order.createdAt.toISOString(),
     itemsTotalTiyin: order.itemsTotalTiyin.toString(),
     deliveryTotalTiyin: order.deliveryTotalTiyin.toString(),
+    discountTiyin: order.discountTiyin.toString(),
+    promoCode: order.promoCode?.code ?? null,
     totalTiyin: order.totalTiyin.toString(),
     address: {
       recipientName: order.recipientName,
@@ -188,6 +193,7 @@ export function toOrderView(order: OrderRow, actor: OrderActor, windowDays: numb
       itemsTotalTiyin: so.itemsTotalTiyin.toString(),
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
+      discountTiyin: so.discountTiyin.toString(),
       ...shipmentExtras(so, actor, windowDays),
     })),
   };
@@ -199,6 +205,7 @@ const notFound = () => new AppException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Orde
 export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly promo: PromoService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
@@ -326,7 +333,20 @@ export class OrdersService {
           itemsTotal += t.items;
           deliveryTotal += t.delivery;
         }
-        const total = itemsTotal + deliveryTotal;
+        // Promo (ADR 0023): the code row is locked so its limits hold under
+        // concurrent checkouts; the discount is split over the lines.
+        const promo = input.promoCode
+          ? await this.promo.evaluate(userId, input.promoCode, itemsTotal, { tx, lock: true })
+          : null;
+        const discount = promo?.discountTiyin ?? 0n;
+        const lineDiscounts = new Map(
+          allocate(
+            discount,
+            lines.map((l) => l.variant.priceTiyin * BigInt(l.quantity)),
+          ).map((d, i) => [lines[i]?.variant.id ?? '', d]),
+        );
+        const discountOf = (variantId: string) => lineDiscounts.get(variantId) ?? 0n;
+        const total = itemsTotal + deliveryTotal - discount;
         if (total.toString() !== input.expectedTotalTiyin) {
           throw new AppException(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -387,6 +407,8 @@ export class OrdersService {
               : null,
             itemsTotalTiyin: itemsTotal,
             deliveryTotalTiyin: deliveryTotal,
+            discountTiyin: discount,
+            promoCodeId: promo?.id ?? null,
             totalTiyin: total,
             recipientName: input.recipientName,
             recipientPhone: phone,
@@ -429,6 +451,7 @@ export class OrdersService {
                   itemsTotalTiyin: totals.items,
                   deliveryTiyin: totals.delivery,
                   totalTiyin: totals.items + totals.delivery,
+                  discountTiyin: storeLines.reduce((sum, l) => sum + discountOf(l.variant.id), 0n),
                   items: {
                     create: storeLines.map((l) => ({
                       variantId: l.variant.id,
@@ -445,6 +468,7 @@ export class OrdersService {
                       unitPriceTiyin: l.variant.priceTiyin,
                       quantity: l.quantity,
                       lineTotalTiyin: l.variant.priceTiyin * BigInt(l.quantity),
+                      discountTiyin: discountOf(l.variant.id),
                       mxikCode: l.variant.mxikCode,
                       packageCode: l.variant.packageCode,
                       vatRateBp: l.variant.vatRateBp,
@@ -666,6 +690,7 @@ export class OrdersService {
       itemsTotalTiyin: so.itemsTotalTiyin.toString(),
       deliveryTiyin: so.deliveryTiyin.toString(),
       totalTiyin: so.totalTiyin.toString(),
+      discountTiyin: so.discountTiyin.toString(),
       ...shipmentExtras(so, 'SELLER', this.env.RETURN_WINDOW_DAYS),
       orderNumber: so.order.number,
       createdAt: so.createdAt.toISOString(),

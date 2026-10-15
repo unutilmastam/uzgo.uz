@@ -22,6 +22,7 @@ import {
   Screen,
 } from '@/components/ui';
 import { ReturnInfo } from '@/components/return-info';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { confirmAction, notify } from '@/lib/dialogs';
 import { formatDateTime, formatPhone, localized } from '@/lib/format';
 import { isOnlineMethod, payOrder } from '@/lib/payments';
@@ -252,6 +253,12 @@ export default function OrderScreen() {
         <Divider />
         <Row label={t('itemsLine')} value={<Price value={order.itemsTotalTiyin} />} />
         <Row label={t('deliveryLine')} value={<Price value={order.deliveryTotalTiyin} />} />
+        {order.discountTiyin !== '0' ? (
+          <Row
+            label={t('discountLine', { code: order.promoCode ?? '' })}
+            value={t('discountAmount', { amount: formatPrice(order.discountTiyin, locale) })}
+          />
+        ) : null}
         <Row label={t('total')} value={<Price value={order.totalTiyin} />} strong />
       </Card>
       {order.sellerOrders.map((shipment) => (

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { phoneInputSchema } from './auth.js';
 import { localizedNameSchema } from './geo.js';
+import { promoCodeInputSchema, promoErrorSchema } from './growth.js';
 import { storeRefSchema, tiyinSchema } from './products.js';
 
 export const ORDER_STATUSES = [
@@ -78,7 +79,9 @@ export const checkoutSchema = z
     pickupPointId: z.uuid().optional(),
     comment: z.string().trim().max(500).optional(),
     paymentMethod: paymentMethodSchema,
-    /** The total the customer saw (items + delivery); a different server total returns PRICE_CHANGED. */
+    /** Optional UZGO promo code (ADR 0023); an unusable code fails the checkout with its PROMO_* error. */
+    promoCode: promoCodeInputSchema.optional(),
+    /** The total the customer saw (items + delivery − discount); a different server total returns PRICE_CHANGED. */
     expectedTotalTiyin: tiyinSchema,
   })
   .refine((v) => v.deliveryType !== 'COURIER' || v.addressLine !== undefined, {
@@ -97,6 +100,7 @@ export const deliveryQuoteQuerySchema = z.strictObject({
   districtId: z.uuid(),
   type: deliveryTypeSchema.default('COURIER'),
   pickupPointId: z.uuid().optional(),
+  promoCode: promoCodeInputSchema.optional(),
 });
 export const deliveryQuoteSchema = z.object({
   available: z.boolean(),
@@ -107,7 +111,15 @@ export const deliveryQuoteSchema = z.object({
   ),
   itemsTotalTiyin: tiyinSchema,
   deliveryTotalTiyin: tiyinSchema,
+  /** Promo discount on items (UZGO pays it); "0" without a usable code. */
+  discountTiyin: tiyinSchema,
+  /** items + delivery − discount: what the customer pays. */
   totalTiyin: tiyinSchema,
+  promo: z.object({ code: z.string(), description: z.string().nullable() }).nullable(),
+  /** Why the requested code cannot be used (null when none was given or it applies). */
+  promoError: promoErrorSchema.nullable(),
+  /** PROMO_MIN_ORDER: the order amount the code needs. */
+  promoMinOrderTiyin: tiyinSchema.nullable(),
 });
 export type DeliveryQuote = z.infer<typeof deliveryQuoteSchema>;
 
@@ -149,7 +161,10 @@ export const sellerOrderViewSchema = z.object({
   items: z.array(orderItemSchema),
   itemsTotalTiyin: tiyinSchema,
   deliveryTiyin: tiyinSchema,
+  /** Items + delivery at full price; the seller is paid on this amount. */
   totalTiyin: tiyinSchema,
+  /** This shipment's share of the promo discount (paid by UZGO, not the seller). */
+  discountTiyin: tiyinSchema,
   /** Statuses the current viewer may move this shipment to. */
   allowedTransitions: z.array(sellerOrderStatusSchema),
   tracking: z.object({ carrier: z.string(), code: z.string() }).nullable(),
@@ -177,6 +192,9 @@ export const orderViewSchema = z.object({
   createdAt: z.string(),
   itemsTotalTiyin: tiyinSchema,
   deliveryTotalTiyin: tiyinSchema,
+  /** UZGO promo discount; totalTiyin = items + delivery − discount. */
+  discountTiyin: tiyinSchema,
+  promoCode: z.string().nullable(),
   totalTiyin: tiyinSchema,
   deliveryType: deliveryTypeSchema,
   pickupPoint: z

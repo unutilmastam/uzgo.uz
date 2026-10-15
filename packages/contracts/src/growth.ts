@@ -93,3 +93,96 @@ export const adminReviewQuerySchema = z.strictObject({
   maxRating: z.coerce.number().int().min(1).max(5).optional(),
   page: reviewPage,
 });
+
+// ─── Promo codes (UZGO-funded, ADR 0023) ────────────────────────────────────
+
+export const PROMO_CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{2,31}$/;
+
+/** A code as typed by the customer: spaces trimmed, case-insensitive. */
+export const promoCodeInputSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(PROMO_CODE_PATTERN, 'Invalid promo code');
+
+export const PROMO_ERRORS = [
+  'PROMO_INVALID',
+  'PROMO_EXPIRED',
+  'PROMO_MIN_ORDER',
+  'PROMO_LIMIT_REACHED',
+] as const;
+export const promoErrorSchema = z.enum(PROMO_ERRORS);
+export type PromoError = z.infer<typeof promoErrorSchema>;
+
+const tiyin = z.string().regex(/^\d+$/);
+const optionalDate = z.iso.datetime({ offset: true }).nullable().optional();
+
+export const adminPromoSchema = z.object({
+  id: z.uuid(),
+  code: z.string(),
+  kind: z.enum(['PERCENT', 'FIXED']),
+  percentBp: z.number().int().nullable(),
+  amountTiyin: tiyin.nullable(),
+  maxDiscountTiyin: tiyin.nullable(),
+  minOrderTiyin: tiyin,
+  startsAt: z.string().nullable(),
+  endsAt: z.string().nullable(),
+  usageLimit: z.number().int().nullable(),
+  perUserLimit: z.number().int(),
+  active: z.boolean(),
+  description: z.string().nullable(),
+  /** Orders that used the code and were not cancelled. */
+  used: z.number().int(),
+  /** Sum of their discounts (UZGO's cost). */
+  discountTotalTiyin: tiyin,
+  createdAt: z.string(),
+});
+export type AdminPromo = z.infer<typeof adminPromoSchema>;
+export const adminPromoListSchema = z.object({ items: z.array(adminPromoSchema) });
+
+/**
+ * POST /api/v1/admin/promo-codes. The discount terms cannot change after
+ * creation (orders refer to them); create a new code instead.
+ */
+export const createPromoSchema = z
+  .strictObject({
+    code: promoCodeInputSchema,
+    kind: z.enum(['PERCENT', 'FIXED']),
+    /** PERCENT: 1–9000 basis points (0.01 %–90 %). */
+    percentBp: z.number().int().min(1).max(9000).optional(),
+    /** FIXED: amount in tiyin. */
+    amountTiyin: tiyin.refine((v) => BigInt(v) > 0n, 'Must be positive').optional(),
+    /** PERCENT only: cap in tiyin. */
+    maxDiscountTiyin: tiyin.refine((v) => BigInt(v) > 0n, 'Must be positive').optional(),
+    minOrderTiyin: tiyin.default('0'),
+    startsAt: optionalDate,
+    endsAt: optionalDate,
+    usageLimit: z.number().int().min(1).max(1_000_000).nullable().optional(),
+    perUserLimit: z.number().int().min(1).max(100).default(1),
+    description: z.string().trim().max(200).nullable().optional(),
+  })
+  .refine(
+    (v) =>
+      v.kind === 'PERCENT'
+        ? v.percentBp !== undefined && v.amountTiyin === undefined
+        : v.amountTiyin !== undefined &&
+          v.percentBp === undefined &&
+          v.maxDiscountTiyin === undefined,
+    { message: 'Set percentBp for PERCENT or amountTiyin for FIXED', path: ['kind'] },
+  )
+  .refine((v) => !v.startsAt || !v.endsAt || new Date(v.startsAt) < new Date(v.endsAt), {
+    message: 'startsAt must be before endsAt',
+    path: ['endsAt'],
+  });
+export type CreatePromo = z.output<typeof createPromoSchema>;
+
+/** PATCH /api/v1/admin/promo-codes/:id — switch off, extend or limit a code. */
+export const updatePromoSchema = z
+  .strictObject({
+    active: z.boolean().optional(),
+    endsAt: optionalDate,
+    usageLimit: z.number().int().min(1).max(1_000_000).nullable().optional(),
+    description: z.string().trim().max(200).nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export type UpdatePromo = z.output<typeof updatePromoSchema>;

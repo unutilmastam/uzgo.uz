@@ -17,6 +17,7 @@ import {
   Screen,
   styles as ui,
 } from '@/components/ui';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { ReturnInfo } from '@/components/return-info';
 import { confirmAction, notify } from '@/lib/dialogs';
 import { formatDateTime, formatPhone, localized } from '@/lib/format';
@@ -123,6 +124,21 @@ function ShipmentCard({ shipment, onChanged }: { shipment: Shipment; onChanged: 
         />
       ))}
       <Row label={t('total')} value={<Price value={shipment.totalTiyin} />} strong />
+      {shipment.discountTiyin !== '0' ? (
+        <View style={{ gap: 2 }}>
+          <Row
+            label={t('promoCollect')}
+            value={
+              <Price
+                value={(BigInt(shipment.totalTiyin) - BigInt(shipment.discountTiyin)).toString()}
+              />
+            }
+          />
+          <AppText variant="small">
+            {t('promoNote', { amount: formatPrice(shipment.discountTiyin, locale) })}
+          </AppText>
+        </View>
+      ) : null}
       <View style={{ gap: 2 }}>
         <AppText variant="small" color="foreground" style={{ fontWeight: '600' }}>
           {t('recipient')}

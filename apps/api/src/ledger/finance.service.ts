@@ -394,6 +394,7 @@ export class FinanceService {
       CUSTOMER_PREPAYMENTS: '0',
       SELLER_PAYABLE: '0',
       PLATFORM_REVENUE: '0',
+      PLATFORM_PROMOTIONS: '0',
     };
     let total = 0n;
     for (const g of groups) {

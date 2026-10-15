@@ -12,8 +12,10 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   type DeliveryQuote,
+  type PromoError,
   type PickupPoint,
   type SellerOrderStatus,
   deliveryQuoteQuerySchema,
@@ -30,6 +32,7 @@ import { AppException } from '../common/http-exception.filter.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { type AppliedPromo, PromoException, PromoService } from '../promo/promo.service.js';
 import { planDelivery } from './delivery.js';
 
 type Names = { uz: string; ru: string };
@@ -92,7 +95,10 @@ const toPoint = (p: {
 @ApiTags('delivery')
 @Controller('delivery')
 export class DeliveryController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly promo: PromoService,
+  ) {}
 
   @Public()
   @Get('pickup-points')
@@ -106,8 +112,13 @@ export class DeliveryController {
     return { items: rows.map(toPoint) };
   }
 
-  /** Delivery price for the caller's cart — the same rules checkout applies. */
+  /**
+   * Delivery price and promo discount for the caller's cart — the same rules
+   * checkout applies. Throttled more tightly: it also answers whether a promo
+   * code exists, so it must not become a code-guessing oracle.
+   */
   @Get('quote')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async quote(
     @CurrentAuth() auth: AuthContext,
     @Query(new ZodValidationPipe(deliveryQuoteQuerySchema))
@@ -133,7 +144,11 @@ export class DeliveryController {
           shipments: [],
           itemsTotalTiyin: '0',
           deliveryTotalTiyin: '0',
+          discountTiyin: '0',
           totalTiyin: '0',
+          promo: null,
+          promoError: null,
+          promoMinOrderTiyin: null,
         };
       }
       throw e;
@@ -145,6 +160,20 @@ export class DeliveryController {
     });
     const items = shipments.reduce((s, x) => s + x.items, 0n);
     const delivery = shipments.reduce((s, x) => s + x.delivery, 0n);
+    // Same promo rules as checkout (without the lock: nothing is reserved here).
+    let promo: AppliedPromo | null = null;
+    let promoError: PromoError | null = null;
+    let promoMinOrderTiyin: string | null = null;
+    if (query.promoCode) {
+      try {
+        promo = await this.promo.evaluate(auth.user.id, query.promoCode, items);
+      } catch (e) {
+        if (!(e instanceof PromoException)) throw e;
+        promoError = e.promoError;
+        promoMinOrderTiyin = e.minOrderTiyin?.toString() ?? null;
+      }
+    }
+    const discount = promo?.discountTiyin ?? 0n;
     return {
       available: true,
       etaDays: plan.etaDays,
@@ -155,7 +184,11 @@ export class DeliveryController {
       })),
       itemsTotalTiyin: items.toString(),
       deliveryTotalTiyin: delivery.toString(),
-      totalTiyin: (items + delivery).toString(),
+      discountTiyin: discount.toString(),
+      totalTiyin: (items + delivery - discount).toString(),
+      promo: promo ? { code: promo.code, description: promo.description } : null,
+      promoError,
+      promoMinOrderTiyin,
     };
   }
 }

@@ -102,13 +102,16 @@ const REFUND_REASON: Partial<Record<SellerOrderStatus, string>> = {
 
 /**
  * Money side of a shipment status change (called inside the transition's
- * transaction):
- * - DELIVERED, paid online: prepayment → seller payable + UZGO commission;
- *   cash on delivery: the seller owes the commission.
+ * transaction). `total` is the shipment at full price, `discount` its share of
+ * a UZGO promo (ADR 0023): the customer paid total − discount, the seller is
+ * still owed total − commission, and UZGO books the discount as an expense.
+ * - DELIVERED, paid online: prepayment + promo expense → seller payable + UZGO
+ *   commission; cash on delivery (the seller collected total − discount): the
+ *   seller owes the commission and is owed the discount.
  * - RETURNED: the delivery entry is reversed.
  * - Cancelled / failed / returned after an online payment: a PENDING refund
- *   for the shipment total (DEV_ONLINE refunds complete at once), unless the
- *   provider already returned the whole payment.
+ *   of what the customer paid for the shipment (DEV_ONLINE refunds complete at
+ *   once), unless the provider already returned the whole payment.
  */
 export async function onShipmentTransition(
   tx: Tx,
@@ -123,6 +126,7 @@ export async function onShipmentTransition(
       orderId: true,
       storeId: true,
       totalTiyin: true,
+      discountTiyin: true,
       commissionTiyin: true,
       order: { select: { paymentMethod: true, paidAt: true } },
     },
@@ -131,6 +135,8 @@ export async function onShipmentTransition(
     shipment.order.paymentMethod !== 'CASH_ON_DELIVERY' && shipment.order.paidAt !== null;
   const cod = shipment.order.paymentMethod === 'CASH_ON_DELIVERY';
   const total = shipment.totalTiyin;
+  const discount = shipment.discountTiyin;
+  const paid = total - discount;
   const commission = shipment.commissionTiyin;
   const refs = { orderId: shipment.orderId, sellerOrderId: shipment.id };
 
@@ -139,7 +145,8 @@ export async function onShipmentTransition(
       await postJournal(
         tx,
         [
-          { account: 'CUSTOMER_PREPAYMENTS', amountTiyin: total },
+          { account: 'CUSTOMER_PREPAYMENTS', amountTiyin: paid },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: discount },
           {
             account: 'SELLER_PAYABLE',
             amountTiyin: -(total - commission),
@@ -153,7 +160,12 @@ export async function onShipmentTransition(
       await postJournal(
         tx,
         [
-          { account: 'SELLER_PAYABLE', amountTiyin: commission, storeId: shipment.storeId },
+          {
+            account: 'SELLER_PAYABLE',
+            amountTiyin: commission - discount,
+            storeId: shipment.storeId,
+          },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: discount },
           { account: 'PLATFORM_REVENUE', amountTiyin: -commission },
         ],
         { kind: 'cod_commission', ...refs },
@@ -168,17 +180,23 @@ export async function onShipmentTransition(
         [
           { account: 'SELLER_PAYABLE', amountTiyin: total - commission, storeId: shipment.storeId },
           { account: 'PLATFORM_REVENUE', amountTiyin: commission },
-          { account: 'CUSTOMER_PREPAYMENTS', amountTiyin: -total },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: -discount },
+          { account: 'CUSTOMER_PREPAYMENTS', amountTiyin: -paid },
         ],
         { kind: 'return_reversal', ...refs },
       );
     } else if (cod) {
-      // The seller returns the cash; UZGO gives the commission back.
+      // The seller returns the cash; UZGO gives the commission back and takes the discount back.
       await postJournal(
         tx,
         [
           { account: 'PLATFORM_REVENUE', amountTiyin: commission },
-          { account: 'SELLER_PAYABLE', amountTiyin: -commission, storeId: shipment.storeId },
+          { account: 'PLATFORM_PROMOTIONS', amountTiyin: -discount },
+          {
+            account: 'SELLER_PAYABLE',
+            amountTiyin: -(commission - discount),
+            storeId: shipment.storeId,
+          },
         ],
         { kind: 'return_reversal', ...refs },
       );
@@ -196,7 +214,7 @@ export async function onShipmentTransition(
         orderId: shipment.orderId,
         sellerOrderId: shipment.id,
         paymentAttemptId: payment.id,
-        amountTiyin: total,
+        amountTiyin: paid,
         reason,
       },
     });

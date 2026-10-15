@@ -1,4 +1,5 @@
 import {
+  adminPromoListSchema,
   adminReviewListSchema,
   adminAttributesResponseSchema,
   adminPayoutListResponseSchema,
@@ -133,3 +134,6 @@ export const getAdminReviews = (
   maxRating: number | undefined,
   page: number,
 ) => getJson(`/admin/reviews${qs({ status, maxRating, page })}`, adminReviewListSchema);
+
+export const getAdminPromos = async () =>
+  (await getJson('/admin/promo-codes', adminPromoListSchema))?.items ?? [];

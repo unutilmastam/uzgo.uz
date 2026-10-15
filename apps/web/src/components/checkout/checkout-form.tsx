@@ -10,6 +10,7 @@ import {
   orderResponseSchema,
   type PaymentMethod,
   type PickupPoint,
+  PROMO_CODE_PATTERN,
   pickupPointsResponseSchema,
   type Region,
 } from '@uzgo/contracts';
@@ -17,6 +18,7 @@ import { Button } from '@uzgo/ui/components/button';
 import { EmptyState } from '@uzgo/ui/components/empty-state';
 import { Input } from '@uzgo/ui/components/input';
 import { Price } from '@uzgo/ui/components/price';
+import { formatPrice } from '@uzgo/ui/lib/money';
 import { Skeleton } from '@uzgo/ui/components/skeleton';
 import { Banknote, CreditCard, FlaskConical, ShoppingCart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -68,6 +70,7 @@ export function CheckoutForm({
     comment: useId(),
     error: useId(),
     point: useId(),
+    promo: useId(),
   };
   // One key per checkout attempt: retries (double clicks, network errors) cannot create a second order.
   const idempotencyKey = useRef<string>(crypto.randomUUID());
@@ -91,6 +94,10 @@ export function CheckoutForm({
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  /** Typed promo code and the one sent to the quote (server decides if it applies). */
+  const [promoInput, setPromoInput] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoMalformed, setPromoMalformed] = useState(false);
 
   async function loadCart() {
     const next = cartResponseSchema.parse(await apiClient('/cart')).cart;
@@ -125,13 +132,14 @@ export function CheckoutForm({
   }, [place.districtId, deliveryType]);
 
   // The server prices delivery with the same rules checkout applies.
-  const quoteKey = `${place.districtId}|${deliveryType}|${pointId}|${cart?.totalTiyin ?? ''}`;
+  const quoteKey = `${place.districtId}|${deliveryType}|${pointId}|${cart?.totalTiyin ?? ''}|${promoCode}`;
   useEffect(() => {
-    const [districtId, type, point] = quoteKey.split('|');
+    const [districtId, type, point, , promo] = quoteKey.split('|');
     if (!districtId || (type === 'PICKUP' && !point)) return;
     let cancelled = false;
     const query = new URLSearchParams({ districtId, type: type ?? 'COURIER' });
     if (type === 'PICKUP' && point) query.set('pickupPointId', point);
+    if (promo) query.set('promoCode', promo);
     void apiClient(`/delivery/quote?${query.toString()}`)
       .then((json) => {
         if (!cancelled) setQuote(deliveryQuoteSchema.parse(json));
@@ -147,6 +155,27 @@ export function CheckoutForm({
   const quoteReady =
     quote !== null && place.districtId !== '' && (deliveryType === 'COURIER' || pointId !== '');
   const total = quoteReady ? quote.totalTiyin : (cart?.totalTiyin ?? '0');
+  const appliedPromo = quoteReady ? quote.promo : null;
+  const promoMessage = promoMalformed
+    ? t('checkout.promo_PROMO_INVALID')
+    : promoCode === ''
+      ? null
+      : quoteReady && quote.promoError
+        ? quote.promoError === 'PROMO_MIN_ORDER' && quote.promoMinOrderTiyin
+          ? t('checkout.promo_PROMO_MIN_ORDER', {
+              amount: formatPrice(quote.promoMinOrderTiyin, locale),
+            })
+          : t(`checkout.promo_${quote.promoError}`)
+        : !quoteReady
+          ? t('checkout.promoAfterAddress')
+          : null;
+
+  function applyPromo() {
+    const code = promoInput.trim().toUpperCase();
+    const valid = PROMO_CODE_PATTERN.test(code);
+    setPromoMalformed(code !== '' && !valid);
+    setPromoCode(valid ? code : '');
+  }
 
   async function goToPayment(number: string) {
     setRedirecting(true);
@@ -174,6 +203,7 @@ export function CheckoutForm({
             : { pickupPointId: pointId }),
           ...(comment.trim() ? { comment: comment.trim() } : {}),
           paymentMethod: method,
+          ...(appliedPromo ? { promoCode: appliedPromo.code } : {}),
           expectedTotalTiyin: total,
         },
       });
@@ -202,6 +232,11 @@ export function CheckoutForm({
         await loadCart();
         setQuote(null);
         setError(t('checkout.priceChanged'));
+      } else if (code.startsWith('PROMO_')) {
+        // The code stopped applying (limit reached, expired): show the new total.
+        setQuote(null);
+        setPromoCode('');
+        setError(t('checkout.promoChanged'));
       } else {
         setError(KNOWN_ERRORS.has(code) ? t(`checkout.error_${code}`) : t('auth.error_generic'));
       }
@@ -438,6 +473,58 @@ export function CheckoutForm({
         <p className="mb-3 text-xs text-muted-foreground">
           {t('checkout.shipmentsNote', { count: cart.groups.length })}
         </p>
+        <div className="mb-3 flex flex-col gap-1.5">
+          <label htmlFor={ids.promo} className="text-sm font-medium">
+            {t('checkout.promoLabel')}
+          </label>
+          <div className="flex gap-2">
+            <Input
+              id={ids.promo}
+              value={promoInput}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={32}
+              onChange={(event) => {
+                setPromoInput(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applyPromo();
+                }
+              }}
+              aria-describedby={`${ids.promo}-status`}
+              data-testid="promo-input"
+            />
+            {promoCode && promoInput.trim().toUpperCase() === promoCode ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPromoInput('');
+                  setPromoCode('');
+                  setPromoMalformed(false);
+                }}
+              >
+                {t('checkout.promoRemove')}
+              </Button>
+            ) : (
+              <Button type="button" variant="outline" onClick={applyPromo}>
+                {t('checkout.promoApply')}
+              </Button>
+            )}
+          </div>
+          <p id={`${ids.promo}-status`} aria-live="polite" className="text-xs">
+            {appliedPromo ? (
+              <span className="text-success">
+                {appliedPromo.description ?? t('checkout.promoApplied')}
+              </span>
+            ) : promoMessage ? (
+              <span className="text-destructive">{promoMessage}</span>
+            ) : null}
+          </p>
+        </div>
         <dl className="mb-3 flex flex-col gap-1 text-sm">
           <div className="flex justify-between">
             <dt>{t('checkout.itemsLine')}</dt>
@@ -457,6 +544,17 @@ export function CheckoutForm({
               )}
             </dd>
           </div>
+          {appliedPromo && quote && quote.discountTiyin !== '0' ? (
+            <div
+              className="flex justify-between gap-3 text-success"
+              data-testid="checkout-discount"
+            >
+              <dt>{t('checkout.discountLine', { code: appliedPromo.code })}</dt>
+              <dd>
+                {t('checkout.discountAmount', { amount: formatPrice(quote.discountTiyin, locale) })}
+              </dd>
+            </div>
+          ) : null}
           {quoteReady && quote.etaDays ? (
             <p className="text-xs text-muted-foreground">
               {t('checkout.eta', { min: quote.etaDays.min, max: quote.etaDays.max })}

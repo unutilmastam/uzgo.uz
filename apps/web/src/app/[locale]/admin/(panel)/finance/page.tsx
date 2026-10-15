@@ -13,6 +13,7 @@ const ACCOUNTS = [
   'CUSTOMER_PREPAYMENTS',
   'SELLER_PAYABLE',
   'PLATFORM_REVENUE',
+  'PLATFORM_PROMOTIONS',
 ] as const;
 
 /** Money work for admins: refunds to perform, payouts to send, ledger balances. */
