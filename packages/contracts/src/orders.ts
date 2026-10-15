@@ -3,8 +3,15 @@ import { phoneInputSchema } from './auth.js';
 import { localizedNameSchema } from './geo.js';
 import { storeRefSchema, tiyinSchema } from './products.js';
 
-export const ORDER_STATUSES = ['CREATED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] as const;
+export const ORDER_STATUSES = [
+  'AWAITING_PAYMENT',
+  'CREATED',
+  'CONFIRMED',
+  'COMPLETED',
+  'CANCELLED',
+] as const;
 export const SELLER_ORDER_STATUSES = [
+  'PENDING_PAYMENT',
   'NEW',
   'ACCEPTED',
   'PACKED',
@@ -18,6 +25,24 @@ export const SELLER_ORDER_STATUSES = [
   'RETURN_REJECTED',
 ] as const;
 export const orderStatusSchema = z.enum(ORDER_STATUSES);
+
+/** `DEV_ONLINE` exists only in development and tests (simulated payment). */
+export const PAYMENT_METHODS = ['CASH_ON_DELIVERY', 'PAYME', 'CLICK', 'DEV_ONLINE'] as const;
+export const paymentMethodSchema = z.enum(PAYMENT_METHODS);
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
+export const ONLINE_PAYMENT_METHODS = ['PAYME', 'CLICK', 'DEV_ONLINE'] as const;
+
+/** GET /api/v1/payments/methods — what checkout can offer right now. */
+export const paymentMethodsResponseSchema = z.object({ items: z.array(paymentMethodSchema) });
+
+export const paymentStatusSchema = z.enum([
+  'NOT_REQUIRED',
+  'UNPAID',
+  'PAID',
+  'EXPIRED',
+  'REFUNDED',
+]);
+export type PaymentState = z.infer<typeof paymentStatusSchema>;
 export const sellerOrderStatusSchema = z.enum(SELLER_ORDER_STATUSES);
 export type SellerOrderStatus = z.infer<typeof sellerOrderStatusSchema>;
 
@@ -28,7 +53,7 @@ export const checkoutSchema = z.strictObject({
   districtId: z.uuid(),
   addressLine: z.string().trim().min(5).max(200),
   comment: z.string().trim().max(500).optional(),
-  paymentMethod: z.literal('CASH_ON_DELIVERY'),
+  paymentMethod: paymentMethodSchema,
   /** The total the customer saw; a different server total returns PRICE_CHANGED. */
   expectedTotalTiyin: tiyinSchema,
 });
@@ -63,7 +88,13 @@ export type SellerOrderView = z.infer<typeof sellerOrderViewSchema>;
 export const orderViewSchema = z.object({
   number: z.string(),
   status: orderStatusSchema,
-  paymentMethod: z.literal('CASH_ON_DELIVERY'),
+  paymentMethod: paymentMethodSchema,
+  /** Online orders only; cash on delivery is NOT_REQUIRED. */
+  payment: z.object({
+    status: paymentStatusSchema,
+    dueAt: z.string().nullable(),
+    paidAt: z.string().nullable(),
+  }),
   createdAt: z.string(),
   itemsTotalTiyin: tiyinSchema,
   deliveryTotalTiyin: tiyinSchema,

@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type {
   CheckoutInput,
   OrderView,
@@ -8,6 +8,13 @@ import { isVariantSellable, variantSelect } from '../cart/cart.service.js';
 import { sha256 } from '../common/crypto.js';
 import { AppException } from '../common/http-exception.filter.js';
 import { normalizePhone } from '../auth/phone.js';
+import { ENV } from '../config/config.module.js';
+import type { Env } from '../config/env.js';
+import {
+  enabledPaymentMethods,
+  FISCAL_METHODS,
+  ONLINE_METHODS,
+} from '../payments/payment-methods.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -59,11 +66,28 @@ export function allowedFor(
   return SELLER_ORDER_TRANSITIONS[status].filter((t) => t.actors.includes(actor)).map((t) => t.to);
 }
 
+function paymentView(order: {
+  paymentMethod: string;
+  status: string;
+  paymentDueAt: Date | null;
+  paidAt: Date | null;
+}): OrderView['payment'] {
+  const due = order.paymentDueAt?.toISOString() ?? null;
+  const paidAt = order.paidAt?.toISOString() ?? null;
+  if (order.paymentMethod === 'CASH_ON_DELIVERY') {
+    return { status: 'NOT_REQUIRED', dueAt: null, paidAt: null };
+  }
+  if (order.paidAt) return { status: 'PAID', dueAt: due, paidAt };
+  if (order.status === 'AWAITING_PAYMENT') return { status: 'UNPAID', dueAt: due, paidAt: null };
+  return { status: 'EXPIRED', dueAt: due, paidAt: null };
+}
+
 export function toOrderView(order: OrderRow, actor: OrderActor): OrderView {
   return {
     number: order.number,
     status: order.status,
     paymentMethod: order.paymentMethod,
+    payment: paymentView(order),
     createdAt: order.createdAt.toISOString(),
     itemsTotalTiyin: order.itemsTotalTiyin.toString(),
     deliveryTotalTiyin: order.deliveryTotalTiyin.toString(),
@@ -102,15 +126,26 @@ const notFound = () => new AppException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Orde
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(ENV) private readonly env: Env,
+  ) {}
 
   /**
-   * Cash-on-delivery checkout of the user's whole cart, in one transaction:
+   * Checkout of the user's whole cart, in one transaction:
    * idempotency key → server-side totals → conditional stock decrements →
    * Order + one SellerOrder per store + item snapshots + events → cart cleared.
    */
   async checkout(userId: string, input: CheckoutInput, idempotencyKey: string): Promise<OrderView> {
     const requestHash = sha256(canonical(input));
+    if (!enabledPaymentMethods(this.env).includes(input.paymentMethod)) {
+      throw new AppException(
+        HttpStatus.BAD_REQUEST,
+        'PAYMENT_METHOD_UNAVAILABLE',
+        'This payment method is not available',
+      );
+    }
+    const online = ONLINE_METHODS.has(input.paymentMethod);
     return this.prisma.$transaction(
       async (tx) => {
         // Concurrent requests with the same key wait here for the first one to finish.
@@ -154,6 +189,22 @@ export class OrdersService {
             'CART_HAS_ISSUES',
             'Some cart items are unavailable',
           );
+        }
+
+        // Online payments with a real provider print fiscal receipts: every item
+        // needs its IKPU (MXIK) and package code, and demo stores are never sold online.
+        if (FISCAL_METHODS.has(input.paymentMethod)) {
+          const missing = lines.filter(
+            (l) => !l.variant.mxikCode || !l.variant.packageCode || l.variant.product.store.isDemo,
+          );
+          if (missing.length > 0) {
+            throw new AppException(
+              HttpStatus.CONFLICT,
+              'FISCAL_DATA_MISSING',
+              'Some items cannot be paid online yet',
+              { variantIds: missing.map((l) => l.variant.id) },
+            );
+          }
         }
 
         const district = await tx.district.findFirst({
@@ -208,6 +259,10 @@ export class OrdersService {
             number,
             userId,
             paymentMethod: input.paymentMethod,
+            status: online ? 'AWAITING_PAYMENT' : 'CREATED',
+            paymentDueAt: online
+              ? new Date(Date.now() + this.env.PAYMENT_WINDOW_MINUTES * 60_000)
+              : null,
             itemsTotalTiyin: itemsTotal,
             deliveryTotalTiyin: deliveryTotal,
             totalTiyin: total,
@@ -228,6 +283,7 @@ export class OrdersService {
                 );
                 return {
                   number: `${number}-${String(index + 1)}`,
+                  status: online ? 'PENDING_PAYMENT' : 'NEW',
                   storeId: storeLines[0]?.variant.product.store.id ?? '',
                   itemsTotalTiyin: subtotal,
                   deliveryTiyin: 0n,
@@ -262,13 +318,13 @@ export class OrdersService {
 
         await tx.orderEvent.createMany({
           data: [
-            { orderId: order.id, actorId: userId, actorType: 'CUSTOMER', toStatus: 'CREATED' },
+            { orderId: order.id, actorId: userId, actorType: 'CUSTOMER', toStatus: order.status },
             ...order.sellerOrders.map((so) => ({
               orderId: order.id,
               sellerOrderId: so.id,
               actorId: userId,
               actorType: 'CUSTOMER' as const,
-              toStatus: 'NEW',
+              toStatus: so.status,
             })),
           ],
         });
@@ -426,7 +482,11 @@ export class OrdersService {
       throw new AppException(HttpStatus.FORBIDDEN, 'FORBIDDEN', 'Not a member of this store');
     }
     const shipments = await this.prisma.sellerOrder.findMany({
-      where: { storeId: { in: storeId ? [storeId] : storeIds } },
+      // Unpaid online orders stay hidden from sellers until the payment arrives.
+      where: {
+        storeId: { in: storeId ? [storeId] : storeIds },
+        status: { not: 'PENDING_PAYMENT' },
+      },
       orderBy: { createdAt: 'desc' },
       take: 100,
       include: {
@@ -474,64 +534,76 @@ export class OrdersService {
   private async transition(
     sellerOrderId: string,
     to: SellerOrderStatus,
-    by: { actor: OrderActor; userId: string; reason: string | undefined },
+    by: { actor: OrderActor; userId: string | null; reason: string | undefined },
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx: Tx) => {
-      const [locked] = await tx.$queryRaw<{ status: SellerOrderStatus; orderId: string }[]>`
-        SELECT "status", "orderId" FROM "SellerOrder" WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
-      if (!locked) throw notFound();
-      if (!canTransition(locked.status, to, by.actor)) {
-        throw new AppException(
-          HttpStatus.CONFLICT,
-          'INVALID_STATE_TRANSITION',
-          `Cannot change status from ${locked.status} to ${to}`,
-          { from: locked.status, to },
-        );
-      }
-      await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: to } });
-      if (RESTOCK_STATUSES.has(to)) {
-        const items = await tx.orderItem.findMany({
-          where: { sellerOrderId },
-          orderBy: { variantId: 'asc' },
-          select: { variantId: true, quantity: true },
-        });
-        for (const item of items) {
-          await tx.$executeRaw`
-            UPDATE "ProductVariant" SET "stock" = "stock" + ${item.quantity}, "updatedAt" = now()
-            WHERE "id" = ${item.variantId}::uuid`;
-        }
-      }
-      await tx.orderEvent.create({
-        data: {
-          orderId: locked.orderId,
-          sellerOrderId,
-          actorId: by.userId,
-          actorType: by.actor,
-          fromStatus: locked.status,
-          toStatus: to,
-          reason: by.reason ?? null,
-        },
-      });
+    await this.prisma.$transaction((tx: Tx) => transitionInTx(tx, sellerOrderId, to, by));
+  }
+}
 
-      const [order] = await tx.$queryRaw<{ status: string }[]>`
-        SELECT "status" FROM "Order" WHERE "id" = ${locked.orderId}::uuid FOR UPDATE`;
-      const siblings = await tx.sellerOrder.findMany({
-        where: { orderId: locked.orderId },
-        select: { status: true },
-      });
-      const next = deriveOrderStatus(siblings.map((s) => s.status));
-      if (order && order.status !== next) {
-        await tx.order.update({ where: { id: locked.orderId }, data: { status: next } });
-        await tx.orderEvent.create({
-          data: {
-            orderId: locked.orderId,
-            actorId: by.userId,
-            actorType: 'SYSTEM',
-            fromStatus: order.status,
-            toStatus: next,
-          },
-        });
-      }
+/**
+ * One shipment transition inside an existing transaction: row lock, state
+ * table check, restock, events, derived order status. Used by order routes and
+ * by the payments module (payment confirmed / unpaid order cancelled).
+ */
+export async function transitionInTx(
+  tx: Tx,
+  sellerOrderId: string,
+  to: SellerOrderStatus,
+  by: { actor: OrderActor; userId: string | null; reason: string | undefined },
+): Promise<void> {
+  const [locked] = await tx.$queryRaw<{ status: SellerOrderStatus; orderId: string }[]>`
+    SELECT "status", "orderId" FROM "SellerOrder" WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
+  if (!locked) throw notFound();
+  if (!canTransition(locked.status, to, by.actor)) {
+    throw new AppException(
+      HttpStatus.CONFLICT,
+      'INVALID_STATE_TRANSITION',
+      `Cannot change status from ${locked.status} to ${to}`,
+      { from: locked.status, to },
+    );
+  }
+  await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: to } });
+  if (RESTOCK_STATUSES.has(to)) {
+    const items = await tx.orderItem.findMany({
+      where: { sellerOrderId },
+      orderBy: { variantId: 'asc' },
+      select: { variantId: true, quantity: true },
+    });
+    for (const item of items) {
+      await tx.$executeRaw`
+        UPDATE "ProductVariant" SET "stock" = "stock" + ${item.quantity}, "updatedAt" = now()
+        WHERE "id" = ${item.variantId}::uuid`;
+    }
+  }
+  await tx.orderEvent.create({
+    data: {
+      orderId: locked.orderId,
+      sellerOrderId,
+      actorId: by.userId,
+      actorType: by.actor,
+      fromStatus: locked.status,
+      toStatus: to,
+      reason: by.reason ?? null,
+    },
+  });
+
+  const [order] = await tx.$queryRaw<{ status: string }[]>`
+    SELECT "status" FROM "Order" WHERE "id" = ${locked.orderId}::uuid FOR UPDATE`;
+  const siblings = await tx.sellerOrder.findMany({
+    where: { orderId: locked.orderId },
+    select: { status: true },
+  });
+  const next = deriveOrderStatus(siblings.map((s) => s.status));
+  if (order && order.status !== next) {
+    await tx.order.update({ where: { id: locked.orderId }, data: { status: next } });
+    await tx.orderEvent.create({
+      data: {
+        orderId: locked.orderId,
+        actorId: by.userId,
+        actorType: 'SYSTEM',
+        fromStatus: order.status,
+        toStatus: next,
+      },
     });
   }
 }

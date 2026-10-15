@@ -57,6 +57,36 @@ export const envSchema = z
      * stored in the database still apply.
      */
     RATE_LIMIT_DISABLED: booleanString.default(false),
+    /** Unpaid online orders are cancelled (stock released) after this many minutes. */
+    PAYMENT_WINDOW_MINUTES: z.coerce
+      .number()
+      .int()
+      .min(5)
+      .max(24 * 60)
+      .default(30),
+    /** Public web origin for payment return URLs, e.g. https://uzgo.uz (defaults to the first CORS origin). */
+    WEB_PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
+    /** DEVELOPMENT / TESTS ONLY: offers a simulated online payment. Refused in production. */
+    DEV_PAYMENTS_ENABLED: booleanString.default(false),
+    /** Payme Merchant API (ADR 0017). The method is offered only when both are set. */
+    PAYME_MERCHANT_ID: z.string().min(1).max(64).optional(),
+    PAYME_KEY: z.string().min(8).max(200).optional(),
+    PAYME_CHECKOUT_URL: z.url({ protocol: /^https$/ }).default('https://checkout.paycom.uz'),
+    /** Click SHOP API (ADR 0017). The method is offered only when all four are set. */
+    CLICK_SERVICE_ID: z
+      .string()
+      .regex(/^\d{1,12}$/)
+      .optional(),
+    CLICK_MERCHANT_ID: z
+      .string()
+      .regex(/^\d{1,12}$/)
+      .optional(),
+    CLICK_MERCHANT_USER_ID: z
+      .string()
+      .regex(/^\d{1,12}$/)
+      .optional(),
+    CLICK_SECRET_KEY: z.string().min(8).max(200).optional(),
+    CLICK_PAY_URL: z.url({ protocol: /^https$/ }).default('https://my.click.uz/services/pay'),
     /** local = DevLocalDiskStorage (development/tests). An S3-compatible adapter comes before launch. */
     STORAGE_DRIVER: z.enum(['local']).default('local'),
     STORAGE_LOCAL_DIR: z.string().min(1).default('./uploads'),
@@ -83,6 +113,13 @@ export const envSchema = z
         code: 'custom',
         path: ['RATE_LIMIT_DISABLED'],
         message: 'rate limiting can be disabled only when NODE_ENV=test',
+      });
+    }
+    if (env.DEV_PAYMENTS_ENABLED && env.NODE_ENV === 'production') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DEV_PAYMENTS_ENABLED'],
+        message: 'simulated payments cannot be enabled in production',
       });
     }
     if (env.NODE_ENV !== 'production') return;
@@ -113,6 +150,7 @@ export const envSchema = z
   .transform((env) => ({
     ...env,
     SWAGGER_ENABLED: env.SWAGGER_ENABLED ?? env.NODE_ENV !== 'production',
+    WEB_PUBLIC_URL: env.WEB_PUBLIC_URL ?? env.CORS_ORIGINS[0] ?? 'http://localhost:3000',
   }));
 
 export type Env = z.output<typeof envSchema>;

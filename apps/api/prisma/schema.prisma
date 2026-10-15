@@ -464,6 +464,7 @@ model CartItem {
 // ─── Orders (Phase 4f) — never deleted (trigger) ───────────────────────────
 
 enum OrderStatus {
+  AWAITING_PAYMENT // online payment not received yet (stock is held until paymentDueAt)
   CREATED // cash/card on delivery, waiting for sellers
   CONFIRMED // at least one seller accepted
   COMPLETED // every shipment resolved
@@ -471,6 +472,7 @@ enum OrderStatus {
 }
 
 enum SellerOrderStatus {
+  PENDING_PAYMENT // hidden from the seller until the order is paid
   NEW
   ACCEPTED
   PACKED
@@ -486,6 +488,44 @@ enum SellerOrderStatus {
 
 enum PaymentMethod {
   CASH_ON_DELIVERY
+  PAYME
+  CLICK
+  /// DEVELOPMENT / TESTS ONLY: simulated online payment, refused in production.
+  DEV_ONLINE
+}
+
+enum PaymentStatus {
+  PENDING // provider transaction created, money not captured yet
+  PAID
+  CANCELLED // never paid (timeout, declined, cancelled before capture)
+  REFUNDED // captured, then fully returned by the provider
+}
+
+/// One provider transaction for an order (Payme transaction, Click payment, dev payment).
+/// An order may see several attempts (e.g. a timed-out one, then a successful one).
+model PaymentAttempt {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  orderId       String        @db.Uuid
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  /// Always equal to the order total at creation (checked against the provider's amount).
+  amountTiyin   BigInt
+  /// Provider's transaction id (Payme `id`, Click `click_trans_id`); unique per provider.
+  providerTxId  String
+  /// Provider-specific state, e.g. Payme 1 / 2 / -1 / -2.
+  providerState Int?
+  /// Provider's own timestamp (Payme `time`, ms).
+  providerTime  BigInt?
+  performedAt   DateTime?     @db.Timestamptz(3)
+  cancelledAt   DateTime?     @db.Timestamptz(3)
+  cancelReason  Int?
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@unique([method, providerTxId])
+  @@index([orderId])
+  @@index([status, createdAt])
 }
 
 enum OrderActor {
@@ -497,32 +537,37 @@ enum OrderActor {
 
 /// Customer-facing order; one SellerOrder (shipment) per store (ADR 0006).
 model Order {
-  id                 String        @id @default(uuid(7)) @db.Uuid
+  id                 String           @id @default(uuid(7)) @db.Uuid
   /// Human-readable, e.g. UZ-2026-000123
-  number             String        @unique
-  userId             String        @db.Uuid
-  user               User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status             OrderStatus   @default(CREATED)
+  number             String           @unique
+  userId             String           @db.Uuid
+  user               User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status             OrderStatus      @default(CREATED)
   paymentMethod      PaymentMethod
+  /// Online orders: unpaid after this moment are cancelled and their stock released.
+  paymentDueAt       DateTime?        @db.Timestamptz(3)
+  paidAt             DateTime?        @db.Timestamptz(3)
   itemsTotalTiyin    BigInt
   deliveryTotalTiyin BigInt
   totalTiyin         BigInt
   recipientName      String
   recipientPhone     String
-  districtId         String        @db.Uuid
-  district           District      @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  districtId         String           @db.Uuid
+  district           District         @relation(fields: [districtId], references: [id], onDelete: Restrict)
   addressLine        String
   /// Region/district names at order time.
   addressSnapshot    Json
   comment            String?
-  createdAt          DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt          DateTime      @updatedAt @db.Timestamptz(3)
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
   sellerOrders       SellerOrder[]
   events             OrderEvent[]
+  payments           PaymentAttempt[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([districtId])
+  @@index([paymentDueAt])
 }
 
 model SellerOrder {

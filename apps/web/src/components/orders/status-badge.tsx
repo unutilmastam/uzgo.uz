@@ -2,6 +2,7 @@ import { Badge } from '@uzgo/ui/components/badge';
 import { getTranslations } from 'next-intl/server';
 
 const ORDER_VARIANT = {
+  AWAITING_PAYMENT: 'outline',
   CREATED: 'secondary',
   CONFIRMED: 'primary',
   COMPLETED: 'accent',

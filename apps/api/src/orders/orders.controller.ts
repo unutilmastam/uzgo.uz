@@ -25,9 +25,9 @@ import { AppException } from '../common/http-exception.filter.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { OrdersService } from './orders.service.js';
 
-const ORDER_NUMBER = /^UZ-\d{4}-\d{6,}$/;
+export const ORDER_NUMBER = /^UZ-\d{4}-\d{6,}$/;
 
-function orderNumber(value: string): string {
+export function orderNumber(value: string): string {
   if (!ORDER_NUMBER.test(value))
     throw new AppException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Order not found');
   return value;

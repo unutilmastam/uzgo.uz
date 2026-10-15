@@ -119,4 +119,21 @@ describe('parseEnv', () => {
         .RATE_LIMIT_DISABLED,
     ).toBe(true);
   });
+
+  it('never allows simulated payments in production', () => {
+    expect(parseEnv(valid).DEV_PAYMENTS_ENABLED).toBe(false);
+    expect(parseEnv({ ...valid, DEV_PAYMENTS_ENABLED: 'true' }).DEV_PAYMENTS_ENABLED).toBe(true);
+    const error = errorOf(() =>
+      parseEnv({ ...valid, NODE_ENV: 'production', DEV_PAYMENTS_ENABLED: 'true' }),
+    );
+    expect(error.issues.some((issue) => issue.startsWith('DEV_PAYMENTS_ENABLED'))).toBe(true);
+  });
+
+  it('validates payment credentials and defaults the public web URL', () => {
+    expect(parseEnv(valid).WEB_PUBLIC_URL).toBe('http://localhost:3000');
+    expect(() => parseEnv({ ...valid, CLICK_SERVICE_ID: 'abc' })).toThrow(EnvValidationError);
+    expect(() => parseEnv({ ...valid, PAYME_CHECKOUT_URL: 'http://checkout.paycom.uz' })).toThrow(
+      EnvValidationError,
+    );
+  });
 });

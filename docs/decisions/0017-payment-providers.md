@@ -1,7 +1,7 @@
 # 0017 — Online payment providers (Phase 6)
 
-- Status: **Proposed — waiting for the owner's confirmation** (Phase 6 prompt:
-  no payment code before the choice is confirmed)
+- Status: Accepted (owner confirmed on 2026-10-15; going live still needs the
+  owner actions below, especially the lawyer's review)
 - Date: 2026-10-15
 - Builds on: 0005 (money in tiyin), 0006 (Order + SellerOrder), 0015 (checkout)
 

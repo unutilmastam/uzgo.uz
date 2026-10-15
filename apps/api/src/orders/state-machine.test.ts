@@ -56,3 +56,21 @@ describe('deriveOrderStatus', () => {
     expect(deriveOrderStatus(['DELIVERED', 'PACKED'])).toBe('CONFIRMED');
   });
 });
+
+describe('online payment states', () => {
+  it('only the system moves unpaid shipments (whole-order payment and cancellation)', () => {
+    expect(canTransition('PENDING_PAYMENT', 'NEW', 'SYSTEM')).toBe(true);
+    expect(canTransition('PENDING_PAYMENT', 'NEW', 'CUSTOMER')).toBe(false);
+    expect(canTransition('PENDING_PAYMENT', 'NEW', 'SELLER')).toBe(false);
+    expect(canTransition('PENDING_PAYMENT', 'NEW', 'ADMIN')).toBe(false);
+    expect(canTransition('PENDING_PAYMENT', 'ACCEPTED', 'SELLER')).toBe(false);
+    expect(canTransition('PENDING_PAYMENT', 'CANCELLED_BY_CUSTOMER', 'CUSTOMER')).toBe(false);
+    expect(canTransition('PENDING_PAYMENT', 'CANCELLED_BY_CUSTOMER', 'SYSTEM')).toBe(true);
+  });
+
+  it('derives AWAITING_PAYMENT while unpaid', () => {
+    expect(deriveOrderStatus(['PENDING_PAYMENT', 'PENDING_PAYMENT'])).toBe('AWAITING_PAYMENT');
+    expect(deriveOrderStatus(['NEW', 'NEW'])).toBe('CREATED');
+    expect(deriveOrderStatus(['CANCELLED_BY_CUSTOMER'])).toBe('CANCELLED');
+  });
+});

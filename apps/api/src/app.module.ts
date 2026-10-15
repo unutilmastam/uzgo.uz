@@ -15,6 +15,7 @@ import type { Env } from './config/env.js';
 import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { OrdersModule } from './orders/orders.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SellerModule } from './seller/seller.module.js';
 import { SmsModule } from './sms/sms.module.js';
@@ -45,6 +46,7 @@ import { UsersModule } from './users/users.module.js';
     CatalogModule,
     CartModule,
     OrdersModule,
+    PaymentsModule,
     StoresModule,
     SellerModule,
     AdminModule,

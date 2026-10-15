@@ -10,6 +10,13 @@ const STAFF = ['SELLER', 'ADMIN'] as const;
  */
 export const SELLER_ORDER_TRANSITIONS: Readonly<Record<SellerOrderStatus, readonly Transition[]>> =
   {
+    // Online orders wait here until paid. Unpaid orders are cancelled only as a
+    // whole (payments module), never one shipment at a time: the provider
+    // collects the full order amount.
+    PENDING_PAYMENT: [
+      { to: 'NEW', actors: ['SYSTEM'] },
+      { to: 'CANCELLED_BY_CUSTOMER', actors: ['SYSTEM'] },
+    ],
     NEW: [
       { to: 'ACCEPTED', actors: STAFF },
       { to: 'CANCELLED_BY_SELLER', actors: STAFF },
@@ -73,8 +80,11 @@ const RESOLVED: ReadonlySet<SellerOrderStatus> = new Set([
  */
 export function deriveOrderStatus(statuses: readonly SellerOrderStatus[]): OrderStatus {
   if (statuses.length === 0) return 'CREATED';
+  if (statuses.some((s) => s === 'PENDING_PAYMENT')) return 'AWAITING_PAYMENT';
   if (statuses.every((s) => CANCELLED.has(s))) return 'CANCELLED';
   if (statuses.every((s) => RESOLVED.has(s))) return 'COMPLETED';
-  if (statuses.some((s) => s !== 'NEW' && !CANCELLED.has(s))) return 'CONFIRMED';
+  if (statuses.some((s) => s !== 'NEW' && s !== 'PENDING_PAYMENT' && !CANCELLED.has(s))) {
+    return 'CONFIRMED';
+  }
   return 'CREATED';
 }
