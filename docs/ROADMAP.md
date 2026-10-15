@@ -17,7 +17,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
 | 8     | Mobile apps                                                                    | VERIFIED    |
-| 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | IN PROGRESS |
+| 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | VERIFIED    |
 | 9b    | UZGO Food (separate module; provider decisions first)                          | NOT STARTED |
 | 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | NOT STARTED |
 | 9d    | Unified search and AI assistant (AI provider decision first)                   | NOT STARTED |
@@ -117,6 +117,8 @@ Web + mobile UI. Verified by API integration tests (incl. concurrent promo
 use, ledger balance, refunds), contract tests, web e2e (admin promo → buyer
 checkout with code → delivery → favorite, review, return → seller rejects →
 moderator hides review) and mobile e2e (review + return in the app).
+CI run #55 (commit 6b4154a) passed incl. web and mobile e2e. Run #54 failed
+before any check ran (pnpm setup on the runner); #55 covers the same code.
 
 ## Open decisions
 
