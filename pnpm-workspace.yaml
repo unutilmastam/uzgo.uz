@@ -48,3 +48,14 @@ auditConfig:
     # Reached only via @next/eslint-plugin-next at lint time with our own
     # glob patterns — never at runtime and never with user input.
     - GHSA-vfj7-8cjw-p6xm
+    # node-forge <=1.4.0 (no patched version): only in @expo/cli (dev server,
+    # code-signing tooling) at build time — not in the app bundle or the server.
+    - GHSA-86w9-cpqp-85rv
+    # uuid <11.1.1 bounds check in v3/v5/v6 with a caller buffer: reached only
+    # via `xcode` during `expo prebuild` (iOS project generation), which uses v4.
+    - GHSA-w5hq-g745-h8pq
+    # decode-uri-component <=0.4.2 slow decoding of malformed input: used by
+    # expo-router's query-string in the app; worst case a crafted deep link
+    # slows the user's own app. The fix (0.5, ESM-only) is incompatible with
+    # query-string 7; revisit with the next Expo SDK.
+    - GHSA-vcc3-ghjq-m6fr

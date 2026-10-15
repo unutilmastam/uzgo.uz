@@ -258,6 +258,12 @@ deleted, with an active in-stock variant, from an active store is visible.
   `SellerOrder(storeId, status, createdAt)`, `Session(userId)`,
   `OtpChallenge(phone, createdAt)`, GIN on product search vector.
 
+## Push devices (Phase 8, ADR 0022)
+
+`PushDevice` (Expo push token unique, platform, user, **session**). Deleted
+when its session is revoked; the outbox `Notification` gains channel `PUSH`
+(recipient = user id) and an optional JSON `data` deep-link payload.
+
 ## Database roles (production, ADR 0021)
 
 - `uzgo` — owner: runs `prisma migrate deploy`, the install-time seed and

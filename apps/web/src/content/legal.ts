@@ -192,6 +192,7 @@ const privacy: Record<Locale, LegalDoc> = {
         paragraphs: [
           'Buyurtmangizni bajaradigan sotuvchiga — faqat shu joʻnatma uchun zarur maʼlumotlar (qabul qiluvchi ismi, telefoni, manzil).',
           'Xizmat koʻrsatuvchilarga: SMS yuborish (Eskiz), onlayn toʻlov (Payme, Click), sotuvchilarga Telegram bildirishnomalari (xabarda manzil va ism boʻlmaydi). Ular maʼlumotlardan faqat shu xizmat uchun foydalanadi.',
+          'Mobil ilovada bildirishnomalarni yoqsangiz, ular Expo, Google (Android) va Apple (iOS) push xizmatlari orqali yetkaziladi. Bu xizmatlar Oʻzbekistondan tashqarida joylashgan, shuning uchun xabarda faqat buyurtma raqami va holati boʻladi — ism, telefon va manzil yuborilmaydi. Bildirishnomalarni telefon sozlamalarida istalgan vaqtda oʻchirish mumkin.',
           'Davlat organlariga — faqat qonunda belgilangan hollarda.',
         ],
       },
@@ -211,7 +212,7 @@ const privacy: Record<Locale, LegalDoc> = {
       {
         heading: '7. Cookie va brauzer xotirasi',
         paragraphs: [
-          'Faqat zarur cookie fayllar ishlatiladi: kirish seansi, mehmon savati va tanlangan til. Tungi rejim tanlovi brauzer xotirasida saqlanadi. Reklama yoki kuzatuv cookie fayllari ishlatilmaydi.',
+          'Faqat zarur cookie fayllar ishlatiladi: kirish seansi, mehmon savati va tanlangan til. Tungi rejim tanlovi brauzer xotirasida saqlanadi. Mobil ilovada kirish kaliti telefonning himoyalangan xotirasida (Keychain / Keystore) saqlanadi. Reklama yoki kuzatuv cookie fayllari ishlatilmaydi.',
         ],
       },
       {
@@ -260,6 +261,7 @@ const privacy: Record<Locale, LegalDoc> = {
         paragraphs: [
           'Продавцу, выполняющему ваш заказ, — только данные, необходимые для этого отправления (имя и телефон получателя, адрес).',
           'Поставщикам услуг: отправка SMS (Eskiz), онлайн-оплата (Payme, Click), уведомления продавцам в Telegram (без адреса и имени). Они используют данные только для этой услуги.',
+          'Если вы включите уведомления в мобильном приложении, они доставляются через push-сервисы Expo, Google (Android) и Apple (iOS). Эти сервисы находятся за пределами Узбекистана, поэтому в сообщении есть только номер и статус заказа — имя, телефон и адрес не передаются. Уведомления можно отключить в настройках телефона в любой момент.',
           'Государственным органам — только в случаях, предусмотренных законом.',
         ],
       },
@@ -279,7 +281,7 @@ const privacy: Record<Locale, LegalDoc> = {
       {
         heading: '7. Cookie и хранилище браузера',
         paragraphs: [
-          'Используются только необходимые cookie: сеанс входа, гостевая корзина и выбранный язык. Выбор тёмной темы хранится в браузере. Рекламные и отслеживающие cookie не используются.',
+          'Используются только необходимые cookie: сеанс входа, гостевая корзина и выбранный язык. Выбор тёмной темы хранится в браузере. В мобильном приложении ключ входа хранится в защищённом хранилище телефона (Keychain / Keystore). Рекламные и отслеживающие cookie не используются.',
         ],
       },
       {

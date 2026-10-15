@@ -147,6 +147,23 @@ without either it is accepted only if it carries no cookies at all.
 - **Notifications** carry no address or name; failures are retried and logged
   with masked phones only.
 
+## Mobile app (Phase 8, ADR 0022)
+
+- Session token returned in the body only to the mobile client, kept in the
+  OS keystore, sent as a bearer token; never cookies, so no CSRF surface.
+  Web cookies and the origin guard are unchanged.
+- Guest cart header token honoured only with the mobile marker (a browser
+  cannot use it to bypass the HttpOnly cookie).
+- Push devices are bound to the session (revocation stops pushes) and a token
+  re-registered by another account is re-bound; push texts and payloads carry
+  no personal data (they cross Expo/Google/Apple servers abroad); tapped
+  payloads are schema-validated before navigation.
+- Card data never enters the app (provider page in the system browser).
+- Android build removes unneeded permissions; release APKs from the GitHub
+  workflow are test-signed and not for distribution.
+- Audit exceptions for Expo build tooling are documented in
+  `pnpm-workspace.yaml` (node-forge, uuid, decode-uri-component).
+
 ## Uploads (Phase 5)
 
 Product images: one file per request, ≤ 8 MB, kept in memory (never on disk

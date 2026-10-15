@@ -16,7 +16,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
-| 8     | Mobile apps                                                                    | NOT STARTED |
+| 8     | Mobile apps                                                                    | IN PROGRESS |
 | 9     | Further ecosystem services                                                     | NOT STARTED |
 
 Phase 0 is documentation only; "VERIFIED" means the documents exist, are
@@ -82,6 +82,19 @@ contracts, real deploy (owner actions in RUNBOOK §1–3, §10).
 CI run #36 (commit 92716cb) passed incl. e2e, the image build and the stack
 smoke test; CodeQL passed; "Release images" run #1 pushed the three images to
 GHCR.
+
+Phase 8 notes: no prompt existed in PROMPTS.md; SPEC §20 asked to reassess
+Flutter vs React Native. The owner left the choice to the recommendation
+("whichever is better") and asked for everything (buyer, seller, push).
+Decision: Expo SDK 57 / React Native 0.86 (ADR 0022). Delivered: API mobile
+protocol (bearer sessions, guest cart header, push devices, PUSH outbox via
+Expo), `apps/mobile` with buyer and seller screens, push registration and
+deep links, uz/ru, light/dark. Verified by unit tests, Android/iOS bundle
+export, and Playwright runs of the buyer and seller flows rendered with
+react-native-web against the real API. Builds: test APK via the "Mobile app"
+workflow; store builds via EAS once the owner creates the accounts
+(`docs/MOBILE.md`). Native-only behaviour (keystore, push delivery) needs the
+manual device checklist.
 
 ## Open decisions
 

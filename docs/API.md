@@ -183,6 +183,25 @@ Auth error codes: `INVALID_PHONE`, `INVALID_CODE`, `OTP_RESEND_TOO_SOON`
 e2e tests: they answer 404
 unless `NODE_ENV=test` and `SMS_PROVIDER=fake` (impossible in production).
 
+## Mobile app protocol (Phase 8, ADR 0022)
+
+- The app sends `X-UZGO-Client: mobile`. `POST /auth/otp/verify` then answers
+  `{ user, session: { token, expiresAt } }` and sets no cookie; later requests
+  send `Authorization: Bearer <token>` (same sessions, expiry and revocation as
+  the web cookie). Bearer requests carry no cookies, so the origin check for
+  browsers does not apply to them.
+- Guest cart: the API returns a new guest token in the `X-Cart-Token`
+  response header; the app sends it back in `X-Cart-Token` (honoured only
+  with the mobile marker) and it is merged into the account at login.
+
+| Method | Path                       | Auth | Notes                                                                                                                       |
+| ------ | -------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------- |
+| PUT    | `/push-devices`            | user | `{ token: "ExponentPushToken[…]", platform: "IOS" \| "ANDROID" }`; bound to the current session (logout removes it); 10/min |
+| POST   | `/push-devices/unregister` | user | `{ token }`; only the caller's own device                                                                                   |
+
+Push payloads (`pushDataSchema`): `{ type: "order", number }` or
+`{ type: "shipment", storeId }`.
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →

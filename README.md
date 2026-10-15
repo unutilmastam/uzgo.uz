@@ -5,7 +5,7 @@ sellers, one storefront, one cart). Web first, mobile later. First module of the
 future UZGO ecosystem. Languages: Uzbek (Latin) primary, Russian second.
 Security first (`docs/decisions/0011-security-baseline.md`).
 
-**Status:** Phase 7 (production readiness: hosting, security review, backups, monitoring) — see `docs/ROADMAP.md`.
+**Status:** Phase 8 (mobile app: Expo / React Native) — see `docs/ROADMAP.md`.
 
 ## Stack
 
@@ -17,7 +17,8 @@ Tailwind CSS 4 + shadcn/ui (Radix) + next-intl · NestJS 12 REST API · PostgreS
 ## Repository map
 
 ```
-apps/web            Next.js storefront (+ /seller, /admin later)
+apps/web            Next.js storefront, seller and admin panels
+apps/mobile         Expo (React Native) app for buyers and sellers
 apps/api            NestJS modular monolith
 apps/api/prisma     the only Prisma schema, migrations, seed
 packages/contracts  Zod schemas shared by web and api
@@ -119,4 +120,5 @@ pnpm audit
 | `docs/DEPLOYMENT.md`    | Hosting decision, requirements, secrets           |
 | `docs/RUNBOOK.md`       | Server setup, deploy, rollback, backup, restore   |
 | `docs/PERFORMANCE.md`   | Lighthouse results and next optimisations         |
+| `docs/MOBILE.md`        | Mobile app: features, tests, builds, checklist    |
 | `docs/decisions/`       | Architecture Decision Records                     |
