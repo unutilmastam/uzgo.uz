@@ -13,7 +13,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
 | 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
 | 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
-| 5     | Seller panel, moderation, admin panel                                          | IN PROGRESS |
+| 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
 | 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | NOT STARTED |
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | NOT STARTED |
 | 8     | Mobile apps                                                                    | NOT STARTED |
@@ -46,7 +46,8 @@ API → 5d seller web panel → 5e admin web panel (ADR 0016). Every permission
 boundary has an API test (customer / seller / other store / staff without TOTP /
 moderator vs admin vs super admin). Browser e2e covers seller application and
 draft product, and the full staff flow: TOTP enrolment → store approval →
-product moderation → product visible on the storefront.
+product moderation → product visible on the storefront. CI run #25 (commit
+7f57ad8) passed incl. e2e.
 
 ## Open decisions
 
