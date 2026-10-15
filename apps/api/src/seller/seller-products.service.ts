@@ -127,6 +127,16 @@ export class SellerProductsService {
     return this.toDetail(await this.load(storeId, productId));
   }
 
+  /** Staff (moderation) view of any store's product. Callers must enforce staff roles. */
+  async getForStaff(productId: string): Promise<SellerProduct & { storeId: string }> {
+    const row = await this.prisma.product.findFirst({
+      where: { id: productId, deletedAt: null },
+      include: detailInclude,
+    });
+    if (!row) throw notFound();
+    return { ...this.toDetail(row), storeId: row.storeId };
+  }
+
   async list(
     storeId: string,
     status: ProductStatus | undefined,

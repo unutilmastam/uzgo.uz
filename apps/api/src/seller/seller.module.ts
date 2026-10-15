@@ -7,6 +7,6 @@ import { StoreMembersController } from './store-members.controller.js';
 @Module({
   controllers: [SellerProductsController, StoreMembersController],
   providers: [SellerProductsService, StoreAccessService],
-  exports: [StoreAccessService],
+  exports: [StoreAccessService, SellerProductsService],
 })
 export class SellerModule {}

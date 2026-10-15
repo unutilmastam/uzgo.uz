@@ -9,7 +9,7 @@ import { sha256 } from '../common/crypto.js';
 import { AppException } from '../common/http-exception.filter.js';
 import { normalizePhone } from '../auth/phone.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import type { OrderActor, SellerOrderStatus } from '../generated/prisma/enums.js';
+import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   canTransition,
@@ -318,6 +318,70 @@ export class OrdersService {
     return toOrderView(order, 'CUSTOMER');
   }
 
+  /** Staff view of any order. Callers must enforce staff roles and the second factor. */
+  async getForAdmin(number: string): Promise<OrderView> {
+    const order = await this.prisma.order.findFirst({ where: { number }, include: orderInclude });
+    if (!order) throw notFound();
+    return toOrderView(order, 'ADMIN');
+  }
+
+  async listForAdmin(
+    filter: { status: OrderStatus | undefined; number: string | undefined },
+    page: number,
+    pageSize: number,
+  ) {
+    const where = {
+      ...(filter.status ? { status: filter.status } : {}),
+      ...(filter.number ? { number: filter.number } : {}),
+    } satisfies Prisma.OrderWhereInput;
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          number: true,
+          status: true,
+          createdAt: true,
+          totalTiyin: true,
+          user: { select: { phone: true } },
+          _count: { select: { sellerOrders: true } },
+        },
+      }),
+    ]);
+    return {
+      items: rows.map((o) => ({
+        number: o.number,
+        status: o.status,
+        createdAt: o.createdAt.toISOString(),
+        totalTiyin: o.totalTiyin.toString(),
+        customerPhone: o.user.phone,
+        storeCount: o._count.sellerOrders,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async transitionAsAdmin(
+    userId: string,
+    number: string,
+    sellerOrderId: string,
+    to: SellerOrderStatus,
+    reason: string | undefined,
+  ): Promise<OrderView> {
+    const shipment = await this.prisma.sellerOrder.findFirst({
+      where: { id: sellerOrderId, order: { number } },
+      select: { id: true },
+    });
+    if (!shipment) throw notFound();
+    await this.transition(shipment.id, to, { actor: 'ADMIN', userId, reason });
+    return this.getForAdmin(number);
+  }
+
   async transitionAsCustomer(
     userId: string,
     number: string,
@@ -334,10 +398,9 @@ export class OrdersService {
     return this.getForCustomer(userId, number);
   }
 
-  /** Seller (store member) or admin moves a shipment. Non-members get 404. */
+  /** A store member moves a shipment. Non-members get 404 (staff use the admin route). */
   async transitionAsSeller(
     userId: string,
-    isAdmin: boolean,
     sellerOrderId: string,
     to: SellerOrderStatus,
     reason: string | undefined,
@@ -345,12 +408,12 @@ export class OrdersService {
     const shipment = await this.prisma.sellerOrder.findFirst({
       where: {
         id: sellerOrderId,
-        ...(isAdmin ? {} : { store: { members: { some: { userId } } } }),
+        store: { members: { some: { userId } } },
       },
       select: { id: true },
     });
     if (!shipment) throw notFound();
-    await this.transition(shipment.id, to, { actor: isAdmin ? 'ADMIN' : 'SELLER', userId, reason });
+    await this.transition(shipment.id, to, { actor: 'SELLER', userId, reason });
   }
 
   async listForSeller(userId: string, storeId: string | undefined) {
