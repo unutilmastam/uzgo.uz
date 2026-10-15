@@ -86,6 +86,7 @@ export class AdminCatalogController {
       active: row.active,
       attributeIds: row.attributes.map((a) => a.attributeId),
       productCount: row._count.products,
+      commissionBp: row.commissionBp,
     }));
   }
 

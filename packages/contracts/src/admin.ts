@@ -71,6 +71,7 @@ export const adminCategorySchema = z.object({
   active: z.boolean(),
   attributeIds: z.array(z.uuid()),
   productCount: z.number().int(),
+  commissionBp: z.number().int().nullable(),
 });
 export type AdminCategory = z.infer<typeof adminCategorySchema>;
 export const adminCategoriesResponseSchema = z.object({ items: z.array(adminCategorySchema) });
@@ -98,6 +99,8 @@ export const updateCategorySchema = z
     icon: icon.optional(),
     sort: z.number().int().min(0).max(10_000).optional(),
     active: z.boolean().optional(),
+    /** Commission in basis points (1000 = 10 %); null = inherit. */
+    commissionBp: z.number().int().min(0).max(5000).nullable().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, 'Nothing to update');
 export type UpdateCategory = z.infer<typeof updateCategorySchema>;

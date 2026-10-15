@@ -195,21 +195,23 @@ model AuditEvent {
 // ─── Catalog (Phase 4) ─────────────────────────────────────────────────────
 
 model Category {
-  id         String              @id @default(uuid(7)) @db.Uuid
-  parentId   String?             @db.Uuid
-  parent     Category?           @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children   Category[]          @relation("CategoryTree")
-  slug       String              @unique
+  id           String              @id @default(uuid(7)) @db.Uuid
+  parentId     String?             @db.Uuid
+  parent       Category?           @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children     Category[]          @relation("CategoryTree")
+  slug         String              @unique
   /// { "uz": "...", "ru": "..." }
-  name       Json
+  name         Json
   /// Icon name used by the web app (lucide), e.g. "smartphone"
-  icon       String?
-  sort       Int                 @default(0)
-  active     Boolean             @default(true)
-  createdAt  DateTime            @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime            @updatedAt @db.Timestamptz(3)
-  attributes CategoryAttribute[]
-  products   Product[]
+  icon         String?
+  sort         Int                 @default(0)
+  active       Boolean             @default(true)
+  /// Marketplace commission in basis points (1000 = 10 %); null = inherit from the parent / default.
+  commissionBp Int?
+  createdAt    DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime            @updatedAt @db.Timestamptz(3)
+  attributes   CategoryAttribute[]
+  products     Product[]
 
   @@index([parentId, sort])
 }
@@ -272,32 +274,41 @@ enum LegalType {
 }
 
 model Store {
-  id           String           @id @default(uuid(7)) @db.Uuid
-  slug         String           @unique
-  name         Json
-  description  Json?
-  status       StoreStatus      @default(PENDING)
+  id              String           @id @default(uuid(7)) @db.Uuid
+  slug            String           @unique
+  name            Json
+  description     Json?
+  status          StoreStatus      @default(PENDING)
   /// Demo stores (seeded fixtures) are labelled "Demo" everywhere in the UI.
-  isDemo       Boolean          @default(false)
-  districtId   String?          @db.Uuid
-  district     District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
-  logoKey      String?
+  isDemo          Boolean          @default(false)
+  districtId      String?          @db.Uuid
+  district        District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  logoKey         String?
   /// Seller details from the application (fields only; verified manually by staff).
-  legalType    LegalType?
-  legalName    String?
+  legalType       LegalType?
+  legalName       String?
   /// STIR / INN (9 digits) of the entity or entrepreneur.
-  taxId        String?
-  contactPhone String?
-  reviewedAt   DateTime?        @db.Timestamptz(3)
-  reviewedById String?          @db.Uuid
-  reviewNote   String?
-  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
-  deletedAt    DateTime?        @db.Timestamptz(3)
-  members      StoreMember[]
-  products     Product[]
-  variants     ProductVariant[]
-  sellerOrders SellerOrder[]
+  taxId           String?
+  contactPhone    String?
+  reviewedAt      DateTime?        @db.Timestamptz(3)
+  reviewedById    String?          @db.Uuid
+  reviewNote      String?
+  /// Commission override for this store (basis points); null = category rules.
+  commissionBp    Int?
+  /// Payout bank details (owner-managed). Account: 20 digits; MFO (bank code): 5 digits.
+  payoutBankName  String?
+  payoutMfo       String?
+  payoutAccount   String?
+  payoutRecipient String?
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?        @db.Timestamptz(3)
+  members         StoreMember[]
+  products        Product[]
+  variants        ProductVariant[]
+  sellerOrders    SellerOrder[]
+  ledgerEntries   LedgerEntry[]
+  payouts         Payout[]
 
   @@index([status])
   @@index([districtId])
@@ -524,6 +535,7 @@ model PaymentAttempt {
   cancelReason  Int?
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+  refunds       Refund[]
 
   @@unique([method, providerTxId])
   @@index([orderId])
@@ -565,6 +577,7 @@ model Order {
   sellerOrders       SellerOrder[]
   events             OrderEvent[]
   payments           PaymentAttempt[]
+  refunds            Refund[]
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -584,10 +597,13 @@ model SellerOrder {
   itemsTotalTiyin BigInt
   deliveryTiyin   BigInt
   totalTiyin      BigInt
+  /// Marketplace commission for this shipment (snapshot at checkout).
+  commissionTiyin BigInt            @default(0)
   createdAt       DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
   items           OrderItem[]
   events          OrderEvent[]
+  refunds         Refund[]
 
   @@index([orderId])
   @@index([storeId, status, createdAt])
@@ -612,6 +628,8 @@ model OrderItem {
   mxikCode       String?
   packageCode    String?
   vatRateBp      Int?
+  /// Commission rate applied to this line (snapshot).
+  commissionBp   Int            @default(0)
   createdAt      DateTime       @default(now()) @db.Timestamptz(3)
 
   @@index([sellerOrderId])
@@ -651,4 +669,97 @@ model IdempotencyKey {
 
   @@unique([userId, scope, key])
   @@index([createdAt])
+}
+
+// ─── Refunds, ledger, payouts (Phase 6d, ADR 0018) ──────────────────────────
+
+enum RefundStatus {
+  PENDING // to be returned through the provider (cabinet / API) by staff
+  SUCCEEDED
+  FAILED
+  CANCELLED // superseded, e.g. by a full refund initiated by the provider
+}
+
+/// Money returned to a customer for an online-paid shipment or order.
+model Refund {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  orderId          String         @db.Uuid
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  /// Null when the provider returned the whole payment at once.
+  sellerOrderId    String?        @db.Uuid
+  sellerOrder      SellerOrder?   @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  paymentAttemptId String         @db.Uuid
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
+  amountTiyin      BigInt
+  status           RefundStatus   @default(PENDING)
+  /// Why: shipment_cancelled, delivery_failed, returned, provider_full_refund.
+  reason           String
+  /// Provider / bank reference entered by staff.
+  reference        String?
+  processedById    String?        @db.Uuid
+  processedAt      DateTime?      @db.Timestamptz(3)
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@index([sellerOrderId])
+}
+
+enum LedgerAccount {
+  /// Money held at the payment providers / UZGO bank account.
+  PROVIDER_CLEARING
+  /// Customers' money for goods not delivered yet (liability).
+  CUSTOMER_PREPAYMENTS
+  /// What UZGO owes each store (per storeId; negative = the store owes UZGO).
+  SELLER_PAYABLE
+  /// UZGO commission income.
+  PLATFORM_REVENUE
+}
+
+/// Double-entry ledger: every journal (journalId) sums to zero. Positive
+/// amounts are debits, negative are credits. Append-only (trigger).
+model LedgerEntry {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  journalId     String        @db.Uuid
+  account       LedgerAccount
+  storeId       String?       @db.Uuid
+  store         Store?        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  amountTiyin   BigInt
+  /// payment_captured, shipment_delivered, cod_commission, return_reversal, refund, payout
+  kind          String
+  orderId       String?       @db.Uuid
+  sellerOrderId String?       @db.Uuid
+  refundId      String?       @db.Uuid
+  payoutId      String?       @db.Uuid
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([journalId])
+  @@index([account, storeId, createdAt])
+  @@index([sellerOrderId])
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+/// Transfer of a store's earnings to its bank account (made by staff).
+model Payout {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  storeId      String       @db.Uuid
+  store        Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  amountTiyin  BigInt
+  status       PayoutStatus @default(PENDING)
+  /// Bank details at the time of the payout (snapshot).
+  bankSnapshot Json
+  reference    String?
+  createdById  String       @db.Uuid
+  paidById     String?      @db.Uuid
+  paidAt       DateTime?    @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([storeId, status])
 }

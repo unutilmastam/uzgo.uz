@@ -17,6 +17,7 @@ import {
 } from '../payments/payment-methods.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { OrderActor, OrderStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
+import { lineCommission, onShipmentTransition, resolveCommissionBp } from '../ledger/ledger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   canTransition,
@@ -251,6 +252,27 @@ export class OrdersService {
           }
         }
 
+        // Commission rates are resolved now and frozen on the order (snapshot).
+        const [categories, products] = await Promise.all([
+          tx.category.findMany({ select: { id: true, parentId: true, commissionBp: true } }),
+          tx.product.findMany({
+            where: { id: { in: lines.map((l) => l.variant.product.id) } },
+            select: { id: true, categoryId: true, store: { select: { commissionBp: true } } },
+          }),
+        ]);
+        const categoryMap = new Map(categories.map((c) => [c.id, c]));
+        const productMap = new Map(products.map((p) => [p.id, p]));
+        const commissionBpOf = (productId: string): number => {
+          const product = productMap.get(productId);
+          if (!product) return this.env.COMMISSION_DEFAULT_BP;
+          return resolveCommissionBp(
+            product.store.commissionBp,
+            product.categoryId,
+            categoryMap,
+            this.env.COMMISSION_DEFAULT_BP,
+          );
+        };
+
         const [{ seq }] = await tx.$queryRaw<
           [{ seq: bigint }]
         >`SELECT nextval('order_number_seq') AS seq`;
@@ -283,8 +305,18 @@ export class OrdersService {
                   (sum, l) => sum + l.variant.priceTiyin * BigInt(l.quantity),
                   0n,
                 );
+                const commission = storeLines.reduce(
+                  (sum, l) =>
+                    sum +
+                    lineCommission(
+                      l.variant.priceTiyin * BigInt(l.quantity),
+                      commissionBpOf(l.variant.product.id),
+                    ),
+                  0n,
+                );
                 return {
                   number: `${number}-${String(index + 1)}`,
+                  commissionTiyin: commission,
                   status: online ? 'PENDING_PAYMENT' : 'NEW',
                   storeId: storeLines[0]?.variant.product.store.id ?? '',
                   itemsTotalTiyin: subtotal,
@@ -309,6 +341,7 @@ export class OrdersService {
                       mxikCode: l.variant.mxikCode,
                       packageCode: l.variant.packageCode,
                       vatRateBp: l.variant.vatRateBp,
+                      commissionBp: commissionBpOf(l.variant.product.id),
                     })),
                   },
                 };
@@ -551,7 +584,13 @@ export async function transitionInTx(
   tx: Tx,
   sellerOrderId: string,
   to: SellerOrderStatus,
-  by: { actor: OrderActor; userId: string | null; reason: string | undefined },
+  by: {
+    actor: OrderActor;
+    userId: string | null;
+    reason: string | undefined;
+    /** The provider already returned the whole payment: no per-shipment refund. */
+    providerRefunded?: boolean;
+  },
 ): Promise<void> {
   const [locked] = await tx.$queryRaw<{ status: SellerOrderStatus; orderId: string }[]>`
     SELECT "status", "orderId" FROM "SellerOrder" WHERE "id" = ${sellerOrderId}::uuid FOR UPDATE`;
@@ -565,6 +604,9 @@ export async function transitionInTx(
     );
   }
   await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: to } });
+  await onShipmentTransition(tx, sellerOrderId, to, {
+    providerRefunded: by.providerRefunded ?? false,
+  });
   if (RESTOCK_STATUSES.has(to)) {
     const items = await tx.orderItem.findMany({
       where: { sellerOrderId },

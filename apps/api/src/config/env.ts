@@ -57,6 +57,10 @@ export const envSchema = z
      * stored in the database still apply.
      */
     RATE_LIMIT_DISABLED: booleanString.default(false),
+    /** Commission when neither the store nor its category sets one (basis points; owner decision). */
+    COMMISSION_DEFAULT_BP: z.coerce.number().int().min(0).max(5000).default(0),
+    /** Delivered earnings stay on hold this many days (return window) before payout. */
+    PAYOUT_HOLD_DAYS: z.coerce.number().int().min(0).max(90).default(10),
     /** Unpaid online orders are cancelled (stock released) after this many minutes. */
     PAYMENT_WINDOW_MINUTES: z.coerce
       .number()

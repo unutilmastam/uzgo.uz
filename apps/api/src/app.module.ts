@@ -9,6 +9,7 @@ import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { OriginGuard } from './auth/origin.guard.js';
 import { HttpExceptionFilter } from './common/http-exception.filter.js';
+import { LedgerModule } from './ledger/ledger.module.js';
 import { LoggerModule } from './common/logger.module.js';
 import { ConfigModule, ENV } from './config/config.module.js';
 import type { Env } from './config/env.js';
@@ -47,6 +48,7 @@ import { UsersModule } from './users/users.module.js';
     CartModule,
     OrdersModule,
     PaymentsModule,
+    LedgerModule,
     StoresModule,
     SellerModule,
     AdminModule,

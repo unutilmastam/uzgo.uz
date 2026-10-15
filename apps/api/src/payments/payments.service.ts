@@ -5,6 +5,7 @@ import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { PaymentMethod } from '../generated/prisma/enums.js';
+import { capturePostings, postJournal, refundPostings } from '../ledger/ledger.js';
 import { transitionInTx } from '../orders/orders.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ONLINE_METHODS } from './payment-methods.js';
@@ -98,6 +99,10 @@ export class PaymentsService {
     });
     if (updated.count === 0) return;
     await tx.order.update({ where: { id: order.id }, data: { paidAt: now } });
+    await postJournal(tx, capturePostings(attempt.amountTiyin), {
+      kind: 'payment_captured',
+      orderId: order.id,
+    });
     const shipments = await tx.sellerOrder.findMany({
       where: { orderId: order.id, status: 'PENDING_PAYMENT' },
       orderBy: { number: 'asc' },
@@ -168,6 +173,13 @@ export class PaymentsService {
     if (!(await this.canRefundWhole(tx, attempt.orderId))) {
       throw new AppException(HttpStatus.CONFLICT, 'ORDER_IN_DELIVERY', 'Order is already shipped');
     }
+    // A whole refund cannot follow money already returned for part of the order.
+    const returned = await tx.refund.count({
+      where: { paymentAttemptId: attemptId, status: 'SUCCEEDED' },
+    });
+    if (returned > 0) {
+      throw new AppException(HttpStatus.CONFLICT, 'PARTIALLY_REFUNDED', 'Partly refunded');
+    }
     const updated = await tx.paymentAttempt.updateMany({
       where: { id: attemptId, status: 'PAID' },
       data: { status: 'REFUNDED', cancelledAt: new Date(), cancelReason: reason, providerState },
@@ -183,8 +195,25 @@ export class PaymentsService {
         actor: 'SYSTEM',
         userId: null,
         reason: `refunded:${attempt.method}`,
+        providerRefunded: true,
       });
     }
+    // Shipment refunds still waiting for staff are covered by this full refund.
+    await tx.refund.updateMany({
+      where: { paymentAttemptId: attemptId, status: 'PENDING' },
+      data: { status: 'CANCELLED', processedAt: new Date() },
+    });
+    const refund = await tx.refund.create({
+      data: {
+        orderId: attempt.orderId,
+        paymentAttemptId: attemptId,
+        amountTiyin: attempt.amountTiyin,
+        status: 'SUCCEEDED',
+        reason: 'provider_full_refund',
+        processedAt: new Date(),
+      },
+    });
+    await refundPostings(tx, refund);
     await this.audit.record(
       {
         action: 'payment.refunded',
