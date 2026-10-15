@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
   type CurrentUser,
+  type MobileLoginResponse,
   type OtpRequest,
   type OtpRequestResponse,
   type OtpVerify,
@@ -12,13 +13,13 @@ import {
 import type { Request, Response } from 'express';
 import { AuditService } from '../audit/audit.service.js';
 import { CartService } from '../cart/cart.service.js';
-import { clientIp, parseCookies } from '../common/http.js';
+import { cartTokenHeader, clientIp, isMobileClient, parseCookies } from '../common/http.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { UsersService } from '../users/users.service.js';
 import type { AuthContext } from './auth.types.js';
 import { CurrentAuth, Public } from './decorators.js';
 import { OtpService } from './otp.service.js';
-import { SessionService } from './session.service.js';
+import { SESSION_TTL_MS, SessionService } from './session.service.js';
 
 function localeOf(req: Request, explicit?: 'uz' | 'ru'): 'uz' | 'ru' {
   if (explicit) return explicit;
@@ -64,13 +65,22 @@ export class AuthController {
     @Body(new ZodValidationPipe(otpVerifySchema)) body: OtpVerify,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ user: CurrentUser }> {
+  ): Promise<{ user: CurrentUser } | MobileLoginResponse> {
     const { token, userId } = await this.otp.verify(
       body.phone,
       body.code,
       localeOf(req),
       metaOf(req),
     );
+    if (isMobileClient(req)) {
+      // Mobile app: the token goes in the body, never in a cookie (ADR 0022).
+      await this.carts.mergeGuestIntoUser(cartTokenHeader(req), userId);
+      res.setHeader('Cache-Control', 'no-store');
+      return {
+        user: await this.users.getCurrent(userId),
+        session: { token, expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString() },
+      };
+    }
     res.cookie(this.sessions.cookieName, token, this.sessions.cookieOptions());
     // A guest cart follows the customer into their account.
     await this.carts.mergeGuestIntoUser(

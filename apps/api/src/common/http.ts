@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { isIP } from 'node:net';
+import { CART_TOKEN_HEADER, MOBILE_CLIENT_HEADER, MOBILE_CLIENT_VALUE } from '@uzgo/contracts';
 import type { Request } from 'express';
 
 /** Minimal RFC 6265 cookie parser (first value wins, malformed pairs ignored). */
@@ -61,4 +62,20 @@ export function rateLimitTracker(req: Request, token: string | undefined): strin
     return forwarded && isIP(forwarded) ? forwarded : 'internal:web';
   }
   return clientIp(req);
+}
+
+/** The UZGO mobile app (ADR 0022): token in the body/headers, never cookies. */
+export function isMobileClient(req: Request): boolean {
+  return headerValue(req, MOBILE_CLIENT_HEADER)?.toLowerCase() === MOBILE_CLIENT_VALUE;
+}
+
+/** `Authorization: Bearer <token>` (mobile sessions), or undefined. */
+export function bearerToken(req: Request): string | undefined {
+  const match = /^Bearer ([A-Za-z0-9_-]{32,128})$/.exec(headerValue(req, 'authorization') ?? '');
+  return match?.[1];
+}
+
+/** Guest cart token sent by the mobile app. */
+export function cartTokenHeader(req: Request): string | undefined {
+  return isMobileClient(req) ? headerValue(req, CART_TOKEN_HEADER) : undefined;
 }

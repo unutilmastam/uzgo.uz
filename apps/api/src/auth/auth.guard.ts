@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import { parseCookies } from '../common/http.js';
+import { bearerToken, parseCookies } from '../common/http.js';
 import { AppException } from '../common/http-exception.filter.js';
 import type { Role } from '../generated/prisma/client.js';
 import { ENV } from '../config/config.module.js';
@@ -17,7 +17,7 @@ import './auth.types.js';
 import { SessionService } from './session.service.js';
 
 /**
- * Global guard: resolves the session cookie on every request, then enforces
+ * Global guard: resolves the session (cookie or bearer token) on every request, then enforces
  * authentication (deny by default) and roles. UI hiding is never trusted.
  */
 @Injectable()
@@ -30,7 +30,8 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
-    const token = parseCookies(req.headers.cookie)[this.sessions.cookieName];
+    // Browser: HttpOnly cookie. Mobile app (ADR 0022): Authorization: Bearer.
+    const token = parseCookies(req.headers.cookie)[this.sessions.cookieName] ?? bearerToken(req);
     if (token) {
       const auth = await this.sessions.resolve(token);
       if (auth) req.auth = auth;

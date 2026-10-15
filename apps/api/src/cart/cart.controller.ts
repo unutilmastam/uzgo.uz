@@ -15,7 +15,8 @@ import { addCartItemSchema, type CartView, updateCartItemSchema } from '@uzgo/co
 import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import { Public } from '../auth/decorators.js';
-import { parseCookies } from '../common/http.js';
+import { CART_TOKEN_HEADER } from '@uzgo/contracts';
+import { cartTokenHeader, isMobileClient, parseCookies } from '../common/http.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { type CartOwner, CartService } from './cart.service.js';
 
@@ -32,12 +33,19 @@ export class CartController {
   private owner(req: Request): CartOwner {
     return req.auth
       ? { userId: req.auth.user.id }
-      : { guestToken: parseCookies(req.headers.cookie)[this.carts.cookieName] };
+      : {
+          guestToken:
+            parseCookies(req.headers.cookie)[this.carts.cookieName] ?? cartTokenHeader(req),
+        };
   }
 
   private async cartFor(req: Request, res: Response, create: boolean): Promise<string | null> {
     const { cartId, newGuestToken } = await this.carts.resolve(this.owner(req), create);
-    if (newGuestToken) res.cookie(this.carts.cookieName, newGuestToken, this.carts.cookieOptions());
+    if (newGuestToken) {
+      // The mobile app keeps the guest token itself (ADR 0022); browsers get a cookie.
+      if (isMobileClient(req)) res.setHeader(CART_TOKEN_HEADER, newGuestToken);
+      else res.cookie(this.carts.cookieName, newGuestToken, this.carts.cookieOptions());
+    }
     return cartId;
   }
 

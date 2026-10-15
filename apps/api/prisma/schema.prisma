@@ -90,6 +90,7 @@ model User {
   roles           UserRole[]       @relation("UserRoles")
   rolesGranted    UserRole[]       @relation("RoleGrantedBy")
   sessions        Session[]
+  pushDevices     PushDevice[]
   auditEvents     AuditEvent[]
   storeMembers    StoreMember[]
   cart            Cart?
@@ -125,23 +126,47 @@ model UserRole {
 }
 
 model Session {
-  id             String    @id @default(uuid(7)) @db.Uuid
-  userId         String    @db.Uuid
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid(7)) @db.Uuid
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// SHA-256 of the opaque token; the token itself is never stored.
-  tokenHash      String    @unique
-  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
-  lastSeenAt     DateTime  @default(now()) @db.Timestamptz(3)
-  expiresAt      DateTime  @db.Timestamptz(3)
-  revokedAt      DateTime? @db.Timestamptz(3)
+  tokenHash      String       @unique
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  lastSeenAt     DateTime     @default(now()) @db.Timestamptz(3)
+  expiresAt      DateTime     @db.Timestamptz(3)
+  revokedAt      DateTime?    @db.Timestamptz(3)
   /// When this session passed the staff second factor (TOTP).
-  totpVerifiedAt DateTime? @db.Timestamptz(3)
+  totpVerifiedAt DateTime?    @db.Timestamptz(3)
   /// HMAC of the client IP (privacy: raw IPs are not stored).
   ipHash         String?
   userAgent      String?
+  pushDevices    PushDevice[]
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+enum PushPlatform {
+  IOS
+  ANDROID
+}
+
+/// A phone that receives push notifications. Bound to the login session, so
+/// logging out (or revoking the session) stops pushes to that phone.
+model PushDevice {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String       @db.Uuid
+  session   Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// Expo push token ("ExponentPushToken[…]").
+  token     String       @unique
+  platform  PushPlatform
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([sessionId])
 }
 
 model OtpCode {
@@ -816,6 +841,8 @@ model PickupPoint {
 enum NotificationChannel {
   SMS
   TELEGRAM
+  /// Mobile push to every device of a user (recipient = user id).
+  PUSH
 }
 
 enum NotificationStatus {
@@ -829,9 +856,11 @@ enum NotificationStatus {
 model Notification {
   id            String              @id @default(uuid(7)) @db.Uuid
   channel       NotificationChannel
-  /// E.164 phone (SMS) or Telegram chat id.
+  /// E.164 phone (SMS), Telegram chat id or user id (PUSH).
   recipient     String
   text          String
+  /// PUSH only: deep-link payload for the app, e.g. {"type":"order","number":"UZ-…"}.
+  data          Json?
   /// e.g. order.paid, shipment.status, seller.new_order
   template      String
   orderId       String?             @db.Uuid

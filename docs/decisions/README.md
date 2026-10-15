@@ -26,3 +26,4 @@ Decision, Consequences. Superseded ADRs stay, marked "Superseded by NNNN".
 | 0019 | Delivery, tracking and notifications              |
 | 0020 | Production hosting (Tashkent VPS, Docker Compose) |
 | 0021 | Production hardening (Phase 7 security review)    |
+| 0022 | Mobile apps (Expo, bearer sessions, push)         |

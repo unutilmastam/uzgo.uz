@@ -112,6 +112,10 @@ export const envSchema = z
       .string()
       .regex(/^\d{5,15}:[\w-]{30,60}$/, 'must look like a Telegram bot token')
       .optional(),
+    /** Expo push access token (optional "enhanced security" of the Expo push API, ADR 0022). */
+    EXPO_ACCESS_TOKEN: z.string().min(20).max(200).optional(),
+    /** Development only: really send pushes through Expo (default: log them). */
+    EXPO_PUSH_ENABLED: booleanString.default(false),
     /** Shared secret of the web server's server-to-server calls (rate limiting per visitor). */
     INTERNAL_API_TOKEN: z.string().min(32, 'must be at least 32 characters').optional(),
     /** Ops Telegram chat for operator alerts (5xx errors, failing jobs). Needs TELEGRAM_BOT_TOKEN. */

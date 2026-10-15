@@ -102,18 +102,25 @@ export class SessionService {
     };
   }
 
+  /** Revokes the session; its phone stops receiving pushes (ADR 0022). */
   async revoke(sessionId: string): Promise<void> {
-    await this.prisma.session.updateMany({
-      where: { id: sessionId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    await this.prisma.$transaction([
+      this.prisma.session.updateMany({
+        where: { id: sessionId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.pushDevice.deleteMany({ where: { sessionId } }),
+    ]);
   }
 
   async revokeAllForUser(userId: string): Promise<number> {
-    const result = await this.prisma.session.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    const [result] = await this.prisma.$transaction([
+      this.prisma.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.pushDevice.deleteMany({ where: { userId } }),
+    ]);
     return result.count;
   }
 }

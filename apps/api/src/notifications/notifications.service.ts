@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { maskPhone } from '../common/mask.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PUSH_PROVIDER, type PushProvider } from '../push/push.provider.js';
 import { SMS_PROVIDER, type SmsProvider } from '../sms/sms.provider.js';
 import { TELEGRAM_PROVIDER, type TelegramProvider } from './telegram.provider.js';
 
@@ -20,7 +22,48 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     @Inject(SMS_PROVIDER) private readonly sms: SmsProvider,
     @Inject(TELEGRAM_PROVIDER) private readonly telegram: TelegramProvider,
+    @Inject(PUSH_PROVIDER) private readonly push: PushProvider,
   ) {}
+
+  /**
+   * Push to every phone of the user with a live session. Tokens the provider
+   * reports as gone are forgotten; the message is retried only if no phone got it.
+   */
+  private async sendPush(
+    tx: Prisma.TransactionClient,
+    row: { recipient: string; text: string; data: Prisma.JsonValue },
+    now: Date,
+  ): Promise<void> {
+    const devices = await tx.pushDevice.findMany({
+      where: { userId: row.recipient, session: { revokedAt: null, expiresAt: { gt: now } } },
+      select: { id: true, token: true },
+    });
+    if (devices.length === 0) return;
+    const data =
+      row.data && typeof row.data === 'object' && !Array.isArray(row.data)
+        ? (row.data as Record<string, unknown>)
+        : undefined;
+    const results = await this.push.send(
+      devices.map((d) => ({
+        to: d.token,
+        title: 'UZGO',
+        body: row.text,
+        ...(data ? { data } : {}),
+      })),
+    );
+    const gone = devices.filter((_, i) => {
+      const r = results[i];
+      return r && !r.ok && r.deviceGone;
+    });
+    if (gone.length > 0) {
+      await tx.pushDevice.deleteMany({ where: { id: { in: gone.map((d) => d.id) } } });
+    }
+    const failures = results.filter((r) => !r.ok && !r.deviceGone);
+    if (failures.length > 0 && !results.some((r) => r.ok)) {
+      const first = failures[0];
+      throw new Error(`Push failed: ${first && !first.ok ? first.error : 'unknown'}`);
+    }
+  }
 
   /** `only` narrows the batch to some notifications (used by tests on a shared database). */
   async dispatchDue(
@@ -42,6 +85,7 @@ export class NotificationsService {
           const row = await tx.notification.findUniqueOrThrow({ where: { id } });
           try {
             if (row.channel === 'SMS') await this.sms.send(row.recipient, row.text);
+            else if (row.channel === 'PUSH') await this.sendPush(tx, row, now);
             else await this.telegram.send(row.recipient, row.text);
             await tx.notification.update({
               where: { id },
@@ -71,7 +115,7 @@ export class NotificationsService {
               {
                 id,
                 channel: row.channel,
-                to: row.channel === 'SMS' ? maskPhone(row.recipient) : 'telegram',
+                to: row.channel === 'SMS' ? maskPhone(row.recipient) : row.channel.toLowerCase(),
                 attempts,
               },
               'Notification delivery failed',

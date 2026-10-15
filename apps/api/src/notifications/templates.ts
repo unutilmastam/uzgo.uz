@@ -38,18 +38,32 @@ const sellerNew = (shipment: string, items: number) =>
 
 const localeOf = (value: string): Locale => (value === 'ru' ? 'ru' : 'uz');
 
-async function enqueue(
-  tx: Tx,
-  rows: {
-    channel: 'SMS' | 'TELEGRAM';
-    recipient: string;
-    text: string;
-    template: string;
-    orderId: string;
-  }[],
-) {
+type Row = {
+  channel: 'SMS' | 'TELEGRAM' | 'PUSH';
+  recipient: string;
+  text: string;
+  template: string;
+  orderId: string;
+  data?: { type: 'order'; number: string } | { type: 'shipment'; storeId: string };
+};
+
+async function enqueue(tx: Tx, rows: Row[]) {
   if (rows.length > 0) await tx.notification.createMany({ data: rows });
 }
+
+/** Users that have at least one phone registered for push (ADR 0022). */
+async function withPushDevices(tx: Tx, userIds: string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const rows = await tx.pushDevice.findMany({
+    where: { userId: { in: userIds } },
+    select: { userId: true },
+    distinct: ['userId'],
+  });
+  return new Set(rows.map((r) => r.userId));
+}
+
+/** Same text as the SMS, without the "UZGO: " prefix (the push title says UZGO). */
+const pushText = (text: string) => text.replace(/^UZGO: /, '');
 
 /** Customer: shipment status changes they care about. */
 export async function notifyShipmentStatus(tx: Tx, sellerOrderId: string, to: SellerOrderStatus) {
@@ -60,7 +74,9 @@ export async function notifyShipmentStatus(tx: Tx, sellerOrderId: string, to: Se
     select: {
       number: true,
       orderId: true,
-      order: { select: { user: { select: { phone: true, locale: true } } } },
+      order: {
+        select: { number: true, user: { select: { id: true, phone: true, locale: true } } },
+      },
     },
   });
   if (to === 'NEW') {
@@ -69,35 +85,48 @@ export async function notifyShipmentStatus(tx: Tx, sellerOrderId: string, to: Se
   }
   if (!template) return;
   const user = shipment.order.user;
-  await enqueue(tx, [
-    {
-      channel: 'SMS',
-      recipient: user.phone,
-      text: template[localeOf(user.locale)](shipment.number),
-      template: `shipment.${to.toLowerCase()}`,
+  const text = template[localeOf(user.locale)](shipment.number);
+  const name = `shipment.${to.toLowerCase()}`;
+  const rows: Row[] = [
+    { channel: 'SMS', recipient: user.phone, text, template: name, orderId: shipment.orderId },
+  ];
+  if ((await withPushDevices(tx, [user.id])).has(user.id)) {
+    rows.push({
+      channel: 'PUSH',
+      recipient: user.id,
+      text: pushText(text),
+      template: name,
       orderId: shipment.orderId,
-    },
-  ]);
+      data: { type: 'order', number: shipment.order.number },
+    });
+  }
+  await enqueue(tx, rows);
 }
 
 /** Customer: online payment received. */
 export async function notifyOrderPaid(tx: Tx, orderId: string) {
   const order = await tx.order.findUniqueOrThrow({
     where: { id: orderId },
-    select: { number: true, user: { select: { phone: true, locale: true } } },
+    select: { number: true, user: { select: { id: true, phone: true, locale: true } } },
   });
-  await enqueue(tx, [
-    {
-      channel: 'SMS',
-      recipient: order.user.phone,
-      text: PAID[localeOf(order.user.locale)](order.number),
+  const text = PAID[localeOf(order.user.locale)](order.number);
+  const rows: Row[] = [
+    { channel: 'SMS', recipient: order.user.phone, text, template: 'order.paid', orderId },
+  ];
+  if ((await withPushDevices(tx, [order.user.id])).has(order.user.id)) {
+    rows.push({
+      channel: 'PUSH',
+      recipient: order.user.id,
+      text: pushText(text),
       template: 'order.paid',
       orderId,
-    },
-  ]);
+      data: { type: 'order', number: order.number },
+    });
+  }
+  await enqueue(tx, rows);
 }
 
-/** Store owners (SMS) and the store's Telegram chat: a new shipment to confirm. */
+/** Store owners (SMS), the store's Telegram chat and members' phones (push): a new shipment. */
 export async function notifySellers(tx: Tx, sellerOrderIds: string[]) {
   const shipments = await tx.sellerOrder.findMany({
     where: { id: { in: sellerOrderIds } },
@@ -107,25 +136,42 @@ export async function notifySellers(tx: Tx, sellerOrderIds: string[]) {
       items: { select: { quantity: true } },
       store: {
         select: {
+          id: true,
           telegramChatId: true,
-          members: { where: { role: 'OWNER' }, select: { user: { select: { phone: true } } } },
+          members: { select: { role: true, user: { select: { id: true, phone: true } } } },
         },
       },
     },
   });
-  const rows = shipments.flatMap((s) => {
+  const pushUsers = await withPushDevices(
+    tx,
+    shipments.flatMap((s) => s.store.members.map((m) => m.user.id)),
+  );
+  const rows = shipments.flatMap((s): Row[] => {
     const text = sellerNew(
       s.number,
       s.items.reduce((n, i) => n + i.quantity, 0),
     );
     return [
-      ...s.store.members.map((m) => ({
-        channel: 'SMS' as const,
-        recipient: m.user.phone,
-        text,
-        template: 'seller.new_order',
-        orderId: s.orderId,
-      })),
+      ...s.store.members
+        .filter((m) => m.role === 'OWNER')
+        .map((m) => ({
+          channel: 'SMS' as const,
+          recipient: m.user.phone,
+          text,
+          template: 'seller.new_order',
+          orderId: s.orderId,
+        })),
+      ...s.store.members
+        .filter((m) => pushUsers.has(m.user.id))
+        .map((m) => ({
+          channel: 'PUSH' as const,
+          recipient: m.user.id,
+          text: pushText(text),
+          template: 'seller.new_order',
+          orderId: s.orderId,
+          data: { type: 'shipment' as const, storeId: s.store.id },
+        })),
       ...(s.store.telegramChatId
         ? [
             {

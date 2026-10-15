@@ -23,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { PushModule } from './push/push.module.js';
 import { SellerModule } from './seller/seller.module.js';
 import { SmsModule } from './sms/sms.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module.js';
     }),
     AuditModule,
     SmsModule,
+    PushModule,
     StorageModule,
     HealthModule,
     GeoModule,
