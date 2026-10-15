@@ -65,7 +65,7 @@ export class AdminPromoController {
       items: rows.map((row) => {
         const u = byId.get(row.id);
         const count = u && typeof u._count === 'object' ? u._count._all : 0;
-        return this.view(row, count, u?._sum?.discountTiyin ?? 0n);
+        return this.view(row, count, u?._sum.discountTiyin ?? 0n);
       }),
     };
   }
