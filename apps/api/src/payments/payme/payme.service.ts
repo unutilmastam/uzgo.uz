@@ -178,8 +178,24 @@ export class PaymeService {
   private async receiptDetail(orderId: string) {
     const order = await this.prisma.order.findUniqueOrThrow({
       where: { id: orderId },
-      select: { deliveryTotalTiyin: true },
+      select: { deliveryTotalTiyin: true, kind: true, totalTiyin: true },
     });
+    if (order.kind === 'RIDE') {
+      // One "taxi service" line (ADR 0025); rides are offered online only when the codes are set.
+      return {
+        receipt_type: 0,
+        items: [
+          {
+            title: 'UZGO Go: taksi xizmati',
+            price: Number(order.totalTiyin),
+            count: 1,
+            code: this.env.RIDE_MXIK_CODE ?? '',
+            package_code: this.env.RIDE_PACKAGE_CODE ?? '',
+            vat_percent: this.env.RIDE_VAT_PERCENT,
+          },
+        ],
+      };
+    }
     const items = await this.prisma.orderItem.findMany({
       where: { sellerOrder: { orderId } },
       orderBy: { createdAt: 'asc' },

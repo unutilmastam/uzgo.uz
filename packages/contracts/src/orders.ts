@@ -182,7 +182,7 @@ export type SellerOrderView = z.infer<typeof sellerOrderViewSchema>;
 
 export const orderViewSchema = z.object({
   number: z.string(),
-  kind: z.enum(['MARKET', 'FOOD']),
+  kind: z.enum(['MARKET', 'FOOD', 'RIDE']),
   status: orderStatusSchema,
   paymentMethod: paymentMethodSchema,
   /** Online orders only; cash on delivery is NOT_REQUIRED. */
@@ -220,7 +220,7 @@ export const orderResponseSchema = z.object({ order: orderViewSchema });
 
 export const orderSummarySchema = z.object({
   number: z.string(),
-  kind: z.enum(['MARKET', 'FOOD']),
+  kind: z.enum(['MARKET', 'FOOD', 'RIDE']),
   status: orderStatusSchema,
   createdAt: z.string(),
   totalTiyin: tiyinSchema,

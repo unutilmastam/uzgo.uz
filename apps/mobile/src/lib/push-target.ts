@@ -17,5 +17,9 @@ export function pushTarget(
       return { pathname: '/seller/[storeId]', params: { storeId: parsed.data.storeId } };
     case 'courier':
       return { pathname: '/courier', params: {} };
+    // UZGO Go screens arrive with the app part of Phase 9c.
+    case 'ride':
+    case 'driver':
+      return null;
   }
 }

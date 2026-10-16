@@ -76,6 +76,8 @@ enum Role {
   SUPER_ADMIN
   /// UZGO Food courier (Phase 9b, ADR 0024); granted by staff with a CourierProfile.
   COURIER
+  /// UZGO Go driver (Phase 9c, ADR 0025); granted when staff approve a DriverProfile.
+  DRIVER
 }
 
 model User {
@@ -106,6 +108,11 @@ model User {
   courierOrders      SellerOrder[]       @relation("CourierOrders")
   courierLedger      LedgerEntry[]       @relation("CourierLedger")
   courierSettlements CourierSettlement[] @relation("SettlementCourier")
+  driverProfile      DriverProfile?
+  ridesTaken         Ride[]              @relation("RideRider")
+  ridesDriven        Ride[]              @relation("RideDriver")
+  driverLedger       LedgerEntry[]       @relation("DriverLedger")
+  driverSettlements  DriverSettlement[]  @relation("SettlementDriver")
 }
 
 model UserProfile {
@@ -601,11 +608,14 @@ enum OrderActor {
   ADMIN
   SYSTEM
   COURIER
+  DRIVER
 }
 
 enum OrderKind {
   MARKET
   FOOD
+  /// UZGO Go ride (ADR 0025): no shipments; details in Ride.
+  RIDE
 }
 
 enum FoodDeliveryMode {
@@ -657,6 +667,7 @@ model Order {
   events             OrderEvent[]
   payments           PaymentAttempt[]
   refunds            Refund[]
+  ride               Ride?
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -830,6 +841,8 @@ enum LedgerAccount {
   PLATFORM_PROMOTIONS
   /// What UZGO owes each courier (per courierId; negative = the courier holds UZGO's cash).
   COURIER_PAYABLE
+  /// What UZGO owes each driver (per driverId; negative = the driver owes UZGO commission).
+  DRIVER_PAYABLE
 }
 
 /// Double-entry ledger: every journal (journalId) sums to zero. Positive
@@ -842,6 +855,8 @@ model LedgerEntry {
   store         Store?        @relation(fields: [storeId], references: [id], onDelete: Restrict)
   courierId     String?       @db.Uuid
   courier       User?         @relation("CourierLedger", fields: [courierId], references: [id], onDelete: Restrict)
+  driverId      String?       @db.Uuid
+  driver        User?         @relation("DriverLedger", fields: [driverId], references: [id], onDelete: Restrict)
   amountTiyin   BigInt
   /// payment_captured, shipment_delivered, cod_commission, return_reversal, refund, payout
   kind          String
@@ -854,6 +869,7 @@ model LedgerEntry {
   @@index([journalId])
   @@index([account, storeId, createdAt])
   @@index([account, courierId, createdAt])
+  @@index([account, driverId, createdAt])
   @@index([sellerOrderId])
 }
 
@@ -1141,4 +1157,118 @@ model CourierSettlement {
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([courierId, createdAt])
+}
+
+// ─── UZGO Go (Phase 9c, ADR 0025) ─────────────────────────────────────────────
+
+enum DriverStatus {
+  /// Applied, waiting for staff.
+  PENDING
+  ACTIVE
+  /// Staff rejected the application (reviewNote says why); the driver may re-apply.
+  REJECTED
+  SUSPENDED
+}
+
+enum RideClass {
+  ECONOMY
+  COMFORT
+}
+
+model DriverProfile {
+  userId          String       @id @db.Uuid
+  user            User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status          DriverStatus @default(PENDING)
+  firstName       String
+  lastName        String
+  /// Driver licence (haydovchilik guvohnomasi) number.
+  licenceNumber   String
+  /// Taxi permit or self-employed registration number, when the driver has one.
+  permitNumber    String?
+  /// Tax id (STIR/PINFL) for receipts and payouts, optional.
+  taxId           String?
+  carMake         String
+  carModel        String
+  carColor        String
+  carYear         Int
+  /// Normalised: upper case, no spaces, e.g. 01A123BC.
+  plateNumber     String       @unique
+  rideClass       RideClass    @default(ECONOMY)
+  termsAcceptedAt DateTime     @db.Timestamptz(3)
+  reviewNote      String?
+  reviewedById    String?      @db.Uuid
+  reviewedAt      DateTime?    @db.Timestamptz(3)
+  /// Ready to take requests.
+  online          Boolean      @default(false)
+  /// Last known position (no history is kept).
+  lastLat         Float?
+  lastLng         Float?
+  lastSeenAt      DateTime?    @db.Timestamptz(3)
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([status, online])
+}
+
+enum RideStatus {
+  AWAITING_PAYMENT
+  SEARCHING
+  ACCEPTED
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_DRIVER
+}
+
+/// One ride; its Order (kind RIDE) carries the number, payment and refunds.
+model Ride {
+  id              String      @id @default(uuid(7)) @db.Uuid
+  orderId         String      @unique @db.Uuid
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  riderId         String      @db.Uuid
+  rider           User        @relation("RideRider", fields: [riderId], references: [id], onDelete: Restrict)
+  driverId        String?     @db.Uuid
+  driver          User?       @relation("RideDriver", fields: [driverId], references: [id], onDelete: Restrict)
+  rideClass       RideClass
+  status          RideStatus
+  pickupLat       Float
+  pickupLng       Float
+  pickupLabel     String
+  dropoffLat      Float
+  dropoffLng      Float
+  dropoffLabel    String
+  /// Straight-line distance between the points, metres.
+  distanceM       Int
+  etaMinutes      Int
+  priceTiyin      BigInt
+  /// UZGO commission (snapshot at ordering).
+  commissionTiyin BigInt
+  /// Set when SEARCHING starts (payment captured, or at once for cash).
+  searchingAt     DateTime?   @db.Timestamptz(3)
+  acceptedAt      DateTime?   @db.Timestamptz(3)
+  arrivedAt       DateTime?   @db.Timestamptz(3)
+  startedAt       DateTime?   @db.Timestamptz(3)
+  finishedAt      DateTime?   @db.Timestamptz(3)
+  cancelledBy     OrderActor?
+  cancelReason    String?
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@index([status, searchingAt])
+  @@index([riderId, createdAt])
+  @@index([driverId, status])
+}
+
+/// Commission handed in by a driver (negative) or a payout to them (positive).
+model DriverSettlement {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  driverId    String   @db.Uuid
+  driver      User     @relation("SettlementDriver", fields: [driverId], references: [id], onDelete: Restrict)
+  amountTiyin BigInt
+  note        String?
+  createdById String   @db.Uuid
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([driverId, createdAt])
 }

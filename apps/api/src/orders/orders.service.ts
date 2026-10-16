@@ -547,8 +547,9 @@ export class OrdersService {
   }
 
   async listForCustomer(userId: string) {
+    // Rides have their own history (GET /rides, ADR 0025).
     const orders = await this.prisma.order.findMany({
-      where: { userId },
+      where: { userId, kind: { not: 'RIDE' } },
       orderBy: { createdAt: 'desc' },
       take: 50,
       select: {

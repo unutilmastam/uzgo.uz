@@ -23,10 +23,12 @@ export function somStringToTiyin(value: string): bigint | null {
 export function paymentLink(
   env: Env,
   method: PaymentMethod,
-  order: { number: string; totalTiyin: bigint },
+  order: { number: string; totalTiyin: bigint; kind?: string },
   locale: 'uz' | 'ru',
 ): string | null {
-  const returnUrl = `${env.WEB_PUBLIC_URL}/${locale}/orders/${order.number}`;
+  // Rides come back to their live ride page (ADR 0025).
+  const page = order.kind === 'RIDE' ? 'go' : 'orders';
+  const returnUrl = `${env.WEB_PUBLIC_URL}/${locale}/${page}/${order.number}`;
   switch (method) {
     case 'PAYME': {
       if (!env.PAYME_MERCHANT_ID) return null;

@@ -11,6 +11,8 @@ export type Posting = {
   storeId?: string | null;
   /** COURIER_PAYABLE lines name the courier. */
   courierId?: string | null;
+  /** DRIVER_PAYABLE lines name the driver. */
+  driverId?: string | null;
 };
 
 export type JournalRefs = {
@@ -38,6 +40,7 @@ export async function postJournal(tx: Tx, postings: Posting[], refs: JournalRefs
       account: p.account,
       storeId: p.storeId ?? null,
       courierId: p.courierId ?? null,
+      driverId: p.driverId ?? null,
       amountTiyin: p.amountTiyin,
       kind: refs.kind,
       orderId: refs.orderId ?? null,

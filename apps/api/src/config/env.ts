@@ -79,6 +79,29 @@ export const envSchema = z
     FOOD_OFFER_RADIUS_KM: z.coerce.number().int().min(1).max(50).default(5),
     /** A restaurant that does not accept an order in time: the order is cancelled. */
     FOOD_ACCEPT_TIMEOUT_MINUTES: z.coerce.number().int().min(2).max(60).default(10),
+    /** UZGO Go (ADR 0025): fixed price = base + per km of road distance, per class (tiyin). */
+    RIDE_ECONOMY_BASE_TIYIN: z.coerce.number().int().min(0).max(100_000_000).default(700_000),
+    RIDE_ECONOMY_PER_KM_TIYIN: z.coerce.number().int().min(0).max(10_000_000).default(250_000),
+    RIDE_COMFORT_BASE_TIYIN: z.coerce.number().int().min(0).max(100_000_000).default(1_000_000),
+    RIDE_COMFORT_PER_KM_TIYIN: z.coerce.number().int().min(0).max(10_000_000).default(350_000),
+    /** UZGO commission on each ride, basis points (1000 = 10 %). */
+    RIDE_COMMISSION_BP: z.coerce.number().int().min(0).max(5000).default(1000),
+    /** Longest ride accepted (straight-line km between pickup and drop-off). */
+    RIDE_MAX_KM: z.coerce.number().int().min(5).max(1000).default(150),
+    /** Online drivers see requests whose pickup is within this distance. */
+    RIDE_OFFER_RADIUS_KM: z.coerce.number().int().min(1).max(50).default(5),
+    /** Nobody accepted the ride in time: NO_DRIVER (online payment refunded). */
+    RIDE_SEARCH_TIMEOUT_MINUTES: z.coerce.number().int().min(2).max(60).default(10),
+    /** Fiscal receipt line for rides paid with Payme/Click (IKPU, package code, VAT %). */
+    RIDE_MXIK_CODE: z
+      .string()
+      .regex(/^\d{17}$/)
+      .optional(),
+    RIDE_PACKAGE_CODE: z
+      .string()
+      .regex(/^\d{1,20}$/)
+      .optional(),
+    RIDE_VAT_PERCENT: z.coerce.number().int().min(0).max(100).default(0),
     /** OpenStreetMap Nominatim (address search). Own instance: set its URL. */
     NOMINATIM_URL: z.url({ protocol: /^https?$/ }).default('https://nominatim.openstreetmap.org'),
     /** Contact e-mail sent in the User-Agent (Nominatim usage policy); required in production. */

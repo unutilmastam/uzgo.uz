@@ -1,5 +1,5 @@
 import type { Prisma } from '../generated/prisma/client.js';
-import type { SellerOrderStatus } from '../generated/prisma/enums.js';
+import type { RideStatus, SellerOrderStatus } from '../generated/prisma/enums.js';
 
 type Tx = Prisma.TransactionClient;
 type Locale = 'uz' | 'ru';
@@ -74,7 +74,11 @@ type Row = {
   template: string;
   orderId: string;
   data?:
-    { type: 'order'; number: string } | { type: 'shipment'; storeId: string } | { type: 'courier' };
+    | { type: 'order'; number: string }
+    | { type: 'shipment'; storeId: string }
+    | { type: 'courier' }
+    | { type: 'ride'; number: string }
+    | { type: 'driver' };
 };
 
 async function enqueue(tx: Tx, rows: Row[]) {
@@ -265,6 +269,142 @@ export async function notifyCourierOffer(tx: Tx, sellerOrderId: string, radiusM:
       template: 'courier.offer',
       orderId: shipment.orderId,
       data: { type: 'courier' as const },
+    })),
+  );
+}
+
+// ─── UZGO Go (ADR 0025) ─────────────────────────────────────────────────────
+
+const RIDER: Partial<Record<RideStatus, Record<Locale, (n: string) => string>>> = {
+  ACCEPTED: {
+    uz: (n) => `UZGO Go: ${n} — haydovchi yoʻlda, sizga kelmoqda.`,
+    ru: (n) => `UZGO Go: ${n} — водитель едет к вам.`,
+  },
+  ARRIVED: {
+    uz: (n) => `UZGO Go: ${n} — haydovchi yetib keldi va sizni kutmoqda.`,
+    ru: (n) => `UZGO Go: ${n} — водитель на месте и ждёт вас.`,
+  },
+  COMPLETED: {
+    uz: (n) => `UZGO Go: ${n} — safar yakunlandi. Rahmat!`,
+    ru: (n) => `UZGO Go: ${n} — поездка завершена. Спасибо!`,
+  },
+  CANCELLED: {
+    uz: (n) => `UZGO Go: ${n} — safar bekor qilindi.`,
+    ru: (n) => `UZGO Go: ${n} — поездка отменена.`,
+  },
+  NO_DRIVER: {
+    uz: (n) =>
+      `UZGO Go: ${n} — afsuski, boʻsh haydovchi topilmadi. Onlayn toʻlov boʻlsa, pul qaytariladi.`,
+    ru: (n) =>
+      `UZGO Go: ${n} — к сожалению, свободный водитель не найден. Онлайн-оплата будет возвращена.`,
+  },
+};
+/** Rides move fast: push for everything, SMS only when nobody came. */
+const RIDER_SMS = new Set<RideStatus>(['NO_DRIVER']);
+
+const DRIVER_OFFER = 'UZGO Go: yaqin atrofda yangi buyurtma. / Новый заказ рядом.';
+const DRIVER_CANCELLED = 'UZGO Go: yoʻlovchi safarni bekor qildi. / Пассажир отменил поездку.';
+
+/**
+ * Rider: their ride changed. `cancelledByRider` skips the rider's own cancel
+ * and tells the driver instead (when one had taken the ride).
+ */
+export async function notifyRideStatus(
+  tx: Tx,
+  rideId: string,
+  to: RideStatus,
+  options: { cancelledByRider?: boolean; driverId?: string | null } = {},
+) {
+  const ride = await tx.ride.findUniqueOrThrow({
+    where: { id: rideId },
+    select: {
+      orderId: true,
+      order: { select: { number: true } },
+      rider: { select: { id: true, phone: true, locale: true } },
+    },
+  });
+  const rows: Row[] = [];
+  if (options.cancelledByRider) {
+    const driverId = options.driverId;
+    if (driverId && (await withPushDevices(tx, [driverId])).has(driverId)) {
+      rows.push({
+        channel: 'PUSH',
+        recipient: driverId,
+        text: DRIVER_CANCELLED,
+        template: 'driver.ride_cancelled',
+        orderId: ride.orderId,
+        data: { type: 'driver' },
+      });
+    }
+    await enqueue(tx, rows);
+    return;
+  }
+  const template = RIDER[to];
+  if (!template) return;
+  const number = ride.order.number;
+  const text = template[localeOf(ride.rider.locale)](number);
+  const name = `ride.${to.toLowerCase()}`;
+  if (RIDER_SMS.has(to)) {
+    rows.push({
+      channel: 'SMS',
+      recipient: ride.rider.phone,
+      text,
+      template: name,
+      orderId: ride.orderId,
+    });
+  }
+  if ((await withPushDevices(tx, [ride.rider.id])).has(ride.rider.id)) {
+    rows.push({
+      channel: 'PUSH',
+      recipient: ride.rider.id,
+      text: pushText(text),
+      template: name,
+      orderId: ride.orderId,
+      data: { type: 'ride', number },
+    });
+  }
+  await enqueue(tx, rows);
+}
+
+/**
+ * New ride request (ADR 0025): push to online, active drivers of a class
+ * that may serve it, whose last position is within `radiusM` of the pickup.
+ * No personal data in the text.
+ */
+export async function notifyDriverOffer(tx: Tx, rideId: string, radiusM: number) {
+  const ride = await tx.ride.findUniqueOrThrow({
+    where: { id: rideId },
+    select: { orderId: true, riderId: true, rideClass: true, pickupLat: true, pickupLng: true },
+  });
+  const dLat = radiusM / 111_000;
+  const dLng = radiusM / (111_000 * Math.cos((ride.pickupLat * Math.PI) / 180));
+  const drivers = await tx.driverProfile.findMany({
+    where: {
+      status: 'ACTIVE',
+      online: true,
+      userId: { not: ride.riderId },
+      // Comfort cars also serve economy rides.
+      rideClass: ride.rideClass === 'COMFORT' ? 'COMFORT' : { in: ['ECONOMY', 'COMFORT'] },
+      lastLat: { gte: ride.pickupLat - dLat, lte: ride.pickupLat + dLat },
+      lastLng: { gte: ride.pickupLng - dLng, lte: ride.pickupLng + dLng },
+      lastSeenAt: { gte: new Date(Date.now() - 15 * 60_000) },
+    },
+    take: 50,
+    select: { userId: true },
+  });
+  const pushUsers = await withPushDevices(
+    tx,
+    drivers.map((d) => d.userId),
+  );
+  await enqueue(
+    tx,
+    [...pushUsers].map((userId) => ({
+      channel: 'PUSH' as const,
+      recipient: userId,
+      text: DRIVER_OFFER,
+      template: 'driver.offer',
+      orderId: ride.orderId,
+      data: { type: 'driver' as const },
     })),
   );
 }

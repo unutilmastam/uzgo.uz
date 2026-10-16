@@ -9,6 +9,7 @@ import { capturePostings, postJournal, refundPostings } from '../ledger/ledger.j
 import { notifyOrderPaid } from '../notifications/templates.js';
 import { transitionInTx } from '../orders/orders.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { transitionRide } from '../rides/ride-flow.js';
 import { ONLINE_METHODS } from './payment-methods.js';
 
 type Tx = Prisma.TransactionClient;
@@ -18,6 +19,7 @@ export type PayableOrder = {
   id: string;
   number: string;
   userId: string;
+  kind: 'MARKET' | 'FOOD' | 'RIDE';
   totalTiyin: bigint;
   paymentMethod: PaymentMethod;
   status: string;
@@ -29,6 +31,7 @@ const payableSelect = {
   id: true,
   number: true,
   userId: true,
+  kind: true,
   totalTiyin: true,
   paymentMethod: true,
   status: true,
@@ -117,6 +120,15 @@ export class PaymentsService {
         reason: `paid:${attempt.method}`,
       });
     }
+    // A paid ride starts looking for a driver (ADR 0025).
+    const ride = await tx.ride.findUnique({ where: { orderId: order.id }, select: { id: true } });
+    if (ride) {
+      await transitionRide(tx, ride.id, 'SEARCHING', {
+        actor: 'SYSTEM',
+        userId: null,
+        reason: `paid:${attempt.method}`,
+      });
+    }
     await this.audit.record(
       {
         action: 'payment.captured',
@@ -144,6 +156,9 @@ export class PaymentsService {
 
   /** Whether the provider may still return the whole captured payment. */
   async canRefundWhole(tx: Tx, orderId: string): Promise<boolean> {
+    const ride = await tx.ride.findUnique({ where: { orderId }, select: { status: true } });
+    // A ride that has started or finished cannot be undone by a whole refund.
+    if (ride) return ride.status !== 'IN_PROGRESS' && ride.status !== 'COMPLETED';
     const shipments = await tx.sellerOrder.findMany({
       where: { orderId },
       select: { status: true },
@@ -199,6 +214,19 @@ export class PaymentsService {
         reason: `refunded:${attempt.method}`,
         providerRefunded: true,
       });
+    }
+    const openRide = await tx.ride.findFirst({
+      where: { orderId: attempt.orderId, status: { in: ['SEARCHING', 'ACCEPTED', 'ARRIVED'] } },
+      select: { id: true },
+    });
+    if (openRide) {
+      await transitionRide(
+        tx,
+        openRide.id,
+        'CANCELLED',
+        { actor: 'SYSTEM', userId: null, reason: `refunded:${attempt.method}` },
+        { providerRefunded: true },
+      );
     }
     // Shipment refunds still waiting for staff are covered by this full refund.
     await tx.refund.updateMany({
@@ -267,6 +295,17 @@ export class PaymentsService {
     });
     for (const shipment of shipments) {
       await transitionInTx(tx, shipment.id, 'CANCELLED_BY_CUSTOMER', {
+        actor: 'SYSTEM',
+        userId: by.userId,
+        reason: by.reason,
+      });
+    }
+    const ride = await tx.ride.findUnique({
+      where: { orderId },
+      select: { id: true, status: true },
+    });
+    if (ride?.status === 'AWAITING_PAYMENT') {
+      await transitionRide(tx, ride.id, 'CANCELLED', {
         actor: 'SYSTEM',
         userId: by.userId,
         reason: by.reason,

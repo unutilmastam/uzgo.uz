@@ -37,5 +37,9 @@ export const pushDataSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('shipment'), storeId: z.uuid() }),
   /** A new UZGO Food delivery offer nearby (courier mode). */
   z.object({ type: z.literal('courier') }),
+  /** UZGO Go: the rider's ride changed. */
+  z.object({ type: z.literal('ride'), number: z.string() }),
+  /** UZGO Go: a new ride request nearby (driver mode). */
+  z.object({ type: z.literal('driver') }),
 ]);
 export type PushData = z.infer<typeof pushDataSchema>;
