@@ -19,7 +19,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 8     | Mobile apps                                                                    | VERIFIED    |
 | 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | VERIFIED    |
 | 9b    | UZGO Food (separate module; provider decisions first)                          | VERIFIED    |
-| 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | NOT STARTED |
+| 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | VERIFIED    |
 | 9d    | Unified search and AI assistant (AI provider decision first)                   | NOT STARTED |
 
 Phase 0 is documentation only; "VERIFIED" means the documents exist, are
@@ -151,7 +151,7 @@ settlements, search timeout, staff cancel), contract and fare unit tests,
 web e2e (driver applies → staff approve → rider calls a car → completed) and
 mobile e2e (rider calls in the app → driver takes and completes in the app).
 Lawyer/accountant items before launch: taxi licensing, driver terms, ride
-fiscal codes.
+fiscal codes. CI run #66 (commit b5780d8) passed incl. web and mobile e2e.
 
 ## Open decisions
 
