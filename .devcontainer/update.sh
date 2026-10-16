@@ -6,4 +6,5 @@ git pull --ff-only
 pnpm install --frozen-lockfile
 pnpm db:deploy
 pnpm --recursive --workspace-concurrency=1 --filter "@uzgo/api..." --filter "@uzgo/web..." build
+touch "$HOME/.uzgo-setup-done"
 bash .devcontainer/start.sh

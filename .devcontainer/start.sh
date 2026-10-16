@@ -14,10 +14,17 @@ healthy() {
 
 # --if-needed: leave already running servers alone (used when the editor opens).
 # The editor task can start while the one-time setup (postCreate) still runs.
-if [[ ! -f "$HOME/.uzgo-setup-done" ]]; then
+# Codespaces created before the marker existed never wrote it: a finished
+# build with no setup running counts as done.
+MARKER="$HOME/.uzgo-setup-done"
+setup_running() { pgrep -f '[.]devcontainer/setup[.]sh' >/dev/null; }
+built() { [[ -f apps/api/dist/main.js && -f apps/web/.next/BUILD_ID ]]; }
+setup_finished() { [[ -f $MARKER ]] || { built && ! setup_running; }; }
+if ! setup_finished; then
   echo "[uzgo] o'rnatish davom etmoqda (taxminan 10 daqiqa), kuting..."
-  until [[ -f "$HOME/.uzgo-setup-done" ]]; do sleep 5; done
+  until setup_finished; do sleep 5; done
 fi
+touch "$MARKER"
 
 if [[ ${1:-} == --if-needed ]] && healthy; then
   echo "[uzgo] ready: API and web are already running"
