@@ -17,7 +17,7 @@ const OPERATOR = {
   email: '[support@domen]',
 };
 
-const UPDATED = '2026-10-15';
+const UPDATED = '2026-10-16';
 
 const terms: Record<Locale, LegalDoc> = {
   uz: {
@@ -193,6 +193,7 @@ const privacy: Record<Locale, LegalDoc> = {
           'Buyurtmangizni bajaradigan sotuvchiga — faqat shu joʻnatma uchun zarur maʼlumotlar (qabul qiluvchi ismi, telefoni, manzil).',
           'Xizmat koʻrsatuvchilarga: SMS yuborish (Eskiz), onlayn toʻlov (Payme, Click), sotuvchilarga Telegram bildirishnomalari (xabarda manzil va ism boʻlmaydi). Ular maʼlumotlardan faqat shu xizmat uchun foydalanadi.',
           'Mobil ilovada bildirishnomalarni yoqsangiz, ular Expo, Google (Android) va Apple (iOS) push xizmatlari orqali yetkaziladi. Bu xizmatlar Oʻzbekistondan tashqarida joylashgan, shuning uchun xabarda faqat buyurtma raqami va holati boʻladi — ism, telefon va manzil yuborilmaydi. Bildirishnomalarni telefon sozlamalarida istalgan vaqtda oʻchirish mumkin.',
+          'UZGO yordamchisidan foydalansangiz, siz yozgan savollar javob tayyorlash uchun AI xizmatiga (Anthropic, AQSh) yuboriladi. Yordamchiga buyurtmalaringiz, telefon yoki manzilingiz berilmaydi va suhbat UZGO serverlarida saqlanmaydi; shaxsiy maʼlumot yozmang. Yordamchidan foydalanish ixtiyoriy.',
           'Davlat organlariga — faqat qonunda belgilangan hollarda.',
         ],
       },
@@ -262,6 +263,7 @@ const privacy: Record<Locale, LegalDoc> = {
           'Продавцу, выполняющему ваш заказ, — только данные, необходимые для этого отправления (имя и телефон получателя, адрес).',
           'Поставщикам услуг: отправка SMS (Eskiz), онлайн-оплата (Payme, Click), уведомления продавцам в Telegram (без адреса и имени). Они используют данные только для этой услуги.',
           'Если вы включите уведомления в мобильном приложении, они доставляются через push-сервисы Expo, Google (Android) и Apple (iOS). Эти сервисы находятся за пределами Узбекистана, поэтому в сообщении есть только номер и статус заказа — имя, телефон и адрес не передаются. Уведомления можно отключить в настройках телефона в любой момент.',
+          'Если вы пользуетесь помощником UZGO, ваши вопросы отправляются в AI-сервис (Anthropic, США) для подготовки ответа. Помощник не получает ваши заказы, телефон или адрес, а переписка не хранится на серверах UZGO; не пишите личные данные. Пользоваться помощником необязательно.',
           'Государственным органам — только в случаях, предусмотренных законом.',
         ],
       },

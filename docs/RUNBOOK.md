@@ -205,6 +205,19 @@ deploy the last good SHA, point DNS to the new server.
   `RIDE_MXIK_CODE`, `RIDE_PACKAGE_CODE` and `RIDE_VAT_PERCENT` from the
   accountant; without them only cash is accepted.
 
+## 9c. Assistant operations (ADR 0026)
+
+- Turn on: create an API key in the Anthropic console (set a monthly spend
+  limit there too), put it into `api.env` as `ANTHROPIC_API_KEY`, redeploy.
+  Turn off: remove the key and redeploy (clients hide the assistant).
+- Limits in `api.env`: `ASSISTANT_DAILY_LIMIT` (per user per day),
+  `ASSISTANT_MONTHLY_TOKEN_BUDGET` (all users; 0 = off), `ASSISTANT_MODEL`,
+  `ASSISTANT_EFFORT`.
+- Usage per day: `SELECT day, sum(messages), sum("inputTokens"),
+sum("outputTokens") FROM "AssistantUsage" GROUP BY day ORDER BY day DESC;`
+- Provider failures raise a Telegram alert (`assistant`); users see "try
+  later" and keep their daily messages.
+
 ## 10. Go-live checklist
 
 - [ ] Lawyer reviewed `/info/terms` and `/info/privacy`; operator details filled
@@ -219,4 +232,6 @@ deploy the last good SHA, point DNS to the new server.
 - [ ] Super admin enrolled with TOTP; `STAFF_TOTP_REQUIRED=true`.
 - [ ] UZGO Go: lawyer confirmed taxi licensing rules and the driver terms;
       accountant set `RIDE_MXIK_CODE` / `RIDE_PACKAGE_CODE` / `RIDE_VAT_PERCENT`.
+- [ ] Assistant: Anthropic API reachable from the server, key and console
+      spend limit set; lawyer confirmed the AI data transfer text.
 - [ ] `PUBLIC_INDEXING=true` only on launch day.

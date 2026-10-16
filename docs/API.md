@@ -321,6 +321,21 @@ IN_PROGRESS → COMPLETED`, plus `CANCELLED` and `NO_DRIVER` (nobody took it
 - `GET /orders` lists shop and food orders only.
 - Push payloads add `{ type: "ride", number }` and `{ type: "driver" }`.
 
+## Search and assistant (Phase 9d, ADR 0026)
+
+| Method | Path                | Auth   | Notes                                                                                                                                 |
+| ------ | ------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/search/all?q=`    | public | Products (8), restaurants (6), dishes (8) for one query; any script; cached 30 s; 60/min                                              |
+| GET    | `/assistant/status` | public | `{ enabled, dailyLimit, remainingToday }` (`remainingToday` only for signed-in users)                                                 |
+| POST   | `/assistant/chat`   | user   | `{ locale, messages: [{ role, text }] }` (≤ 20 turns, ≤ 2 000 chars, last from the user) → `{ reply, cards, remainingToday }`; 10/min |
+
+- Errors: `ASSISTANT_DAILY_LIMIT` (429), `ASSISTANT_DISABLED`,
+  `ASSISTANT_BUDGET_EXHAUSTED`, `ASSISTANT_UNAVAILABLE` (503). A failed
+  answer does not count against the daily limit.
+- `reply` is plain text; links are only `[Name](/p/<slug>)` or
+  `[Name](/food/<slug>)` (`assistantTextParts` in contracts) and `cards` hold
+  the items the tools returned that the reply links to.
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →

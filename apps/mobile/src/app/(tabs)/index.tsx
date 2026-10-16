@@ -92,6 +92,22 @@ function Header() {
         </View>
         <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
       </Pressable>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={t('assistantTitle')}
+        onPress={() => {
+          router.push('/assistant');
+        }}
+        style={[styles.food, { backgroundColor: c.secondary, borderColor: c.border }]}
+        testID="assistant-entry"
+      >
+        <Ionicons name="sparkles" size={28} color={c.primary} />
+        <View style={{ flex: 1 }}>
+          <AppText variant="heading">{t('assistantTitle')}</AppText>
+          <AppText variant="small">{t('assistantHomeText')}</AppText>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+      </Pressable>
       <AppText variant="heading">{t('recommended')}</AppText>
     </View>
   );

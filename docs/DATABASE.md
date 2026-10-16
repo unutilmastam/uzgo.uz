@@ -311,6 +311,14 @@ when its session is revoked; the outbox `Notification` gains channel `PUSH`
 - Ledger account `DRIVER_PAYABLE` (`LedgerEntry.driverId`);
   `DriverSettlement` is append-only (no-delete trigger).
 
+## Search and assistant (Phase 9d, ADR 0026)
+
+- `RestaurantProfile.searchText`, `FoodMenuItem.searchText` (normalised,
+  trigram GIN indexes); rebuilt by `reindexFood` on every staff change.
+- `AssistantUsage` (user, Tashkent day): message count and token totals; no
+  message text. Counted with one conditional upsert so parallel requests
+  cannot pass the daily limit.
+
 ## Database roles (production, ADR 0021)
 
 - `uzgo` — owner: runs `prisma migrate deploy`, the install-time seed and

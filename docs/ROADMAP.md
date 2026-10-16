@@ -153,6 +153,19 @@ mobile e2e (rider calls in the app → driver takes and completes in the app).
 Lawyer/accountant items before launch: taxi licensing, driver terms, ride
 fiscal codes. CI run #66 (commit b5780d8) passed incl. web and mobile e2e.
 
+Phase 9d notes (ADR 0026): owner decisions — Anthropic Claude behind an
+adapter, shopping helper only (finds, compares, links; never orders or
+pays), 30 messages per signed-in user per day plus a monthly token budget,
+website and app. Unified search across products, restaurants and dishes
+(normalised search text with trigram indexes for food). Stateless assistant
+with read-only catalogue tools; no conversation stored. Verified by adapter
+unit tests (stubbed SDK client), contract tests, API integration tests
+(search in Latin/Cyrillic/Russian, cards, limits incl. parallel requests,
+budget, disabled), web e2e (assistant and unified search) and mobile e2e
+(assistant and search in the app) — all with the fake provider. The real
+Claude adapter has not been called from this environment (no API key);
+check it with a real key before launch.
+
 ## Open decisions
 
 | Decision                                                                                                                                                    | Who                          | When                                         |

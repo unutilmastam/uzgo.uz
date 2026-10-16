@@ -288,6 +288,8 @@ without capabilities; secrets only in env files with mode 600.
 | `PUT /driver/application`          | 5 / min                        | Plate numbers unique                                                                                 |
 | `PUT /driver/location`             | 20 / min                       | Approved drivers only                                                                                |
 | `POST /driver/offers/:id/accept`   | 20 / min                       | Row lock: one driver per ride; one active ride per driver (database index)                           |
+| `GET /search/all`                  | 60 / min                       | Public, cached 30 s                                                                                  |
+| `POST /assistant/chat`             | 10 / min                       | Signed-in only; plus 30 messages per user per day and a monthly token budget                         |
 | `POST /seller/stores` (apply)      | 5 / min                        |                                                                                                      |
 | `POST /seller/stores/:id/members`  | 10 / min                       |                                                                                                      |
 | Product image upload               | 30 / min                       | One file ≤ 8 MB per request                                                                          |
@@ -316,6 +318,19 @@ without capabilities; secrets only in env files with mode 600.
   kept.
 - Prices and commission are decided by the server; a stale client price is
   refused. Driver settlements are append-only and never exceed the balance.
+
+### Assistant (Phase 9d, ADR 0026)
+
+- The model only gets read-only tools over public catalogue data; no
+  orders, phones, addresses or sessions. It cannot change anything.
+- Prompt injection from product texts can only change the wording of an
+  answer: links are rendered only for internal `/p/` and `/food/` paths and
+  cards only for items the tools returned.
+- No conversation is stored; only per-user daily counters and token totals.
+  The text users type goes to Anthropic (USA) — named in the privacy policy
+  draft; the lawyer must confirm this cross-border transfer before launch.
+- `ANTHROPIC_API_KEY` is a secret (env file only); without it the assistant
+  is off. Set a spend limit in the Anthropic console as a second guard.
 
 ### Remaining risks and owner actions
 

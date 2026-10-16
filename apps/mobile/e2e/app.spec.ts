@@ -307,3 +307,27 @@ test.describe('UZGO Go in the app', () => {
     await expect(page.getByTestId('ride-status')).toHaveText('Safar yakunlandi');
   });
 });
+
+test('assistant in the app: answers with product cards; search also shows UZGO Food', async ({
+  page,
+  request,
+}) => {
+  const user = await apiUser(request);
+  await signedInPage(page, user.token);
+  await page.goto('/');
+  await page.getByTestId('assistant-entry').click();
+  await page.getByLabel('Savolingiz').fill('Menga choynak');
+  await page.getByTestId('assistant-send').click();
+  const reply = page.getByTestId('assistant-reply').last();
+  await expect(reply).toContainText('Bahor elektr choynagi');
+  await expect(reply.getByTestId('assistant-card').first()).toContainText('soʻm');
+  await expect(page.getByText(/Bugun yana \d+ ta savol/)).toBeVisible();
+  await page.screenshot({ path: 'test-results/screenshots/assistant.png', fullPage: true });
+  await reply.getByTestId('assistant-card').first().click();
+  await expect(page).toHaveURL(/\/product\//);
+
+  await page.goto('/search');
+  await page.getByLabel('Mahsulot qidirish').fill('choynak');
+  await page.getByLabel('Mahsulot qidirish').press('Enter');
+  await expect(page.getByRole('button', { name: 'Yordamchidan soʻrash' })).toBeVisible();
+});

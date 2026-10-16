@@ -2,6 +2,7 @@ import type { ProductSort } from '@uzgo/contracts';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { FoodMatches } from '@/components/food-matches';
 import { ProductListView } from '@/components/product-list';
 import { SortBar } from '@/components/sort-bar';
 import { EmptyState, Field } from '@/components/ui';
@@ -35,11 +36,14 @@ export default function SearchScreen() {
         <ProductListView
           query={`q=${encodeURIComponent(query)}&sort=${sort}`}
           header={
-            <SortBar
-              value={sort}
-              onChange={setSort}
-              options={['relevance', 'newest', 'price_asc', 'price_desc']}
-            />
+            <View>
+              <FoodMatches query={query} />
+              <SortBar
+                value={sort}
+                onChange={setSort}
+                options={['relevance', 'newest', 'price_asc', 'price_desc']}
+              />
+            </View>
           }
         />
       ) : (
