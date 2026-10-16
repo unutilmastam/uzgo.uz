@@ -59,7 +59,13 @@ export function LoginForm({ next }: { next: string }) {
 
   function showError(err: unknown) {
     const code = err instanceof ApiClientError ? err.code : 'generic';
-    setError(t(KNOWN_ERRORS.has(code) ? `error_${code}` : 'error_generic'));
+    if (KNOWN_ERRORS.has(code)) {
+      setError(t(`error_${code}`));
+      return;
+    }
+    // Unexpected errors keep their code and status visible: easier to report.
+    const status = err instanceof ApiClientError && err.status > 0 ? `, ${String(err.status)}` : '';
+    setError(`${t('error_generic')} (${code}${status})`);
   }
 
   async function sendCode() {
