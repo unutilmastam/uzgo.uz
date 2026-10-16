@@ -5,18 +5,20 @@ import { useCallback, useSyncExternalStore } from 'react';
 /** The customer's delivery point, kept in this browser only (never sent until ordering). */
 export type SavedPoint = { lat: number; lng: number; label: string };
 
-const KEY = 'uzgo:food:point';
+/** The food delivery point; UZGO Go keeps its pickup and drop-off under their own keys. */
+export const FOOD_POINT_KEY = 'uzgo:food:point';
 const listeners = new Set<() => void>();
-let cached: { raw: string | null; value: SavedPoint | null } = { raw: null, value: null };
+const caches = new Map<string, { raw: string | null; value: SavedPoint | null }>();
 
-function read(): SavedPoint | null {
+function read(key: string): SavedPoint | null {
   let raw: string | null = null;
   try {
-    raw = window.localStorage.getItem(KEY);
+    raw = window.localStorage.getItem(key);
   } catch {
     return null;
   }
-  if (raw === cached.raw) return cached.value;
+  const cached = caches.get(key);
+  if (cached && raw === cached.raw) return cached.value;
   let value: SavedPoint | null = null;
   try {
     const parsed = raw ? (JSON.parse(raw) as Partial<SavedPoint>) : null;
@@ -31,30 +33,35 @@ function read(): SavedPoint | null {
   } catch {
     value = null;
   }
-  cached = { raw, value };
+  caches.set(key, { raw, value });
   return value;
 }
 
-/** Shared between the list, the restaurant page and checkout. */
-export function usePoint(): [SavedPoint | null, (point: SavedPoint | null) => void] {
+/** Shared between the pages that use the same key (food: list, restaurant page, checkout). */
+export function usePoint(
+  key: string = FOOD_POINT_KEY,
+): [SavedPoint | null, (point: SavedPoint | null) => void] {
   const point = useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    read,
+    () => read(key),
     () => null,
   );
-  const set = useCallback((next: SavedPoint | null) => {
-    try {
-      if (next) window.localStorage.setItem(KEY, JSON.stringify(next));
-      else window.localStorage.removeItem(KEY);
-    } catch {
-      // Private mode: the point lives for this page only.
-    }
-    cached = { raw: null, value: null };
-    for (const l of listeners) l();
-  }, []);
+  const set = useCallback(
+    (next: SavedPoint | null) => {
+      try {
+        if (next) window.localStorage.setItem(key, JSON.stringify(next));
+        else window.localStorage.removeItem(key);
+      } catch {
+        // Private mode: the point lives for this page only.
+      }
+      caches.delete(key);
+      for (const l of listeners) l();
+    },
+    [key],
+  );
   return [point, set];
 }
 

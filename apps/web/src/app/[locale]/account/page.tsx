@@ -1,5 +1,5 @@
 import { Badge } from '@uzgo/ui/components/badge';
-import { Heart, Package, Store } from 'lucide-react';
+import { CarTaxiFront, Heart, IdCard, Package, Store } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { LogoutButtons } from '@/components/auth/logout-buttons';
@@ -86,6 +86,20 @@ export default async function AccountPage() {
         >
           <Store aria-hidden="true" className="size-5 text-primary" />
           {t('sellerPanel')}
+        </Link>
+        <Link
+          href="/go"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 font-semibold hover:border-primary lg:col-start-2"
+        >
+          <CarTaxiFront aria-hidden="true" className="size-5 text-primary" />
+          {t('myRides')}
+        </Link>
+        <Link
+          href="/driver"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 font-semibold hover:border-primary lg:col-start-2"
+        >
+          <IdCard aria-hidden="true" className="size-5 text-primary" />
+          {user.roles.includes('DRIVER') ? t('driverAccount') : t('becomeDriver')}
         </Link>
       </div>
     </PageShell>

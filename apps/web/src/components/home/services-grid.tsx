@@ -6,12 +6,12 @@ import { Link } from '@/i18n/navigation';
 const SERVICES = [
   { key: 'market', art: MarketArt, tint: 'bg-[#e8effd] dark:bg-[#1b2a4d]', href: '/catalog' },
   { key: 'delivery', art: DeliveryArt, tint: 'bg-[#fff3e0] dark:bg-[#3a2a12]', href: null },
-  { key: 'go', art: GoArt, tint: 'bg-[#dcf8eb] dark:bg-[#0f3326]', href: null },
+  { key: 'go', art: GoArt, tint: 'bg-[#dcf8eb] dark:bg-[#0f3326]', href: '/go' },
   { key: 'food', art: FoodArt, tint: 'bg-[#ffe9e0] dark:bg-[#3a1d12]', href: '/food' },
 ] as const;
 
 /**
- * The UZGO ecosystem at a glance. Market and Food are live; the rest are
+ * The UZGO ecosystem at a glance. Market, Go and Food are live; the rest are
  * labelled "coming soon" and are deliberately not interactive (SPEC §2).
  */
 export async function ServicesGrid() {

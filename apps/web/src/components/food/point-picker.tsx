@@ -13,11 +13,25 @@ import { currentPosition, type SavedPoint, usePoint } from './use-point';
  * Where to deliver: the phone/browser location (best) or an address found on
  * OpenStreetMap. The point decides fee, ETA and whether a restaurant delivers.
  */
-export function PointPicker({ compact = false }: { compact?: boolean }) {
+export function PointPicker({
+  compact = false,
+  storageKey,
+  hint,
+  locateLabel,
+  testId = 'point-picker',
+}: {
+  compact?: boolean;
+  /** Where the point is kept in this browser (default: the food delivery point). */
+  storageKey?: string;
+  /** Shown while no point is chosen. */
+  hint?: string;
+  locateLabel?: string;
+  testId?: string;
+}) {
   const t = useTranslations('food');
   const locale = useLocale();
   const id = useId();
-  const [point, setPoint] = usePoint();
+  const [point, setPoint] = usePoint(storageKey);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SavedPoint[] | null>(null);
   const [pending, setPending] = useState(false);
@@ -66,7 +80,7 @@ export function PointPicker({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div className="flex flex-col gap-2" data-testid="point-picker">
+    <div className="flex flex-col gap-2" data-testid={testId}>
       {point ? (
         <p className="flex items-start gap-2 text-sm">
           <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -75,12 +89,12 @@ export function PointPicker({ compact = false }: { compact?: boolean }) {
           </span>
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('pointHint')}</p>
+        <p className="text-sm text-muted-foreground">{hint ?? t('pointHint')}</p>
       )}
       <div className={compact ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2 sm:flex-row'}>
         <Button type="button" variant="outline" disabled={pending} onClick={() => void locate()}>
           <LocateFixed aria-hidden="true" className="size-4" />
-          {t('useMyLocation')}
+          {locateLabel ?? t('useMyLocation')}
         </Button>
         <form
           className="flex flex-1 gap-2"

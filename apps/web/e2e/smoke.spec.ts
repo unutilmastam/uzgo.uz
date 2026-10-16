@@ -149,8 +149,8 @@ test('unknown pages show a localised 404', async ({ page }) => {
 test('only live services are interactive; coming soon services are not', async ({ page }) => {
   await page.goto('/uz');
   const services = page.locator('section[aria-labelledby="services"]');
-  await expect(services.getByText('Tez kunda')).toHaveCount(2);
-  await expect(services.getByRole('link')).toHaveCount(2);
+  await expect(services.getByText('Tez kunda')).toHaveCount(1);
+  await expect(services.getByRole('link')).toHaveCount(3);
   await expect(services.getByRole('link').first()).toContainText('Market');
   await expect(services.getByRole('link').last()).toContainText('Food');
   await expect(services.getByRole('button')).toHaveCount(0);

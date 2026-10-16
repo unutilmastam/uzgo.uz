@@ -41,7 +41,11 @@ export default async function DevPayPage({ params }: { params: Promise<{ number:
         </p>
         <p className="text-sm text-muted-foreground">{t('order', { number: order.number })}</p>
         <Price value={order.totalTiyin} locale={locale} className="mb-6 block text-3xl font-bold" />
-        <DevPayButtons orderNumber={order.number} payable={order.payment.status === 'UNPAID'} />
+        <DevPayButtons
+          orderNumber={order.number}
+          payable={order.payment.status === 'UNPAID'}
+          back={order.kind === 'RIDE' ? `/go/${order.number}` : `/orders/${order.number}`}
+        />
       </div>
     </div>
   );

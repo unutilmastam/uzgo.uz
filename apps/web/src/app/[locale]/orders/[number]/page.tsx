@@ -40,6 +40,8 @@ export default async function OrderPage({ params, searchParams }: Props) {
   }
   const order = /^UZ-\d{4}-\d{6,}$/.test(number) ? await getMyOrder(number) : null;
   if (!order) notFound();
+  // Rides have their own live page (ADR 0025).
+  if (order.kind === 'RIDE') redirect({ href: `/go/${order.number}`, locale });
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
