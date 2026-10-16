@@ -7,10 +7,23 @@ ROOT=$PWD
 
 bash .devcontainer/env.sh
 
+SITE=$(sed -n 's/^WEB_PUBLIC_URL=//p' apps/api/.env)
+
+# Ready = API and web answer, and the API accepts requests from the site's
+# public origin (an API still running with an old CORS_ORIGINS answers 403).
+origin_ok() {
+  local code
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -X POST \
+    -H "Origin: $SITE" -H 'content-type: application/json' -d '{}' \
+    http://localhost:3000/api/v1/auth/otp/request)
+  [[ $code != 403 && $code != 000 ]]
+}
 healthy() {
   curl -fs --max-time 10 http://localhost:4000/api/v1/health/ready >/dev/null &&
-    curl -fs --max-time 30 -o /dev/null http://localhost:3000/uz
+    curl -fs --max-time 30 -o /dev/null http://localhost:3000/uz &&
+    origin_ok
 }
+port_busy() { curl -s -o /dev/null --max-time 2 "http://localhost:$1/"; }
 
 # --if-needed: leave already running servers alone (used when the editor opens).
 # The editor task can start while the one-time setup (postCreate) still runs.
@@ -31,9 +44,19 @@ if [[ ${1:-} == --if-needed ]] && healthy; then
   exit 0
 fi
 
-pkill -f 'node dist/main.js' 2>/dev/null || true
-pkill -f 'next start' 2>/dev/null || true
-sleep 1
+# Stop the old servers and wait until their ports are free: a new server that
+# starts while the old one still holds the port exits, and the old one (with
+# old settings) keeps answering. `next start` runs the server as next-server.
+stop_servers() { pkill "$@" -f '[d]ist/main[.]js|[n]ext start|[n]ext-server' 2>/dev/null || true; }
+stop_servers
+for _ in $(seq 1 20); do
+  port_busy 4000 || port_busy 3000 || break
+  sleep 1
+done
+if port_busy 4000 || port_busy 3000; then
+  stop_servers -9
+  sleep 2
+fi
 
 until pg_isready -h localhost -U uzgo -d uzgo >/dev/null 2>&1; do sleep 1; done
 

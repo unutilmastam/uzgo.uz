@@ -69,5 +69,14 @@ faqat serverda `ANTHROPIC_API_KEY` qo'yilganda ishlaydi.
 - 30 kun ishlatilmagan codespace o'chiriladi. Kerak bo'lsa yangisini yarating.
 - Haqiqiy shaxsiy ma'lumot kiritmang — bu xorijdagi sinov muhiti.
 
+## 5. Muammo bo'lsa
+
+- **Oq sahifa (iPhone Safari):** pastdagi PORTS → 3000 qatori → **Port
+  Visibility** → **Public** (havolani bilgan har kim demo saytni ko'radi).
+- **`ORIGIN_NOT_ALLOWED` yoki "Nimadir xato ketdi":** terminalda `yangila`
+  deb yozing. Yangi kod olinadi va serverlar to'g'ri sozlama bilan qayta
+  ishga tushadi (`start.sh` endi eski serverni to'liq o'chiradi va saytning
+  manzilidan kirish ishlashini tekshiradi).
+
 Texnik tafsilotlar: `.devcontainer/` (setup.sh — bir martalik o'rnatish,
 start.sh — har ishga tushishda, env.sh — sozlamalar).

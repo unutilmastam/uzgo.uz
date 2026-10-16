@@ -8,6 +8,13 @@ API_ENV=apps/api/.env
 WEB_ENV=apps/web/.env.local
 
 # Public origin of the site: the Codespaces forwarded URL, or localhost elsewhere.
+# Lifecycle commands do not always get the Codespaces variables; the
+# codespace keeps a copy of them in this file.
+CS_VARS=/workspaces/.codespaces/shared/environment-variables.json
+if [[ -z "${CODESPACE_NAME:-}" && -f $CS_VARS ]]; then
+  CODESPACE_NAME=$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.CODESPACE_NAME ?? "")' "$CS_VARS" 2>/dev/null || true)
+  GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN=$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? "")' "$CS_VARS" 2>/dev/null || true)
+fi
 if [[ -n "${CODESPACE_NAME:-}" ]]; then
   SITE="https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
 else
