@@ -43,6 +43,23 @@ Haqiqiy serverda u doim yoqilgan.
 Food (restoranlar) uchun demo restoran yo'q — admin paneldan qo'shing.
 Online to'lov "Test to'lov" bilan ishlaydi (haqiqiy pul yechilmaydi).
 
+### Taksi (UZGO Go)
+
+1. Bir raqam bilan **/uz/driver** sahifasida haydovchi arizasini to'ldiring.
+2. Admin raqam bilan **/uz/admin/drivers** → arizani **Tasdiqlash**.
+3. Boshqa raqam bilan **/uz/go** → qayerdan / qayerga → **Taksi chaqirish**.
+
+Haydovchi rejimi (buyurtmani olish, "Yetib keldim", "Safarni yakunlash")
+faqat mobil ilovada. Saytda safar holatini va admin paneldagi safarlar
+ro'yxatini ko'rasiz.
+
+### Yordamchi
+
+**/uz/assistant** (yuqoridagi "Yordamchi" tugmasi). Bu sinov muhitida
+haqiqiy AI ulanmagan: javoblar `[FAKE]` deb belgilangan va savolning
+oxirgi so'zi bo'yicha qidiradi (masalan: "Menga choynak"). Haqiqiy Claude
+faqat serverda `ANTHROPIC_API_KEY` qo'yilganda ishlaydi.
+
 ## 4. Muhim
 
 - Bepul limit: shaxsiy akkauntga oyiga cheklangan soat beriladi.

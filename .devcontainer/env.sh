@@ -41,6 +41,8 @@ set_kv "$API_ENV" WEB_PUBLIC_URL "$SITE"
 set_kv "$API_ENV" OTP_IP_HOURLY_LIMIT 100
 # Demo convenience: staff need no authenticator app here. Refused in production.
 set_kv "$API_ENV" STAFF_TOTP_REQUIRED false
+# Demo assistant without an API key: deterministic answers marked [FAKE]. Refused in production.
+set_kv "$API_ENV" ASSISTANT_PROVIDER fake
 
 set_kv "$WEB_ENV" API_INTERNAL_URL http://localhost:4000
 set_kv "$WEB_ENV" PUBLIC_SITE_URL "$SITE"
