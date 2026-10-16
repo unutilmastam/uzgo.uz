@@ -2,25 +2,25 @@
 
 Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 
-| Phase | Item                                                                           | Status      |
-| ----- | ------------------------------------------------------------------------------ | ----------- |
-| —     | Reviewed specification (docs/SPEC.md, docs/REVIEW.md, docs/PROMPTS.md)         | VERIFIED    |
-| 0     | VISION, ARCHITECTURE, DATABASE, API, DESIGN_SYSTEM, SECURITY, DEPLOYMENT docs  | VERIFIED    |
-| 0     | ADRs for decisions already taken in SPEC (docs/decisions/0001–0008)            | VERIFIED    |
-| 1     | Monorepo, web + api skeletons, strict TS, lint/format                          | VERIFIED    |
-| 1     | Env validation, health endpoints, Prisma connected, Docker Compose             | VERIFIED    |
-| 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED    |
-| 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED    |
-| 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED    |
-| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED    |
-| 5     | Seller panel, moderation, admin panel                                          | VERIFIED    |
-| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED    |
-| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
-| 8     | Mobile apps                                                                    | VERIFIED    |
-| 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | VERIFIED    |
-| 9b    | UZGO Food (separate module; provider decisions first)                          | VERIFIED    |
-| 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | VERIFIED    |
-| 9d    | Unified search and AI assistant (AI provider decision first)                   | NOT STARTED |
+| Phase | Item                                                                           | Status   |
+| ----- | ------------------------------------------------------------------------------ | -------- |
+| —     | Reviewed specification (docs/SPEC.md, docs/REVIEW.md, docs/PROMPTS.md)         | VERIFIED |
+| 0     | VISION, ARCHITECTURE, DATABASE, API, DESIGN_SYSTEM, SECURITY, DEPLOYMENT docs  | VERIFIED |
+| 0     | ADRs for decisions already taken in SPEC (docs/decisions/0001–0008)            | VERIFIED |
+| 1     | Monorepo, web + api skeletons, strict TS, lint/format                          | VERIFIED |
+| 1     | Env validation, health endpoints, Prisma connected, Docker Compose             | VERIFIED |
+| 1     | GitHub Actions CI green (+ CodeQL, audit, dependency review)                   | VERIFIED |
+| 2     | Design system, i18n uz/ru, web shell, homepage (fixtures)                      | VERIFIED |
+| 3     | Geo data, users, OTP auth, sessions, RBAC, audit                               | VERIFIED |
+| 4     | Catalog, stores, products/variants, search, cart, checkout (COD), split orders | VERIFIED |
+| 5     | Seller panel, moderation, admin panel                                          | VERIFIED |
+| 6     | Payments, fiscal data, refunds, delivery, ledger & payouts                     | VERIFIED |
+| 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED |
+| 8     | Mobile apps                                                                    | VERIFIED |
+| 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | VERIFIED |
+| 9b    | UZGO Food (separate module; provider decisions first)                          | VERIFIED |
+| 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | VERIFIED |
+| 9d    | Unified search and AI assistant (AI provider decision first)                   | VERIFIED |
 
 Phase 0 is documentation only; "VERIFIED" means the documents exist, are
 consistent with SPEC and were reviewed. No code checks apply.
@@ -164,7 +164,8 @@ unit tests (stubbed SDK client), contract tests, API integration tests
 budget, disabled), web e2e (assistant and unified search) and mobile e2e
 (assistant and search in the app) — all with the fake provider. The real
 Claude adapter has not been called from this environment (no API key);
-check it with a real key before launch.
+check it with a real key before launch. CI run #75 (commit 7818a2d) passed incl. web
+and mobile e2e.
 
 ## Open decisions
 
