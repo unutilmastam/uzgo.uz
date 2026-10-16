@@ -60,6 +60,22 @@ function Header() {
           </View>
         </ScrollView>
       ) : null}
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={t('foodTitle')}
+        onPress={() => {
+          router.push('/food');
+        }}
+        style={[styles.food, { backgroundColor: c.secondary, borderColor: c.border }]}
+        testID="food-entry"
+      >
+        <Ionicons name="restaurant" size={28} color={c.primary} />
+        <View style={{ flex: 1 }}>
+          <AppText variant="heading">{t('foodTitle')}</AppText>
+          <AppText variant="small">{t('foodHomeText')}</AppText>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+      </Pressable>
       <AppText variant="heading">{t('recommended')}</AppText>
     </View>
   );
@@ -75,6 +91,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  food: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
   brand: { flexDirection: 'row', alignItems: 'center' },
   search: {
     flexDirection: 'row',

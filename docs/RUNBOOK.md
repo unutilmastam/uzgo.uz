@@ -173,6 +173,21 @@ deploy the last good SHA, point DNS to the new server.
    payment keys (in the Payme/Click cabinets), Eskiz password, deploy key;
    review `/uz/admin/audit`; keep logs; inform users as the law requires.
 
+## 9a. UZGO Food operations (ADR 0024)
+
+- Restaurants: `/uz/admin/restaurants` → add (owner phone must have signed in
+  once), point on the map (lat/lng), delivery mode, hours, then the menu.
+- Couriers: `/uz/admin/couriers` → add by phone (the person signed in once).
+  The courier opens "Kuryer rejimi" in the app cabinet.
+- Courier cash: the list shows each balance (positive = cash the courier owes
+  UZGO, negative = fee UZGO owes the courier). Record every hand-over or
+  payout as a settlement; it cannot be edited or deleted.
+- Tariffs: `FOOD_COURIER_BASE_TIYIN`, `FOOD_COURIER_PER_KM_TIYIN`,
+  `FOOD_OFFER_RADIUS_KM`, `FOOD_ACCEPT_TIMEOUT_MINUTES` in `api.env`.
+- Maps: `GEOCODER_CONTACT` (an e-mail) is required in production by the
+  OpenStreetMap Nominatim usage policy; for heavy traffic run an own
+  Nominatim and set `NOMINATIM_URL`.
+
 ## 10. Go-live checklist
 
 - [ ] Lawyer reviewed `/info/terms` and `/info/privacy`; operator details filled

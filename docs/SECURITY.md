@@ -278,11 +278,27 @@ without capabilities; secrets only in env files with mode 600.
 | `GET /delivery/quote`              | 30 / min                       | Also checks promo codes: limited so it is not a code-guessing oracle                                 |
 | `PUT /products/:slug/reviews/mine` | 10 / min                       | Reviews only after delivery; links refused                                                           |
 | `PUT /favorites/:productId`        | 60 / min                       | Max 500 per customer                                                                                 |
+| `POST /food/quote`                 | 60 / min                       | Public; prices from the server                                                                       |
+| `POST /food/checkout`              | 10 / min                       | Idempotency key; max 3 unpaid online orders                                                          |
+| `GET /food/geocode` · `/reverse`   | 20 / min                       | Nominatim: 1 request/s upstream, cached, contact in User-Agent (`GEOCODER_CONTACT`)                  |
+| `PUT /courier/location`            | 12 / min                       | Courier only                                                                                         |
+| `POST /courier/offers/:id/accept`  | 20 / min                       | Conditional update: one courier per order                                                            |
 | `POST /seller/stores` (apply)      | 5 / min                        |                                                                                                      |
 | `POST /seller/stores/:id/members`  | 10 / min                       |                                                                                                      |
 | Product image upload               | 30 / min                       | One file ≤ 8 MB per request                                                                          |
 | Payme / Click callbacks            | not limited                    | Authenticated by provider secret; optional Payme IP allow-list                                       |
 | Request body                       | 1 MB JSON (API), 25 MB (Caddy) |                                                                                                      |
+
+### UZGO Food (Phase 9b, ADR 0024)
+
+- Couriers see the customer's name, phone and address only after taking the
+  job; offers show the restaurant and distance only.
+- Courier positions are stored as the last point only (no history); location
+  permission is foreground only and asked when going online.
+- Only staff create restaurants and couriers (audited); couriers cannot be
+  granted through the generic role endpoint.
+- Courier cash settlements are append-only (database trigger) and cannot
+  exceed the courier's balance (advisory lock).
 
 ### Remaining risks and owner actions
 

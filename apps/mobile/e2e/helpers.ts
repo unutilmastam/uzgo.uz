@@ -133,3 +133,54 @@ export async function signedInPage(page: Page, token: string) {
     sessionStorage.setItem('uzgo.session', value);
   }, token);
 }
+
+/** An admin with TOTP enrolled (API only). */
+export async function staffAdmin(request: APIRequestContext) {
+  const admin = await apiUser(request);
+  const grant = await request.post(`${API}/__test__/grant-role`, {
+    data: { phone: `+998${admin.localPhone}`, role: 'ADMIN' },
+  });
+  expect(grant.status()).toBe(204);
+  const { secret } = (await admin.call('post', '/auth/totp/setup')) as { secret: string };
+  await admin.call('post', '/auth/totp/enable', { code: totp(secret) });
+  return admin;
+}
+
+/** Termiz: restaurant and a customer ~0.5 km away (WGS 84). */
+export const RESTAURANT_POINT = { lat: 37.2242, lng: 67.2783 };
+export const HOME_POINT = { latitude: 37.2286, longitude: 67.2756 };
+
+/** A UZGO-courier restaurant (open all week) with one dish, added by staff. */
+export async function liveRestaurant(request: APIRequestContext) {
+  const owner = await apiUser(request);
+  const admin = await staffAdmin(request);
+  const regions = (await admin.call('get', '/geo/regions')) as {
+    items: { id: string; code: string }[];
+  };
+  const districts = (await admin.call(
+    'get',
+    `/geo/regions/${regions.items.find((r) => r.code === 'UZ-SU')?.id ?? ''}/districts`,
+  )) as { items: { id: string }[] };
+  const stamp = String(Date.now()).slice(-7);
+  const name = `Mobil oshxona ${stamp}`;
+  const { restaurant } = (await admin.call('post', '/admin/restaurants', {
+    name: { uz: name, ru: `Мобильное кафе ${stamp}` },
+    slug: `mobil-osh-${stamp}`,
+    ownerPhone: `+998${owner.localPhone}`,
+    districtId: districts.items[0]?.id,
+    address: 'Alpomish koʻchasi, 1',
+    ...RESTAURANT_POINT,
+    deliveryMode: 'UZGO',
+    openingHours: [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open: '00:00', close: '00:00' })),
+  })) as { restaurant: { id: string; menu: { id: string }[] } };
+  const base = `/admin/restaurants/${restaurant.id}/menu`;
+  const withCategory = (await admin.call('post', `${base}/categories`, {
+    name: { uz: 'Osh', ru: 'Плов' },
+  })) as { restaurant: { menu: { id: string }[] } };
+  await admin.call('post', `${base}/items`, {
+    categoryId: withCategory.restaurant.menu[0]?.id,
+    name: { uz: 'Toʻy oshi', ru: 'Свадебный плов' },
+    priceTiyin: '3500000',
+  });
+  return { owner, admin, name, slug: `mobil-osh-${stamp}`, storeId: restaurant.id };
+}

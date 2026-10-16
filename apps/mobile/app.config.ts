@@ -34,6 +34,17 @@ export default (): ExpoConfig => ({
     'expo-localization',
     'expo-web-browser',
     [
+      // Foreground location only: delivery point and the courier's position
+      // while the app is open (ADR 0024). No background tracking.
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'UZGO yetkazish manzilini va kuryer joylashuvini aniqlash uchun joylashuvdan foydalanadi.',
+        isAndroidBackgroundLocationEnabled: false,
+        isIosBackgroundLocationEnabled: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/splash-icon.png',

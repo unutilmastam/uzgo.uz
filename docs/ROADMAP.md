@@ -120,6 +120,22 @@ moderator hides review) and mobile e2e (review + return in the app).
 CI run #55 (commit 6b4154a) passed incl. web and mobile e2e. Run #54 failed
 before any check ran (pnpm setup on the runner); #55 covers the same code.
 
+Phase 9b notes (ADR 0024): UZGO Food as a separate module in the same
+monolith. Owner decisions: both delivery modes (restaurant's own or UZGO
+couriers), all of Uzbekistan, cash + Payme + Click, restaurants added only by
+staff, OpenStreetMap (Nominatim) for addresses, courier mode inside the UZGO
+app, couriers take offers themselves. Restaurants and menus (admin), point-based
+delivery fee and ETA, food quote/checkout reusing orders, payments and the
+ledger (courier fee and cash in `COURIER_PAYABLE`, courier settlements), food
+order flow with auto-cancel of unaccepted orders, courier offers/accept/
+pickup/deliver with push. Web: `/food`, restaurant page, tracking,
+restaurant panel, admin restaurants and couriers. Mobile: food, kitchen panel,
+courier mode (expo-location). Verified by API integration tests (admin,
+checkout SELF/UZGO, ledger balance, courier race, timeout cancel), web e2e
+(admin adds restaurant and menu → customer orders by GPS → kitchen delivers →
+admin adds courier) and mobile e2e (customer orders → courier takes, picks up,
+delivers).
+
 ## Open decisions
 
 | Decision                                                                                                                                                    | Who                          | When                                         |

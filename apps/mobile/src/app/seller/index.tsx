@@ -44,7 +44,11 @@ export default function SellerStoresScreen() {
           <Pressable
             key={store.id}
             onPress={() => {
-              router.push({ pathname: '/seller/[storeId]', params: { storeId: store.id } });
+              if (store.kind === 'RESTAURANT') {
+                router.push({ pathname: '/restaurant/[storeId]', params: { storeId: store.id } });
+              } else {
+                router.push({ pathname: '/seller/[storeId]', params: { storeId: store.id } });
+              }
             }}
             accessibilityRole="link"
           >

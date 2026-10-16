@@ -1,12 +1,13 @@
 import {
+  type OrderView,
   orderResponseSchema,
   RETURN_REASONS,
   type ReturnReason,
   type SellerOrderView,
 } from '@uzgo/contracts';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { RefreshControl, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Linking, RefreshControl, View } from 'react-native';
 import {
   AppText,
   Badge,
@@ -188,6 +189,58 @@ function Shipment({
   );
 }
 
+const osmUrl = (lat: number, lng: number) =>
+  `https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lng.toFixed(5)}#map=16/${lat.toFixed(5)}/${lng.toFixed(5)}`;
+
+/** Food order: kitchen/road status, ETA and the courier (ADR 0024). */
+function FoodCard({ order }: { order: OrderView }) {
+  const { t, locale } = useApp();
+  const food = order.food;
+  const status = order.sellerOrders[0]?.status;
+  if (!food || !status) return null;
+  const courier = food.courier;
+  return (
+    <Card>
+      <AppText variant="heading" testID="food-status">
+        {t(`courierStatus_${status}`)}
+      </AppText>
+      {food.etaAt ? (
+        <AppText>
+          {t('foodEtaAt', { time: formatDateTime(food.etaAt, locale).split(', ')[1] ?? '' })}
+        </AppText>
+      ) : null}
+      <AppText variant="small">{localized(food.restaurant.name, locale)}</AppText>
+      {courier ? (
+        <View style={{ gap: spacing.xs }}>
+          <AppText>{t('foodCourier', { name: courier.name ?? t('courierTitle') })}</AppText>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+            <Button
+              title={t('courierCall')}
+              variant="outline"
+              icon="call-outline"
+              onPress={() => void Linking.openURL(`tel:${courier.phone}`)}
+            />
+            {courier.position ? (
+              <Button
+                title={t('courierMap')}
+                variant="outline"
+                icon="map-outline"
+                onPress={() =>
+                  void Linking.openURL(
+                    osmUrl(courier.position?.lat ?? 0, courier.position?.lng ?? 0),
+                  )
+                }
+              />
+            ) : null}
+          </View>
+        </View>
+      ) : food.deliveryMode === 'UZGO' && food.etaAt ? (
+        <AppText variant="small">{t('foodWaitingCourier')}</AppText>
+      ) : null}
+    </Card>
+  );
+}
+
 export default function OrderScreen() {
   const { number, placed } = useLocalSearchParams<{ number: string; placed?: string }>();
   const { api, t, locale, errorText } = useApp();
@@ -197,6 +250,20 @@ export default function OrderScreen() {
     [number],
   );
   const order = result.data?.order;
+  // Food orders change by the minute: refresh while cooking or on the way.
+  const liveFood =
+    order?.kind === 'FOOD' &&
+    ['NEW', 'ACCEPTED', 'PACKED', 'HANDED_TO_DELIVERY'].includes(
+      order.sellerOrders[0]?.status ?? '',
+    );
+  const reload = result.reload;
+  useEffect(() => {
+    if (!liveFood) return;
+    const timer = setInterval(reload, 15_000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [liveFood, reload]);
   if (result.error && !order) return <ErrorState error={result.error} onRetry={result.reload} />;
   if (!order) return <Loading />;
 
@@ -236,6 +303,7 @@ export default function OrderScreen() {
           </AppText>
         </Card>
       ) : null}
+      {order.food ? <FoodCard order={order} /> : null}
       <Card>
         <Row label={t('paymentStatus')} value={t(`pay_${order.payment.status}`)} />
         <AppText variant="small">{t(`method_${order.paymentMethod}`)}</AppText>

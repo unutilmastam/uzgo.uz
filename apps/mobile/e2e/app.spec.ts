@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { apiUser, liveProduct, loginInApp, randomLocalPhone, signedInPage } from './helpers';
+import {
+  apiUser,
+  HOME_POINT,
+  liveProduct,
+  liveRestaurant,
+  loginInApp,
+  randomLocalPhone,
+  signedInPage,
+} from './helpers';
 
 test('buyer: browse → cart as guest → login (cart kept) → checkout → order', async ({
   page,
@@ -151,4 +159,66 @@ test('buyer after delivery: rating, review and a return request in the app', asy
   await expect(page.getByText('Qaytarish soʻralgan').first()).toBeVisible();
   await expect(page.getByTestId('return-info')).toContainText('Quti ezilib kelgan');
   await page.screenshot({ path: 'test-results/screenshots/return.png', fullPage: true });
+});
+
+test.describe('UZGO Food in the app', () => {
+  test.use({ geolocation: HOME_POINT, permissions: ['geolocation'] });
+
+  test('customer orders near home; a UZGO courier takes, picks up and delivers', async ({
+    page,
+    context,
+    request,
+  }) => {
+    test.setTimeout(150_000);
+    const r = await liveRestaurant(request);
+    const customer = await apiUser(request);
+    await customer.call('patch', '/users/me', { firstName: 'Dilnoza' });
+    const courier = await apiUser(request);
+    await r.admin.call('post', '/admin/couriers', { phone: `+998${courier.localPhone}` });
+
+    // Customer: home → Food → location → restaurant → basket → order.
+    await signedInPage(page, customer.token);
+    await page.goto('/');
+    await page.getByTestId('food-entry').click();
+    await page.getByRole('button', { name: 'Joylashuvimni aniqlash' }).click();
+    await expect(page.getByTestId('food-point')).not.toHaveText(/Joylashuvni aniqlang/);
+    await page.getByRole('link', { name: r.name }).click();
+    await page.getByRole('button', { name: 'Toʻy oshi — savatga qoʻshish' }).click();
+    await page.getByLabel('Uy, podyezd, qavat, xonadon').fill('Alpomish 5, 12-xonadon');
+    await page.getByRole('button', { name: 'Buyurtma berish' }).click();
+    await expect(page.getByTestId('food-status')).toHaveText('Restoran tasdigʻini kutmoqda');
+    await page.screenshot({ path: 'test-results/screenshots/food-order.png', fullPage: true });
+    const number = /UZ-\d{4}-\d{6}/.exec(decodeURIComponent(page.url()))?.[0] ?? '';
+    expect(number).not.toBe('');
+
+    // The kitchen accepts (API); the courier works in the app.
+    const orders = (await r.owner.call('get', `/restaurant/${r.storeId}/orders`)) as {
+      items: { id: string }[];
+    };
+    const shipmentId = orders.items[0]?.id ?? '';
+    await r.owner.call('post', `/seller/seller-orders/${shipmentId}/transition`, {
+      to: 'ACCEPTED',
+    });
+
+    const courierPage = await context.newPage();
+    await signedInPage(courierPage, courier.token);
+    await courierPage.goto('/account');
+    await courierPage.getByTestId('courier-mode').click();
+    await courierPage.getByTestId('courier-toggle').click();
+    await expect(courierPage.getByText('Yaqin takliflar')).toBeVisible();
+    const offer = courierPage.getByTestId('take-offer').first();
+    await expect(offer).toBeVisible({ timeout: 15_000 });
+    await offer.click();
+    await expect(courierPage.getByText('Mening buyurtmalarim')).toBeVisible();
+    await expect(courierPage.getByText('Dilnoza')).toBeVisible();
+    await r.owner.call('post', `/seller/seller-orders/${shipmentId}/transition`, { to: 'PACKED' });
+    await courierPage.reload();
+    await courierPage.getByRole('button', { name: 'Oldim, yoʻldaman' }).click();
+    await courierPage.getByRole('button', { name: 'Yetkazdim' }).click();
+    await expect(courierPage.getByText('Mening buyurtmalarim')).toHaveCount(0);
+    await courierPage.screenshot({ path: 'test-results/screenshots/courier.png', fullPage: true });
+
+    await page.goto(`/order/${number}`);
+    await expect(page.getByTestId('food-status')).toHaveText('Yetkazildi');
+  });
 });

@@ -283,6 +283,21 @@ deleted, with an active in-stock variant, from an active store is visible.
 when its session is revoked; the outbox `Notification` gains channel `PUSH`
 (recipient = user id) and an optional JSON `data` deep-link payload.
 
+## UZGO Food (Phase 9b, ADR 0024)
+
+- `Store.kind` `SHOP | RESTAURANT`; `RestaurantProfile` (address, point,
+  delivery mode `SELF | UZGO`, own fee, minimum order, prep time, opening
+  hours JSON in Tashkent time, accepting orders).
+- `FoodMenuCategory`, `FoodMenuItem` (price in tiyin, available, image).
+- `Order.kind` `MARKET | FOOD`, `deliveryLat/Lng`, `foodDeliveryMode`;
+  `OrderItem.menuItemId` — CHECK: exactly one of variant or menu item.
+- `SellerOrder.courierId`, `courierFeeTiyin`, `courierAssignedAt`,
+  `acceptedAt`, `readyAt`.
+- Role `COURIER`, `CourierProfile` (status, vehicle, online, last point).
+- Ledger account `COURIER_PAYABLE` (`LedgerEntry.courierId`): the courier's
+  fee is owed to them; cash they collect is owed to UZGO.
+  `CourierSettlement` is append-only (no update/delete trigger).
+
 ## Database roles (production, ADR 0021)
 
 - `uzgo` — owner: runs `prisma migrate deploy`, the install-time seed and

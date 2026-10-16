@@ -160,6 +160,17 @@ export default function AccountScreen() {
           router.push('/favorites');
         }}
       />
+      {user.roles.includes('COURIER') ? (
+        <Button
+          title={t('courierTitle')}
+          icon="bicycle-outline"
+          variant="secondary"
+          onPress={() => {
+            router.push('/courier');
+          }}
+          testID="courier-mode"
+        />
+      ) : null}
       {isSeller ? (
         <Button
           title={t('sellerPanel')}

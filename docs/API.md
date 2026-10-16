@@ -236,6 +236,52 @@ Push payloads (`pushDataSchema`): `{ type: "order", number }` or
   (`DECISION_NOTE_REQUIRED`).
 - Product cards and detail carry `rating: { average, count } | null`.
 
+## UZGO Food (Phase 9b, ADR 0024)
+
+Points are `{ lat, lng }` (WGS-84, inside Uzbekistan's bounding box). Fees are
+decided on the server: restaurant delivery (SELF) is the restaurant's flat
+fee; UZGO delivery is `FOOD_COURIER_BASE_TIYIN + FOOD_COURIER_PER_KM_TIYIN ×
+road km` (straight line × 1.3), rounded up to 100 so'm.
+
+| Method | Path                                            | Auth                   | Notes                                                                                              |
+| ------ | ----------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
+| GET    | `/food/restaurants?lat=&lng=&regionId=`         | public                 | Live restaurants; with a point: nearest first, `delivery { feeTiyin, etaMinutes }` or out of range |
+| GET    | `/food/restaurants/:slug?lat=&lng=`             | public                 | Restaurant, open now, menu by category                                                             |
+| GET    | `/food/geocode?q=&locale=`                      | public                 | Address search via OpenStreetMap Nominatim; 20/min                                                 |
+| GET    | `/food/reverse?lat=&lng=&locale=`               | public                 | `{ label }`; 20/min                                                                                |
+| POST   | `/food/quote`                                   | public                 | `{ storeId, point, lines[{ menuItemId, quantity }] }` → items, delivery, total, errors; 60/min     |
+| POST   | `/food/checkout`                                | user + Idempotency-Key | `foodCheckoutSchema`; cash, Payme or Click; `expectedTotalTiyin` must match; 10/min                |
+| GET    | `/restaurant/:storeId`                          | store member           | Restaurant (kind RESTAURANT) for its team                                                          |
+| GET    | `/restaurant/:storeId/orders?scope=active\|all` | store member           | Kitchen tickets with lines, address, courier                                                       |
+| PATCH  | `/restaurant/:storeId/settings`                 | store member           | `{ acceptingOrders }`                                                                              |
+| PATCH  | `/restaurant/:storeId/menu-items/:itemId`       | store member           | `{ available }` (stop-list)                                                                        |
+| GET    | `/courier/me`                                   | courier                | Status, vehicle, online, cash balance, active jobs                                                 |
+| PUT    | `/courier/status`                               | courier                | `{ online, lat?, lng? }`; going online needs a point (`LOCATION_REQUIRED`)                         |
+| PUT    | `/courier/location`                             | courier                | `{ lat, lng }`; 12/min                                                                             |
+| GET    | `/courier/offers`                               | courier                | Unassigned UZGO orders (cooking/ready) within `FOOD_OFFER_RADIUS_KM`; no customer details          |
+| POST   | `/courier/offers/:id/accept`                    | courier                | First courier wins (`OFFER_TAKEN`, 409); max 3 active (`TOO_MANY_JOBS`); 20/min                    |
+| POST   | `/courier/orders/:id/transition`                | courier (assigned)     | `{ to: HANDED_TO_DELIVERY\|DELIVERED\|DELIVERY_FAILED, reason? }`                                  |
+| GET    | `/admin/restaurants`                            | admin + TOTP           | All restaurants                                                                                    |
+| POST   | `/admin/restaurants`                            | admin + TOTP           | `createRestaurantSchema` (owner phone, region/district, point, mode, hours); audited               |
+| PATCH  | `/admin/restaurants/:id`                        | admin + TOTP           | `updateRestaurantSchema`; audited                                                                  |
+| POST   | `/admin/restaurants/:id/cover`                  | admin + TOTP           | Image upload; 30/min                                                                               |
+| POST   | `/admin/restaurants/:id/menu/categories`        | admin + TOTP           | Menu section; PATCH `…/:categoryId` to edit                                                        |
+| POST   | `/admin/restaurants/:id/menu/items`             | admin + TOTP           | Dish; PATCH `…/:itemId`, POST `…/:itemId/image`                                                    |
+| GET    | `/admin/couriers`                               | admin + TOTP           | Couriers with cash balance                                                                         |
+| POST   | `/admin/couriers`                               | admin + TOTP           | `{ phone, vehicle }`; grants role COURIER; audited                                                 |
+| PATCH  | `/admin/couriers/:userId`                       | admin + TOTP           | `{ status?, vehicle? }`                                                                            |
+| POST   | `/admin/couriers/:userId/settlements`           | admin + TOTP           | Cash handed in / fee paid out; never more than the balance; audited                                |
+
+- Food order flow: `NEW → ACCEPTED (cooking) → PACKED (ready) →
+HANDED_TO_DELIVERY → DELIVERED`, plus cancel and delivery-failed; no
+  returns. With UZGO delivery only the assigned courier (or staff) hands over
+  and delivers; with SELF delivery the restaurant does.
+- Orders not accepted within `FOOD_ACCEPT_TIMEOUT_MINUTES` are cancelled by a
+  job (online payments refunded).
+- Order views carry `kind` (`MARKET`/`FOOD`) and `food { restaurant, mode,
+courier, eta, point }` for food orders.
+- Push payloads add `{ type: "courier" }` (new offers near the courier).
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →

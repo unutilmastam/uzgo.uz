@@ -7,10 +7,13 @@ import { useApp } from '@/state/app';
 /** Quantity − / + control (1…max). */
 export function Stepper({
   value,
+  min = 1,
   max,
   onChange,
 }: {
   value: number;
+  /** Lowest value (0 lets a basket line be removed). */
+  min?: number;
   max: number;
   onChange: (value: number) => void;
 }) {
@@ -32,7 +35,7 @@ export function Stepper({
   );
   return (
     <View style={ui.row} accessibilityLabel={t('quantity')}>
-      {button('remove', t('decrease'), value - 1, value <= 1)}
+      {button('remove', t('decrease'), value - 1, value <= min)}
       <AppText style={styles.stepperValue} accessibilityLiveRegion="polite">
         {String(value)}
       </AppText>
