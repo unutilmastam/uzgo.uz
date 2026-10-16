@@ -13,6 +13,12 @@ healthy() {
 }
 
 # --if-needed: leave already running servers alone (used when the editor opens).
+# The editor task can start while the one-time setup (postCreate) still runs.
+if [[ ! -f "$HOME/.uzgo-setup-done" ]]; then
+  echo "[uzgo] o'rnatish davom etmoqda (taxminan 10 daqiqa), kuting..."
+  until [[ -f "$HOME/.uzgo-setup-done" ]]; do sleep 5; done
+fi
+
 if [[ ${1:-} == --if-needed ]] && healthy; then
   echo "[uzgo] ready: API and web are already running"
   exit 0

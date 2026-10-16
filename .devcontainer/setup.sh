@@ -31,4 +31,5 @@ for pair in kod:kod admin:admin sotuvchi:sotuvchi qayta:start yangila:update; do
   sudo ln -sf "$PWD/.devcontainer/${pair#*:}.sh" "/usr/local/bin/${pair%%:*}"
 done
 
+touch "$HOME/.uzgo-setup-done"
 echo "[uzgo] setup done"
