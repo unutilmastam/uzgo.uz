@@ -30,3 +30,4 @@ Decision, Consequences. Superseded ADRs stay, marked "Superseded by NNNN".
 | 0023 | Market growth: reviews, favorites, returns, promo |
 | 0024 | UZGO Food: restaurants, menus, couriers           |
 | 0025 | UZGO Go: ride-hailing (drivers, rides)            |
+| 0026 | Unified search and the AI shopping assistant      |

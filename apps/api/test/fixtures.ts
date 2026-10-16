@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { PrismaService } from '../src/prisma/prisma.service.js';
 import { reindexProducts } from '../src/search/search-index.js';
+import { reindexFood } from '../src/search/food-index.js';
 
 const suffix = () => randomUUID().slice(0, 8);
 
@@ -136,5 +137,6 @@ export async function createRestaurant(
       }),
     );
   }
+  await reindexFood(prisma, [store.id]);
   return { store, dishes };
 }

@@ -21,6 +21,8 @@ import { FavoritesModule } from './favorites/favorites.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { FoodModule } from './food/food.module.js';
 import { RidesModule } from './rides/rides.module.js';
+import { SearchModule } from './search/search.module.js';
+import { AssistantModule } from './assistant/assistant.module.js';
 import { GeoModule } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
@@ -64,6 +66,8 @@ import { UsersModule } from './users/users.module.js';
     ReviewsModule,
     FoodModule,
     RidesModule,
+    SearchModule,
+    AssistantModule,
     OrdersModule,
     PaymentsModule,
     LedgerModule,

@@ -102,6 +102,23 @@ export const envSchema = z
       .regex(/^\d{1,20}$/)
       .optional(),
     RIDE_VAT_PERCENT: z.coerce.number().int().min(0).max(100).default(0),
+    /**
+     * Shopping assistant (ADR 0026). Without ANTHROPIC_API_KEY the assistant is off.
+     * The fake provider is for tests and local development only (refused in production).
+     */
+    ANTHROPIC_API_KEY: z.string().min(20).max(400).optional(),
+    ASSISTANT_PROVIDER: z.enum(['anthropic', 'fake']).default('anthropic'),
+    ASSISTANT_MODEL: z.string().min(3).max(100).default('claude-opus-5-5'),
+    ASSISTANT_EFFORT: z.enum(['low', 'medium', 'high']).default('low'),
+    /** Messages per signed-in user per Tashkent day. */
+    ASSISTANT_DAILY_LIMIT: z.coerce.number().int().min(1).max(1000).default(30),
+    /** Input + output tokens for all users per calendar month; 0 = no assistant. */
+    ASSISTANT_MONTHLY_TOKEN_BUDGET: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(10_000_000_000)
+      .default(30_000_000),
     /** OpenStreetMap Nominatim (address search). Own instance: set its URL. */
     NOMINATIM_URL: z.url({ protocol: /^https?$/ }).default('https://nominatim.openstreetmap.org'),
     /** Contact e-mail sent in the User-Agent (Nominatim usage policy); required in production. */
@@ -170,6 +187,13 @@ export const envSchema = z
     MEDIA_PUBLIC_BASE_URL: z.string().min(1).default('/api/v1/media'),
   })
   .superRefine((env, ctx) => {
+    if (env.NODE_ENV === 'production' && env.ASSISTANT_PROVIDER === 'fake') {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'The fake assistant is not allowed in production',
+        path: ['ASSISTANT_PROVIDER'],
+      });
+    }
     if (env.NODE_ENV === 'production' && !env.GEOCODER_CONTACT) {
       ctx.addIssue({
         code: 'custom',

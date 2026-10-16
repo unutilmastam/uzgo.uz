@@ -22,6 +22,7 @@ import type { Env } from '../config/env.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { Role, StoreRole } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { reindexFood } from '../search/food-index.js';
 import { processProductImage } from '../seller/image-processing.js';
 import { STORAGE, type StorageAdapter } from '../storage/storage.adapter.js';
 import { courierFeeTiyin, distanceM, etaMinutes, isOpenAt, type Point } from './geo.js';
@@ -374,6 +375,7 @@ export class RestaurantsService {
         );
         return store.id;
       });
+      await reindexFood(this.prisma, [id]);
       return await this.adminGet(id);
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -444,6 +446,7 @@ export class RestaurantsService {
         tx,
       );
     });
+    await reindexFood(this.prisma, [id]);
     return this.adminGet(id);
   }
 
@@ -497,6 +500,7 @@ export class RestaurantsService {
       metadata: { storeId },
       ...meta,
     });
+    await reindexFood(this.prisma, [storeId]);
     return this.adminGet(storeId);
   }
 
@@ -536,6 +540,7 @@ export class RestaurantsService {
       metadata: { storeId, priceTiyin: input.priceTiyin },
       ...meta,
     });
+    await reindexFood(this.prisma, [storeId]);
     return this.adminGet(storeId);
   }
 
@@ -577,6 +582,7 @@ export class RestaurantsService {
       },
       ...meta,
     });
+    await reindexFood(this.prisma, [storeId]);
     return this.adminGet(storeId);
   }
 

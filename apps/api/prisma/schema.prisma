@@ -113,6 +113,7 @@ model User {
   ridesDriven        Ride[]              @relation("RideDriver")
   driverLedger       LedgerEntry[]       @relation("DriverLedger")
   driverSettlements  DriverSettlement[]  @relation("SettlementDriver")
+  assistantUsage     AssistantUsage[]
 }
 
 model UserProfile {
@@ -1076,8 +1077,12 @@ model RestaurantProfile {
   /// The team can pause new orders (busy kitchen) without staff.
   acceptingOrders      Boolean          @default(true)
   coverKey             String?
+  /// Normalised name + address for search (ADR 0026); rebuilt on every change.
+  searchText           String           @default("")
   createdAt            DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt            DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model FoodMenuCategory {
@@ -1110,11 +1115,14 @@ model FoodMenuItem {
   mxikCode    String?
   packageCode String?
   vatRateBp   Int?
+  /// Normalised name + description for search (ADR 0026); rebuilt on every change.
+  searchText  String           @default("")
   createdAt   DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime         @updatedAt @db.Timestamptz(3)
   orderItems  OrderItem[]
 
   @@index([storeId, archived, sort])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 enum CourierStatus {
@@ -1271,4 +1279,21 @@ model DriverSettlement {
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([driverId, createdAt])
+}
+
+// ─── Assistant (Phase 9d, ADR 0026) ───────────────────────────────────────────
+
+/// Per user and Tashkent day: assistant messages and tokens (no message text is stored).
+model AssistantUsage {
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Tashkent calendar day.
+  day          DateTime @db.Date
+  messages     Int      @default(0)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  @@id([userId, day])
+  @@index([day])
 }
