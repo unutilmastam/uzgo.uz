@@ -13,7 +13,7 @@
     "./eslint-react": "./eslint-react.js"
   },
   "dependencies": {
-    "@eslint/js": "9.39.5",
+    "@eslint/js": "10.0.1",
     "@next/eslint-plugin-next": "16.4.1",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.13.0",
