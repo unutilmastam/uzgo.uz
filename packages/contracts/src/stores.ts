@@ -43,6 +43,8 @@ export const sellerStoreSchema = z.object({
   id: z.uuid(),
   slug: z.string(),
   name: localizedNameSchema,
+  /** RESTAURANT stores open the UZGO Food panel instead of the shop panel. */
+  kind: z.enum(['SHOP', 'RESTAURANT']),
   status: storeStatusSchema,
   isDemo: z.boolean(),
   myRole: z.enum(STORE_MEMBER_ROLES),

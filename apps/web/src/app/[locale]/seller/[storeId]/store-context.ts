@@ -14,6 +14,7 @@ export async function loadSellerStore(
   if (!storeIdSchema.safeParse(storeId).success) notFound();
   await requireUser(next);
   const store = await getSellerStore(storeId);
-  if (!store) notFound();
+  // Restaurants have their own panel (/restaurant/:id), not the shop pages.
+  if (!store || store.kind !== 'SHOP') notFound();
   return { store, readOnly: store.status !== 'ACTIVE' && store.status !== 'PENDING' };
 }

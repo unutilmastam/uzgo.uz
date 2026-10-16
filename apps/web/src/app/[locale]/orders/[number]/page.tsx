@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getFormatter, getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
+import { FoodTracking } from '@/components/food/food-tracking';
 import { OrderStatusBadge } from '@/components/orders/status-badge';
 import { PaymentActions } from '@/components/orders/payment-actions';
 import { ReturnInfo } from '@/components/orders/return-info';
@@ -66,6 +67,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">
         {format.dateTime(new Date(order.createdAt), { dateStyle: 'long', timeStyle: 'short' })}
       </p>
+      {order.food && order.sellerOrders[0] ? (
+        <FoodTracking food={order.food} status={order.sellerOrders[0].status} />
+      ) : null}
       <div className="flex flex-col gap-4">
         {order.sellerOrders.map((so) => (
           <section
@@ -76,25 +80,32 @@ export default async function OrderPage({ params, searchParams }: Props) {
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Store aria-hidden="true" className="size-4 text-muted-foreground" />
-                <Link href={`/s/${so.store.slug}`} className="hover:underline">
+                <Link
+                  href={order.kind === 'FOOD' ? `/food/${so.store.slug}` : `/s/${so.store.slug}`}
+                  className="hover:underline"
+                >
                   {so.store.name[l]}
                 </Link>
                 <span className="font-normal text-muted-foreground">· {so.number}</span>
               </div>
               <Badge variant="outline" data-testid="shipment-status">
-                {t(`orders.ss_${so.status}`)}
+                {order.kind === 'FOOD' ? t(`food.ss_${so.status}`) : t(`orders.ss_${so.status}`)}
               </Badge>
             </header>
             <ul className="divide-y divide-border">
               {so.items.map((item) => (
                 <li key={item.sku} className="flex justify-between gap-3 px-4 py-3 text-sm">
                   <div>
-                    <Link
-                      href={`/p/${item.productSlug}`}
-                      className="font-medium hover:text-primary"
-                    >
-                      {item.title[l]}
-                    </Link>
+                    {item.productSlug ? (
+                      <Link
+                        href={`/p/${item.productSlug}`}
+                        className="font-medium hover:text-primary"
+                      >
+                        {item.title[l]}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{item.title[l]}</span>
+                    )}
                     <p className="text-muted-foreground">
                       {[...item.options.map((o) => o[l]), `× ${String(item.quantity)}`].join(' · ')}
                     </p>

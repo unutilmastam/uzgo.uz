@@ -54,7 +54,9 @@ export default async function SellerHomePage() {
             {stores.map((store) => (
               <li key={store.id}>
                 <Link
-                  href={`/seller/${store.id}`}
+                  href={
+                    store.kind === 'RESTAURANT' ? `/restaurant/${store.id}` : `/seller/${store.id}`
+                  }
                   className="flex h-full flex-col gap-2 rounded-xl border border-border bg-card p-5 hover:border-primary"
                 >
                   <div className="flex flex-wrap items-center gap-2">

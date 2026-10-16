@@ -29,7 +29,7 @@ import {
 } from '@uzgo/contracts';
 import type { z } from 'zod';
 import type { AuthContext } from '../auth/auth.types.js';
-import { CurrentAuth } from '../auth/decorators.js';
+import { CurrentAuth, Public } from '../auth/decorators.js';
 import { AppException } from '../common/http-exception.filter.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { StoreAccessService } from '../seller/store-access.service.js';
@@ -44,6 +44,8 @@ const uuid = new ParseUUIDPipe({ version: '7' });
 export class FoodOrdersController {
   constructor(private readonly food: FoodOrdersService) {}
 
+  /** Public: guests see prices before signing in (nothing personal in or out). */
+  @Public()
   @Post('quote')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 60, ttl: 60_000 } })

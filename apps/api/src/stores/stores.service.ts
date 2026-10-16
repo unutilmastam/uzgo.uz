@@ -100,6 +100,7 @@ export class StoresService {
         store: {
           select: {
             id: true,
+            kind: true,
             slug: true,
             name: true,
             status: true,
@@ -170,6 +171,7 @@ export class StoresService {
         );
         return {
           id: store.id,
+          kind: store.kind,
           slug: store.slug,
           name: store.name as Name,
           status: store.status,

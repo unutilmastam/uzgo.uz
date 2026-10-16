@@ -140,6 +140,13 @@ describe('UZGO Food — ordering, restaurant team, couriers (ADR 0024)', () => {
     expect(
       (await quote(customer.cookie, { ...base, ...TASHKENT, items: lines([dish], 2) })).reason,
     ).toBe('OUT_OF_AREA');
+    // Guests see prices before signing in.
+    const guest = await http()
+      .post('/api/v1/food/quote')
+      .set('Origin', TEST_ORIGIN)
+      .send({ ...base, items: lines([dish], 2) })
+      .expect(200);
+    expect(foodQuoteSchema.parse(guest.body).totalTiyin).toBe('6500000');
     const ok = await quote(customer.cookie, { ...base, items: lines([dish], 2) });
     expect(ok).toMatchObject({
       available: true,

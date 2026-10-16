@@ -4,15 +4,15 @@ import { DeliveryArt, FoodArt, GoArt, MarketArt } from '@/components/art/service
 import { Link } from '@/i18n/navigation';
 
 const SERVICES = [
-  { key: 'market', art: MarketArt, tint: 'bg-[#e8effd] dark:bg-[#1b2a4d]', live: true },
-  { key: 'delivery', art: DeliveryArt, tint: 'bg-[#fff3e0] dark:bg-[#3a2a12]', live: false },
-  { key: 'go', art: GoArt, tint: 'bg-[#dcf8eb] dark:bg-[#0f3326]', live: false },
-  { key: 'food', art: FoodArt, tint: 'bg-[#ffe9e0] dark:bg-[#3a1d12]', live: false },
+  { key: 'market', art: MarketArt, tint: 'bg-[#e8effd] dark:bg-[#1b2a4d]', href: '/catalog' },
+  { key: 'delivery', art: DeliveryArt, tint: 'bg-[#fff3e0] dark:bg-[#3a2a12]', href: null },
+  { key: 'go', art: GoArt, tint: 'bg-[#dcf8eb] dark:bg-[#0f3326]', href: null },
+  { key: 'food', art: FoodArt, tint: 'bg-[#ffe9e0] dark:bg-[#3a1d12]', href: '/food' },
 ] as const;
 
 /**
- * The UZGO ecosystem at a glance. Market is live; the rest are labelled
- * "coming soon" and are deliberately not interactive (SPEC §2).
+ * The UZGO ecosystem at a glance. Market and Food are live; the rest are
+ * labelled "coming soon" and are deliberately not interactive (SPEC §2).
  */
 export async function ServicesGrid() {
   const t = await getTranslations();
@@ -30,15 +30,15 @@ export async function ServicesGrid() {
         </p>
       </div>
       <ul className="grid grid-cols-4 gap-1 sm:gap-3">
-        {SERVICES.map(({ key, art: Art, tint, live }) => (
+        {SERVICES.map(({ key, art: Art, tint, href }) => (
           <li key={key}>
             <ServiceCard
               icon={<Art />}
               tint={tint}
               title={t(`services.${key}Title`)}
               description={t(`services.${key}Text`)}
-              statusLabel={live ? t('services.live') : t('common.comingSoon')}
-              {...(live ? { href: '/catalog', linkAs: Link } : {})}
+              statusLabel={href ? t('services.live') : t('common.comingSoon')}
+              {...(href ? { href, linkAs: Link } : {})}
             />
           </li>
         ))}
