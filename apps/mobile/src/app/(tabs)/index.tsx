@@ -76,6 +76,22 @@ function Header() {
         </View>
         <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
       </Pressable>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={t('goTitle')}
+        onPress={() => {
+          router.push('/go');
+        }}
+        style={[styles.food, { backgroundColor: c.secondary, borderColor: c.border }]}
+        testID="go-entry"
+      >
+        <Ionicons name="car" size={28} color={c.primary} />
+        <View style={{ flex: 1 }}>
+          <AppText variant="heading">{t('goTitle')}</AppText>
+          <AppText variant="small">{t('goHomeText')}</AppText>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+      </Pressable>
       <AppText variant="heading">{t('recommended')}</AppText>
     </View>
   );

@@ -298,6 +298,19 @@ when its session is revoked; the outbox `Notification` gains channel `PUSH`
   fee is owed to them; cash they collect is owed to UZGO.
   `CourierSettlement` is append-only (no update/delete trigger).
 
+## UZGO Go (Phase 9c, ADR 0025)
+
+- `Order.kind` `RIDE`: no shipments; `Ride` 1:1 (class, pickup/drop-off
+  points and labels, distance, ETA, price, commission, driver, status and
+  timestamps). CHECKs: points inside Uzbekistan, `0 ≤ commission ≤ price`, a
+  driver exactly when the status needs one. Partial unique indexes: one
+  active ride per driver, one open ride per rider.
+- Role `DRIVER`, `DriverProfile` (application data, unique plate, status
+  `PENDING | ACTIVE | REJECTED | SUSPENDED`, class, online, last point; only
+  ACTIVE drivers can be online — CHECK).
+- Ledger account `DRIVER_PAYABLE` (`LedgerEntry.driverId`);
+  `DriverSettlement` is append-only (no-delete trigger).
+
 ## Database roles (production, ADR 0021)
 
 - `uzgo` — owner: runs `prisma migrate deploy`, the install-time seed and

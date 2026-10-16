@@ -10,6 +10,11 @@ describe('push deep links', () => {
     const storeId = '01a1402e-9251-727c-91cb-9ceff87e8604';
     expect(pushTarget({ type: 'shipment', storeId })?.params).toEqual({ storeId });
     expect(pushTarget({ type: 'courier' })?.pathname).toBe('/courier');
+    expect(pushTarget({ type: 'ride', number: 'UZ-2026-000002' })).toEqual({
+      pathname: '/go/[number]',
+      params: { number: 'UZ-2026-000002' },
+    });
+    expect(pushTarget({ type: 'driver' })?.pathname).toBe('/driver');
   });
 
   it('ignores unknown or malformed payloads', () => {

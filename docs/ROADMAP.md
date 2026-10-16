@@ -136,6 +136,23 @@ checkout SELF/UZGO, ledger balance, courier race, timeout cancel), web e2e
 admin adds courier) and mobile e2e (customer orders → courier takes, picks up,
 delivers).
 
+Phase 9c notes (ADR 0025): UZGO Go (ride-hailing) as a separate module in the
+same monolith. Owner decisions: anyone may apply as a driver and staff
+approve; fixed price shown before ordering; cash, Payme and Click; drivers
+take requests themselves; OpenStreetMap; all of Uzbekistan. A ride reuses
+`Order` (kind RIDE) for payments, refunds and the ledger (`DRIVER_PAYABLE`,
+driver settlements); `Ride` holds places, class, price, driver and status.
+One open ride per rider and one active ride per driver are enforced by the
+database. Web: `/go`, live ride page, `/driver` application, admin drivers
+and rides. Mobile: Go, live ride, driver application and driver mode.
+Verified by API integration tests (application/review/suspend, quote, cash
+and online rides, accept race, release, cancel refund, completion ledger,
+settlements, search timeout, staff cancel), contract and fare unit tests,
+web e2e (driver applies → staff approve → rider calls a car → completed) and
+mobile e2e (rider calls in the app → driver takes and completes in the app).
+Lawyer/accountant items before launch: taxi licensing, driver terms, ride
+fiscal codes.
+
 ## Open decisions
 
 | Decision                                                                                                                                                    | Who                          | When                                         |

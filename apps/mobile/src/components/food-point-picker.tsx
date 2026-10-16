@@ -2,16 +2,29 @@ import { geocodeResponseSchema, reverseGeocodeResponseSchema } from '@uzgo/contr
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AppText, Button, Field } from '@/components/ui';
-import { type FoodPoint, setFoodPoint, useFoodPoint } from '@/lib/food-point';
+import { type FoodPoint, type PointSlot, setPoint, usePoint } from '@/lib/food-point';
 import { currentPoint } from '@/lib/location';
 import { spacing, useColors } from '@/lib/theme';
 import { useApp } from '@/state/app';
 
-/** Delivery point: phone location first, or an address found on OpenStreetMap. */
-export function FoodPointPicker() {
+/** A place: phone location first, or an address found on OpenStreetMap. */
+export function FoodPointPicker({
+  slot = 'food',
+  hint,
+  locateLabel,
+  testID = 'food-point',
+}: {
+  slot?: PointSlot;
+  hint?: string;
+  locateLabel?: string;
+  testID?: string;
+}) {
   const { api, t, locale } = useApp();
   const c = useColors();
-  const point = useFoodPoint();
+  const point = usePoint(slot);
+  const setFoodPoint = (p: FoodPoint | null) => {
+    setPoint(slot, p);
+  };
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodPoint[]>([]);
   const [pending, setPending] = useState(false);
@@ -60,11 +73,11 @@ export function FoodPointPicker() {
 
   return (
     <View style={{ gap: spacing.sm }}>
-      <AppText variant={point ? 'body' : 'muted'} testID="food-point">
-        {point ? point.label : t('foodPointHint')}
+      <AppText variant={point ? 'body' : 'muted'} testID={testID}>
+        {point ? point.label : (hint ?? t('foodPointHint'))}
       </AppText>
       <Button
-        title={t('foodUseLocation')}
+        title={locateLabel ?? t('foodUseLocation')}
         icon="locate-outline"
         variant="outline"
         loading={pending}

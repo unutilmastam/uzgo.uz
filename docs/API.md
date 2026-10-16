@@ -282,6 +282,45 @@ HANDED_TO_DELIVERY → DELIVERED`, plus cancel and delivery-failed; no
 courier, eta, point }` for food orders.
 - Push payloads add `{ type: "courier" }` (new offers near the courier).
 
+## UZGO Go (Phase 9c, ADR 0025)
+
+The price is fixed before ordering and decided on the server: per class
+`base + perKm × road km` (straight line × 1.3), rounded up to 500 soʻm
+(`RIDE_ECONOMY_*`, `RIDE_COMFORT_*`). A ride is an `Order` of kind `RIDE`;
+its number is the ride's id in URLs. Payment links and the dev payment use
+the existing `/orders/:number/payment-link` and `/payments/dev/:number`.
+
+| Method | Path                                 | Auth                   | Notes                                                                                             |
+| ------ | ------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| POST   | `/rides/quote`                       | public                 | `{ pickup, dropoff }` → distance, ETA, `tooFar`, price per class, `driversNearby`; 60/min         |
+| POST   | `/rides`                             | user + Idempotency-Key | `rideRequestSchema`; `expectedPriceTiyin` must match (`PRICE_CHANGED`); one open ride; 10/min     |
+| GET    | `/rides`                             | user                   | The rider's rides, newest first                                                                   |
+| GET    | `/rides/:number`                     | user (own)             | Live view; driver phone and position only while active                                            |
+| POST   | `/rides/:number/cancel`              | user (own)             | Before the trip starts; a paid ride is refunded in full                                           |
+| GET    | `/driver/application`                | user                   | `{ application }` (null: never applied)                                                           |
+| PUT    | `/driver/application`                | user                   | Apply or correct a rejected one (`acceptTerms: true`); `PLATE_TAKEN`, `APPLICATION_LOCKED`; 5/min |
+| GET    | `/driver/me`                         | approved driver        | Status, class, car, balance, active ride                                                          |
+| PUT    | `/driver/status`                     | approved driver        | `{ online, lat?, lng? }` (online needs a point)                                                   |
+| PUT    | `/driver/location`                   | approved driver        | `{ lat, lng }`; 20/min                                                                            |
+| GET    | `/driver/offers`                     | approved driver        | Searching rides within `RIDE_OFFER_RADIUS_KM`, class the car may serve; no rider details          |
+| POST   | `/driver/offers/:id/accept`          | approved driver        | First driver wins (`OFFER_TAKEN`); one active ride (`DRIVER_BUSY`); 20/min                        |
+| POST   | `/driver/rides/:id/action`           | the ride's driver      | `{ action: ARRIVED \| START \| COMPLETE \| RELEASE \| NO_SHOW }`                                  |
+| GET    | `/admin/drivers?status=`             | admin + TOTP           | Applications and drivers with balance and completed rides                                         |
+| POST   | `/admin/drivers/:userId/review`      | admin + TOTP           | `{ decision: APPROVE \| REJECT, note?, rideClass? }` (reject needs a note); audited               |
+| PATCH  | `/admin/drivers/:userId`             | admin + TOTP           | `{ status?: ACTIVE \| SUSPENDED, rideClass?, note? }`; audited                                    |
+| POST   | `/admin/drivers/:userId/settlements` | admin + TOTP           | Commission handed in (negative) or payout (positive); never past the balance; audited             |
+| GET    | `/admin/rides?status=`               | admin + TOTP           | Newest 200                                                                                        |
+| POST   | `/admin/rides/:number/cancel`        | admin + TOTP           | `{ reason }`; audited                                                                             |
+
+- Ride statuses: `AWAITING_PAYMENT → SEARCHING → ACCEPTED → ARRIVED →
+IN_PROGRESS → COMPLETED`, plus `CANCELLED` and `NO_DRIVER` (nobody took it
+  within `RIDE_SEARCH_TIMEOUT_MINUTES`; a job closes it and refunds).
+  `RELEASE` returns an accepted ride to `SEARCHING`.
+- Payme/Click for rides need `RIDE_MXIK_CODE` and `RIDE_PACKAGE_CODE`
+  (`FISCAL_DATA_MISSING` otherwise).
+- `GET /orders` lists shop and food orders only.
+- Push payloads add `{ type: "ride", number }` and `{ type: "driver" }`.
+
 ## Pagination
 
 - Lists use cursor pagination: `?limit=20&cursor=<opaque>` →

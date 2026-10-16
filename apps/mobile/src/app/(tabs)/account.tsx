@@ -160,6 +160,24 @@ export default function AccountScreen() {
           router.push('/favorites');
         }}
       />
+      <Button
+        title={t('goTitle')}
+        icon="car-outline"
+        variant="secondary"
+        onPress={() => {
+          router.push('/go');
+        }}
+        testID="go-entry-account"
+      />
+      <Button
+        title={user.roles.includes('DRIVER') ? t('driverMode') : t('goBecomeDriver')}
+        icon="id-card-outline"
+        variant="secondary"
+        onPress={() => {
+          router.push('/driver');
+        }}
+        testID="driver-mode"
+      />
       {user.roles.includes('COURIER') ? (
         <Button
           title={t('courierTitle')}

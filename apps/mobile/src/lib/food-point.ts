@@ -1,24 +1,32 @@
 import { useSyncExternalStore } from 'react';
 import type { Point } from './location';
 
-/** The chosen delivery point for UZGO Food (kept in memory while the app runs). */
+/** A chosen place (kept in memory while the app runs). */
 export type FoodPoint = Point & { label: string };
 
-let current: FoodPoint | null = null;
+/** food: the delivery point; pickup / dropoff: UZGO Go (ADR 0025). */
+export type PointSlot = 'food' | 'pickup' | 'dropoff';
+
+const current: Record<PointSlot, FoodPoint | null> = { food: null, pickup: null, dropoff: null };
 const listeners = new Set<() => void>();
 
-export function setFoodPoint(point: FoodPoint | null): void {
-  current = point;
+export function setPoint(slot: PointSlot, point: FoodPoint | null): void {
+  current[slot] = point;
   for (const l of listeners) l();
 }
 
-export function useFoodPoint(): FoodPoint | null {
+export function usePoint(slot: PointSlot): FoodPoint | null {
   return useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    () => current,
-    () => current,
+    () => current[slot],
+    () => current[slot],
   );
 }
+
+export const setFoodPoint = (point: FoodPoint | null) => {
+  setPoint('food', point);
+};
+export const useFoodPoint = () => usePoint('food');

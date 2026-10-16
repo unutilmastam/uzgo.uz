@@ -188,6 +188,23 @@ deploy the last good SHA, point DNS to the new server.
   OpenStreetMap Nominatim usage policy; for heavy traffic run an own
   Nominatim and set `NOMINATIM_URL`.
 
+## 9b. UZGO Go operations (ADR 0025)
+
+- Driver applications: `/uz/admin/drivers` (waiting ones first). Check the
+  driver licence, car documents and the person (in person or video call),
+  then approve with the right class, or reject with a note the driver sees.
+- Suspend a driver from the same page (they go offline at once).
+- Driver money: balance positive = UZGO owes the driver (online rides);
+  negative = the driver owes UZGO commission (cash rides). Record every
+  hand-over or payout as a settlement; it cannot be edited or deleted.
+- Rides: `/uz/admin/rides`; cancel an open ride with a reason (a paid ride
+  is refunded in full — Payme/Click refunds appear under Finance → refunds).
+- Tariffs and rules in `api.env`: `RIDE_ECONOMY_*`, `RIDE_COMFORT_*`,
+  `RIDE_COMMISSION_BP`, `RIDE_MAX_KM`, `RIDE_OFFER_RADIUS_KM`,
+  `RIDE_SEARCH_TIMEOUT_MINUTES`. Online payment for rides needs
+  `RIDE_MXIK_CODE`, `RIDE_PACKAGE_CODE` and `RIDE_VAT_PERCENT` from the
+  accountant; without them only cash is accepted.
+
 ## 10. Go-live checklist
 
 - [ ] Lawyer reviewed `/info/terms` and `/info/privacy`; operator details filled
@@ -200,4 +217,6 @@ deploy the last good SHA, point DNS to the new server.
 - [ ] Telegram ops chat receives a test alert; external uptime check active.
 - [ ] Backup + off-site copy + restore test OK; offline key stored safely.
 - [ ] Super admin enrolled with TOTP; `STAFF_TOTP_REQUIRED=true`.
+- [ ] UZGO Go: lawyer confirmed taxi licensing rules and the driver terms;
+      accountant set `RIDE_MXIK_CODE` / `RIDE_PACKAGE_CODE` / `RIDE_VAT_PERCENT`.
 - [ ] `PUBLIC_INDEXING=true` only on launch day.

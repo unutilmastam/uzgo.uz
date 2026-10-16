@@ -7,6 +7,8 @@ export function pushTarget(
   | { pathname: '/order/[number]'; params: { number: string } }
   | { pathname: '/seller/[storeId]'; params: { storeId: string } }
   | { pathname: '/courier'; params: Record<string, never> }
+  | { pathname: '/go/[number]'; params: { number: string } }
+  | { pathname: '/driver'; params: Record<string, never> }
   | null {
   const parsed = pushDataSchema.safeParse(data);
   if (!parsed.success) return null;
@@ -17,9 +19,9 @@ export function pushTarget(
       return { pathname: '/seller/[storeId]', params: { storeId: parsed.data.storeId } };
     case 'courier':
       return { pathname: '/courier', params: {} };
-    // UZGO Go screens arrive with the app part of Phase 9c.
     case 'ride':
+      return { pathname: '/go/[number]', params: { number: parsed.data.number } };
     case 'driver':
-      return null;
+      return { pathname: '/driver', params: {} };
   }
 }

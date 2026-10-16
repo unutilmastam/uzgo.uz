@@ -283,6 +283,11 @@ without capabilities; secrets only in env files with mode 600.
 | `GET /food/geocode` · `/reverse`   | 20 / min                       | Nominatim: 1 request/s upstream, cached, contact in User-Agent (`GEOCODER_CONTACT`)                  |
 | `PUT /courier/location`            | 12 / min                       | Courier only                                                                                         |
 | `POST /courier/offers/:id/accept`  | 20 / min                       | Conditional update: one courier per order                                                            |
+| `POST /rides/quote`                | 60 / min                       | Public; prices from the server                                                                       |
+| `POST /rides`                      | 10 / min                       | Idempotency key; one open ride per rider (database index)                                            |
+| `PUT /driver/application`          | 5 / min                        | Plate numbers unique                                                                                 |
+| `PUT /driver/location`             | 20 / min                       | Approved drivers only                                                                                |
+| `POST /driver/offers/:id/accept`   | 20 / min                       | Row lock: one driver per ride; one active ride per driver (database index)                           |
 | `POST /seller/stores` (apply)      | 5 / min                        |                                                                                                      |
 | `POST /seller/stores/:id/members`  | 10 / min                       |                                                                                                      |
 | Product image upload               | 30 / min                       | One file ≤ 8 MB per request                                                                          |
@@ -299,6 +304,18 @@ without capabilities; secrets only in env files with mode 600.
   granted through the generic role endpoint.
 - Courier cash settlements are append-only (database trigger) and cannot
   exceed the courier's balance (advisory lock).
+
+### UZGO Go (Phase 9c, ADR 0025)
+
+- Anyone may apply; only staff approve (audited) after checking original
+  documents. No document photos are stored. Taxi licensing must be confirmed
+  by a lawyer before launch.
+- Offers show places, distance and price only; the rider's name and phone
+  reach the driver after accepting. The rider sees the driver's phone and
+  position only while the ride is active. Only the last driver position is
+  kept.
+- Prices and commission are decided by the server; a stale client price is
+  refused. Driver settlements are append-only and never exceed the balance.
 
 ### Remaining risks and owner actions
 
