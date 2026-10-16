@@ -12,7 +12,7 @@ const squash = (text: string) =>
 /**
  * Rebuilds the food search text (ADR 0026) for the given restaurants (store
  * ids) or for every row still empty: restaurant name + address, dish name +
- * description + category. Call after staff change a restaurant or a dish.
+ * description + category + restaurant name. Call after staff change a restaurant or a dish.
  */
 export async function reindexFood(
   prisma: Pick<PrismaClient, 'restaurantProfile' | 'foodMenuItem'>,
@@ -32,14 +32,21 @@ export async function reindexFood(
   const items = await prisma.foodMenuItem.findMany({
     where: storeIds ? { storeId: { in: storeIds } } : { searchText: '' },
     take: storeIds ? undefined : 2000,
-    select: { id: true, name: true, description: true, category: { select: { name: true } } },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      category: { select: { name: true } },
+      store: { select: { name: true } },
+    },
   });
   for (const item of items) {
     await prisma.foodMenuItem.update({
       where: { id: item.id },
       data: {
+        // The restaurant name too: "osh Rayhon" finds Rayhon's osh.
         searchText: squash(
-          `${both(item.name)} ${both(item.description)} ${both(item.category.name)}`,
+          `${both(item.name)} ${both(item.description)} ${both(item.category.name)} ${both(item.store.name)}`,
         ),
       },
     });

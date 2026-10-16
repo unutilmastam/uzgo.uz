@@ -103,5 +103,5 @@ export class ClaudeAssistant implements AssistantProvider {
 }
 
 export function createClaudeClient(apiKey: string): MessagesClient {
-  return new Anthropic({ apiKey, maxRetries: 2, timeout: 60_000 });
+  return new Anthropic({ apiKey, maxRetries: 1, timeout: 45_000 });
 }

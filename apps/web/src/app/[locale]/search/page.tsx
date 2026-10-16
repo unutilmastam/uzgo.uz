@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Breadcrumbs } from '@/components/catalog/breadcrumbs';
+import { FoodResults } from '@/components/catalog/food-results';
 import { ProductListing } from '@/components/catalog/product-listing';
 import type { Locale } from '@/i18n/routing';
-import { getCategory, NotFoundError } from '@/lib/catalog-api';
+import { getCategory, getSearchAll, NotFoundError } from '@/lib/catalog-api';
 import { parseListingParams } from '@/lib/listing-params';
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -31,6 +32,14 @@ export default async function SearchPage({ searchParams }: Props) {
       throw error;
     }
   }
+  // Plain text search (no filters, first page): restaurants and dishes too.
+  const plain =
+    query.q &&
+    !query.category &&
+    !query.store &&
+    !query.attr?.length &&
+    (query.page ?? '1') === '1';
+  const unified = plain && query.q ? await getSearchAll(query.q) : null;
   const title = query.q
     ? t('search.resultsFor', { query: query.q })
     : (categoryName ?? t('search.title'));
@@ -39,6 +48,7 @@ export default async function SearchPage({ searchParams }: Props) {
     <div className="mx-auto max-w-7xl px-4 py-6">
       <Breadcrumbs items={[{ label: t('search.title') }]} />
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">{title}</h1>
+      {unified && query.q ? <FoodResults result={unified} query={query.q} /> : null}
       <ProductListing basePath="/search" query={query} filters={filters} />
     </div>
   );

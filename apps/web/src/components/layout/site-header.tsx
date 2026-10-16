@@ -1,5 +1,5 @@
 import { Logo } from '@uzgo/ui/components/logo';
-import { ShoppingCart, UserRound } from 'lucide-react';
+import { ShoppingCart, Sparkles, UserRound } from 'lucide-react';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { CartCount } from '@/components/cart/cart-count';
@@ -33,6 +33,10 @@ export async function SiteHeader() {
         <div className="ml-auto flex items-center gap-1">
           <LocaleSwitcher />
           <ThemeToggle />
+          <Link href="/assistant" className={iconLink}>
+            <Sparkles aria-hidden="true" />
+            {t('header.assistant')}
+          </Link>
           <Link href="/account" className={iconLink}>
             <UserRound aria-hidden="true" />
             {t('header.account')}

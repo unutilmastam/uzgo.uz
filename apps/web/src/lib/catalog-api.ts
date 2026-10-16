@@ -9,6 +9,8 @@ import {
   type ProductReviews,
   productListResponseSchema,
   productReviewsResponseSchema,
+  type SearchAll,
+  searchAllSchema,
   type StoreDetail,
   storeDetailResponseSchema,
 } from '@uzgo/contracts';
@@ -92,4 +94,14 @@ export async function getProducts(query: ListingQuery): Promise<ProductList> {
 export async function getProductReviews(slug: string): Promise<ProductReviews> {
   const path = `/catalog/products/${encodeURIComponent(slug)}/reviews`;
   return productReviewsResponseSchema.parse(await json(await publicGet(path, 60), path));
+}
+
+/** Products, restaurants and dishes for one query (ADR 0026); null when the API is unavailable. */
+export async function getSearchAll(q: string): Promise<SearchAll | null> {
+  const path = `/search/all?q=${encodeURIComponent(q.slice(0, 100))}`;
+  try {
+    return searchAllSchema.parse(await json(await publicGet(path, 30), path));
+  } catch {
+    return null;
+  }
 }

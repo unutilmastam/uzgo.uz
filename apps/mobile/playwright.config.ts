@@ -40,6 +40,7 @@ export default defineConfig({
         OTP_IP_HOURLY_LIMIT: '10000',
         RATE_LIMIT_DISABLED: 'true',
         DEV_PAYMENTS_ENABLED: 'true',
+        ASSISTANT_PROVIDER: 'fake',
       },
     },
     {

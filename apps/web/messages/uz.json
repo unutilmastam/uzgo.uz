@@ -24,7 +24,8 @@
     "themeToLight": "Yorugʻ rejimni yoqish",
     "categoriesNav": "Toifalar",
     "allCategories": "Barcha toifalar",
-    "bottomNav": "Pastki menyu"
+    "bottomNav": "Pastki menyu",
+    "assistant": "Yordamchi"
   },
   "locales": {
     "uz": "Oʻzbekcha",
@@ -142,7 +143,9 @@
   "search": {
     "title": "Qidiruv",
     "resultsFor": "“{query}” boʻyicha natijalar",
-    "backHome": "Bosh sahifaga"
+    "backHome": "Bosh sahifaga",
+    "foodResults": "UZGO Food: restoran va taomlar",
+    "askAssistant": "Yordamchidan soʻrash"
   },
   "cart": {
     "title": "Savat",
@@ -1074,5 +1077,28 @@
     "error_PLATE_TAKEN": "Bu davlat raqami boshqa haydovchida roʻyxatdan oʻtgan.",
     "error_APPLICATION_LOCKED": "Tasdiqlangan maʼlumotlarni faqat UZGO jamoasi oʻzgartiradi.",
     "error_VALIDATION_FAILED": "Maʼlumotlarni tekshiring: guvohnoma, yil va davlat raqami."
+  },
+  "assistant": {
+    "title": "UZGO yordamchi",
+    "description": "Mahsulot, restoran va taomlarni topishga yordam beradi. Savolingizni oddiy soʻz bilan yozing.",
+    "off": "Yordamchi hozircha ishlamayapti. Qidiruvdan foydalaning.",
+    "loginHint": "Yordamchidan foydalanish uchun tizimga kiring.",
+    "login": "Kirish",
+    "hello": "Salom! Nima qidiryapsiz? Masalan:",
+    "example1": "200 ming soʻmgacha elektr choynak",
+    "example2": "Yaqin atrofda qayerda osh bor?",
+    "example3": "Bolalar uchun qishki kurtka",
+    "thinking": "Yordamchi javob yozmoqda…",
+    "inputLabel": "Savolingiz",
+    "placeholder": "Savolingizni yozing…",
+    "send": "Yuborish",
+    "remaining": "Bugun yana {count} ta savol",
+    "privacy": "Shaxsiy maʼlumot (telefon, manzil, karta) yozmang. Savollar AI xizmatiga (Anthropic, AQSh) yuboriladi va saqlanmaydi.",
+    "error_ASSISTANT_DAILY_LIMIT": "Bugungi savollar limiti tugadi. Ertaga qayta urinib koʻring.",
+    "error_ASSISTANT_BUDGET_EXHAUSTED": "Yordamchi bu oy dam olmoqda. Qidiruvdan foydalaning.",
+    "error_ASSISTANT_UNAVAILABLE": "Yordamchi javob bera olmadi. Birozdan soʻng qayta urinib koʻring.",
+    "error_ASSISTANT_DISABLED": "Yordamchi hozircha ishlamayapti.",
+    "error_RATE_LIMITED": "Juda tez. Bir daqiqadan soʻng qayta yozing.",
+    "error_generic": "Nimadir xato ketdi. Qayta urinib koʻring."
   }
 }

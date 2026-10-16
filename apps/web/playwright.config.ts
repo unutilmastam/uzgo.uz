@@ -43,6 +43,8 @@ export default defineConfig({
         RATE_LIMIT_DISABLED: 'true',
         // Simulated online payment for e2e (refused in production by env validation).
         DEV_PAYMENTS_ENABLED: 'true',
+        // Deterministic stand-in for the AI assistant (refused in production by env validation).
+        ASSISTANT_PROVIDER: 'fake',
       },
     },
     {

@@ -123,6 +123,13 @@ test('UZGO Food: staff add a restaurant → customer orders near home → kitche
   await buyer.goto(orderPath);
   await expect(buyer.getByTestId('shipment-status')).toHaveText('Yetkazildi');
 
+  // Unified search finds the restaurant and its dish (ADR 0026).
+  await buyer.goto(`/uz/search?q=${encodeURIComponent(stamp)}`);
+  await expect(buyer.getByTestId('search-restaurant').filter({ hasText: name })).toBeVisible();
+  await buyer.goto(`/uz/search?q=${encodeURIComponent(`to'y oshi ${stamp}`)}`);
+  await expect(buyer.getByTestId('search-dish')).toHaveCount(1);
+  await expect(buyer.getByTestId('search-dish')).toContainText('Toʻy oshi');
+
   // 4. Staff add a courier.
   await admin.goto('/uz/admin/couriers');
   await admin.getByLabel('Kuryer telefoni').fill(ownerPhone);
