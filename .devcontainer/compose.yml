@@ -1,0 +1,28 @@
+# Dev container services for GitHub Codespaces (development only).
+# The app container shares the database container's network, so PostgreSQL is
+# reachable on localhost:5432 exactly as in apps/api/.env.example.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:bookworm
+    command: sleep infinity
+    network_mode: service:postgres
+    volumes:
+      - ../..:/workspaces:cached
+
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uzgo
+      POSTGRES_PASSWORD: uzgo_dev_password
+      POSTGRES_DB: uzgo
+    volumes:
+      - uzgo_codespace_pg:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U uzgo -d uzgo']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  uzgo_codespace_pg:

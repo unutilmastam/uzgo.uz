@@ -34,6 +34,12 @@ The owner drives Claude Code in the cloud. Write **"davom et"** to run the next
 phase. **GitHub Actions CI is the source of truth**: open the repository's
 _Actions_ tab to see whether the latest commit is green.
 
+To try the running site without a server: **Code → Codespaces → Create
+codespace on main**. The dev container (`.devcontainer/`) starts PostgreSQL,
+migrates, seeds demo data, builds and runs API + web, and opens the site.
+Step-by-step guide in Uzbek: [docs/CODESPACES.md](docs/CODESPACES.md).
+Development only — never production.
+
 ## Local setup (developers)
 
 Requirements: Node.js 24 (`.nvmrc`), pnpm 12 (`corepack enable` picks the

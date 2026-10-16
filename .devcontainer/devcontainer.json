@@ -1,0 +1,27 @@
+{
+  // GitHub Codespaces / Dev Containers: one-click demo of the whole stack
+  // (PostgreSQL + API + web) with clearly labelled demo data. Development only —
+  // never a production environment. Guide: docs/CODESPACES.md
+  "name": "UZGO demo",
+  "dockerComposeFile": ["compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24", "pnpmVersion": "none" }
+  },
+  "hostRequirements": { "cpus": 2, "memory": "8gb" },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "UZGO sayt", "onAutoForward": "openBrowser" },
+    "4000": { "label": "UZGO API", "onAutoForward": "silent" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "silent" },
+  // Once, when the codespace is created: install, migrate, seed demo data, build.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  // Every time the codespace starts: run API and web in the background.
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "customizations": {
+    "codespaces": { "openFiles": ["docs/CODESPACES.md"] }
+  }
+}
