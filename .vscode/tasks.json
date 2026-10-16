@@ -1,0 +1,16 @@
+{
+  // Codespaces: when the editor opens, make sure UZGO is running and leave an
+  // open terminal for the helper commands (kod, admin, sotuvchi, qayta, yangila).
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "UZGO",
+      "type": "shell",
+      "command": "bash .devcontainer/start.sh --if-needed; echo; echo \"Sayt: https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/uz\"; echo 'Buyruqlar: kod | admin 901234567 | sotuvchi 901234567 | qayta | yangila'; exec bash",
+      "isBackground": false,
+      "problemMatcher": [],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "clear": true }
+    }
+  ]
+}

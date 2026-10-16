@@ -22,6 +22,8 @@
   // Every time the codespace starts: run API and web in the background.
   "postStartCommand": "bash .devcontainer/start.sh",
   "customizations": {
+    // Lets .vscode/tasks.json open the UZGO terminal automatically.
+    "vscode": { "settings": { "task.allowAutomaticTasks": "on" } },
     "codespaces": { "openFiles": ["docs/CODESPACES.md"] }
   }
 }

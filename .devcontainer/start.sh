@@ -7,6 +7,17 @@ ROOT=$PWD
 
 bash .devcontainer/env.sh
 
+healthy() {
+  curl -fs --max-time 10 http://localhost:4000/api/v1/health/ready >/dev/null &&
+    curl -fs --max-time 30 -o /dev/null http://localhost:3000/uz
+}
+
+# --if-needed: leave already running servers alone (used when the editor opens).
+if [[ ${1:-} == --if-needed ]] && healthy; then
+  echo "[uzgo] ready: API and web are already running"
+  exit 0
+fi
+
 pkill -f 'node dist/main.js' 2>/dev/null || true
 pkill -f 'next start' 2>/dev/null || true
 sleep 1
@@ -20,8 +31,7 @@ until pg_isready -h localhost -U uzgo -d uzgo >/dev/null 2>&1; do sleep 1; done
   >/tmp/uzgo-web.log 2>&1 &)
 
 for _ in $(seq 1 90); do
-  if curl -fs http://localhost:4000/api/v1/health/ready >/dev/null &&
-    curl -fs -o /dev/null http://localhost:3000/uz; then
+  if healthy; then
     echo "[uzgo] ready: API and web are running"
     exit 0
   fi
