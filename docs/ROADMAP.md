@@ -18,7 +18,7 @@ Statuses: NOT STARTED · IN PROGRESS · BLOCKED · VERIFIED
 | 7     | Hosting, security review, monitoring, backups, E2E, legal pages                | VERIFIED    |
 | 8     | Mobile apps                                                                    | VERIFIED    |
 | 9a    | Market growth: reviews & ratings, favorites, returns flow, promo codes         | VERIFIED    |
-| 9b    | UZGO Food (separate module; provider decisions first)                          | IN PROGRESS |
+| 9b    | UZGO Food (separate module; provider decisions first)                          | VERIFIED    |
 | 9c    | UZGO Go — ride-hailing (separate module; maps/licence decisions first)         | NOT STARTED |
 | 9d    | Unified search and AI assistant (AI provider decision first)                   | NOT STARTED |
 
