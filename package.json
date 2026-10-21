@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "prettier": "3.9.10",
-    "turbo": "2.11.8",
+    "turbo": "2.11.9",
     "@uzgo/config": "workspace:*"
   },
   "prettier": "@uzgo/config/prettier"
