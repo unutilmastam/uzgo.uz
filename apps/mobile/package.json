@@ -46,7 +46,7 @@
     "@react-native/metro-config": "0.86.3",
     "@types/react": "~19.2.0",
     "@uzgo/config": "workspace:*",
-    "eslint": "9.39.5",
+    "eslint": "10.13.0",
     "typescript": "6.0.3",
     "vitest": "5.0.4"
   }
