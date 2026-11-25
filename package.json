@@ -23,8 +23,8 @@
     "db:seed:demo": "pnpm --filter @uzgo/api db:seed:demo"
   },
   "devDependencies": {
-    "prettier": "3.9.10",
-    "turbo": "2.11.8",
+    "prettier": "3.10.1",
+    "turbo": "2.11.13",
     "@uzgo/config": "workspace:*"
   },
   "prettier": "@uzgo/config/prettier"
